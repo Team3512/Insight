@@ -1,0 +1,10 @@
+streamHost        = 10.35.12.11
+streamPort        = 80
+streamRequestPath = /mjpg/video.mjpg
+
+streamServerPort  = 8080
+streamServerPath  = /
+
+#Insight sends to this
+robotIP           = 127.0.0.1
+robotControlPort  = 1133
