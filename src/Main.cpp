@@ -9,6 +9,9 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#include <cstdint>
+#include <cstring>
+
 #include "SFML/Network/IpAddress.hpp"
 #include "SFML/Network/UdpSocket.hpp"
 
@@ -17,6 +20,8 @@
 #include "MJPEG/MjpegStream.hpp"
 #include "Settings.hpp"
 #include "Resource.h"
+
+#include "ImageProcess/FindTarget2013.hpp"
 
 #define _WIN32_IE 0x0400
 #include <commctrl.h>
@@ -103,14 +108,39 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     robotControl.setBlocking( false );
     gCtrlSocketPtr = &robotControl;
 
-    // Used for sending control packets to robot
-    char data[24];
+    /* Used for sending control packets to robot
+     * data format:
+     * 8 byte header
+     *     "ctrl\r\n\0\0"
+     * 6 bytes of x-y pairs
+     *     char x
+     *     char y
+     *     char x
+     *     char y
+     *     char x
+     *     char y
+     * 2 empty bytes
+     */
+    char data[16] = "ctrl\r\n\0\0";
+    std::memset( data + 8 , 0 , sizeof(data) - 8 );
+    bool newData = false;
+
     sf::IpAddress robotIP( gSettings.getValueFor( "robotIP" ) );
     unsigned short robotControlPort = std::atoi( gSettings.getValueFor( "robotControlPort" ).c_str() );
 
     // Make sure control data isn't sent too fast
     sf::Clock sendTime;
     /* ======================================== */
+
+    /* ===== Image Processing Variables ===== */
+    uint8_t* imgBuffer = NULL;
+    uint8_t* tempImg = NULL;
+    uint32_t imgWidth = 0;
+    uint32_t imgHeight = 0;
+    uint32_t lastWidth = 0;
+    uint32_t lastHeight = 0;
+    FindTarget2013 processor;
+    /* ====================================== */
 
     // Make sure the main window is shown before continuing
     ShowWindow( mainWindow , SW_SHOW );
@@ -128,12 +158,80 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             }
         }
         else {
-            /* TODO: Run image processing here
-             * TODO: Put control data into data array starting at data[9]
-             */
+            // Get new image to process
+            imgBuffer = gStreamWinPtr->getCurrentImage();
+            imgWidth = gStreamWinPtr->getCurrentSize().X;
+            imgHeight = gStreamWinPtr->getCurrentSize().Y;
+
+            if ( imgBuffer != NULL && imgWidth > 0 && imgHeight > 0 ) {
+                if ( tempImg == NULL ) {
+                    tempImg = new uint8_t[imgWidth * imgHeight * 3];
+                }
+                else if ( lastWidth != imgWidth || lastHeight != imgHeight ) {
+                    delete[] tempImg;
+                    tempImg = new uint8_t[imgWidth * imgHeight * 3];
+                }
+
+                // Update width and height
+                lastWidth = imgWidth;
+                lastHeight = imgHeight;
+
+                /* ===== Convert RGBA image to RGB ===== */
+                // Copy R, G, and B channels but ignore A channel
+                for ( unsigned int posIn = 0, posOut = 0 ; posIn < imgWidth * imgHeight * 4 ; posIn++, posOut++ ) {
+                    // copy bit here
+                    tempImg[posOut] = imgBuffer[posIn];
+
+                    // Skip 'A' part of RGBA pixel
+                    if ( posIn % 4 == 3 ) {
+                        posIn++;
+                    }
+                }
+                /* ===================================== */
+
+                // Process the new image
+                processor.setImage( tempImg , imgWidth , imgHeight );
+                processor.processImage();
+
+                processor.getProcessedImage( tempImg ); // TODO Pass tempImg to MJPEG server
+
+                // Retrieve positions of targets and send them to robot
+                if ( processor.getTargetPositions().size() > 0 ) {
+                    char x = 0;
+                    char y = 0;
+
+                    // Pack data structure with points
+                    for ( unsigned int i = 0 ; i < processor.getTargetPositions().size() &&
+                            i < 3 ; i++ ) {
+                        quad_t target = processor.getTargetPositions()[i];
+                        for ( unsigned int j = 0 ; j < 4 ; j++ ) {
+                            x += target.point[j].x;
+                            y += target.point[j].y;
+                        }
+                        x /= 4;
+                        y /= 4;
+
+                        data[9 + 2*i] = x;
+                        data[10 + 2*i] = y;
+                    }
+
+                    /* If there are less than three points in the data
+                     * structure, zero the rest out.
+                     */
+                    for ( unsigned int i = processor.getTargetPositions().size() ;
+                            i < 3 ; i++ ) {
+                        data[9 + 2*i] = 0;
+                        data[10 + 2*i] = 0;
+                    }
+
+                    // We have new target data to send to the robot
+                    newData = true;
+                }
+            }
 
             if ( gCtrlSocketPtr != NULL &&
-                    sendTime.getElapsedTime().asMilliseconds() > 200 ) {
+                    sendTime.getElapsedTime().asMilliseconds() > 200 &&
+                    newData ) {
                 sf::Socket::Status status = gCtrlSocketPtr->send( data , sizeof(data) , robotIP , robotControlPort );
                 if ( status == sf::Socket::Done ) {
                     sendTime.restart();
@@ -149,6 +247,8 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
 
     // Delete MJPEG stream window
     delete gStreamWinPtr;
+
+    delete[] tempImg;
 
     // Clean up windows
     DestroyWindow( mainWindow );

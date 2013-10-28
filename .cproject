@@ -40,9 +40,9 @@
 									<listOptionValue builtIn="false" value="Gdi32"/>
 									<listOptionValue builtIn="false" value="Ws2_32"/>
 									<listOptionValue builtIn="false" value="comctl32"/>
-									<listOptionValue builtIn="false" value="opencv_core246"/>
-									<listOptionValue builtIn="false" value="opencv_highgui246"/>
-									<listOptionValue builtIn="false" value="opencv_imgproc246"/>
+									<listOptionValue builtIn="false" value="opencv_core246.dll"/>
+									<listOptionValue builtIn="false" value="opencv_highgui246.dll"/>
+									<listOptionValue builtIn="false" value="opencv_imgproc246.dll"/>
 								</option>
 								<option id="gnu.cpp.link.option.userobjs.619550808" name="Other objects" superClass="gnu.cpp.link.option.userobjs" valueType="userObjs">
 									<listOptionValue builtIn="false" value="src/Resources.res"/>
@@ -98,9 +98,9 @@
 									<listOptionValue builtIn="false" value="Gdi32"/>
 									<listOptionValue builtIn="false" value="Ws2_32"/>
 									<listOptionValue builtIn="false" value="comctl32"/>
-									<listOptionValue builtIn="false" value="opencv_core246"/>
-									<listOptionValue builtIn="false" value="opencv_highgui246"/>
-									<listOptionValue builtIn="false" value="opencv_imgproc246"/>
+									<listOptionValue builtIn="false" value="opencv_core246.dll"/>
+									<listOptionValue builtIn="false" value="opencv_highgui246.dll"/>
+									<listOptionValue builtIn="false" value="opencv_imgproc246.dll"/>
 								</option>
 								<option id="gnu.cpp.link.option.strip.1045642647" name="Omit all symbol information (-s)" superClass="gnu.cpp.link.option.strip" value="true" valueType="boolean"/>
 								<option id="gnu.cpp.link.option.flags.1625206884" name="Linker flags" superClass="gnu.cpp.link.option.flags" value="-static-libgcc -static-libstdc++" valueType="string"/>

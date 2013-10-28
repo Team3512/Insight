@@ -5,13 +5,13 @@
 //Author: FRC Team 3512, Spartatroniks
 //=============================================================================
 
+#include "../SFML/System/Lock.hpp"
+
 #include "../WinGDI/UIFont.hpp"
-#include "MjpegStream.hpp"
 #include "../Resource.h"
-#include "ImageScale.hpp"
+#include "MjpegStream.hpp"
 
 #include <iostream>
-#include <sstream>
 #include <wingdi.h>
 #include <cstring>
 
@@ -112,6 +112,10 @@ MjpegStream::MjpegStream( const std::string& hostName ,
         m_dispWidth( 0 ) ,
         m_dispHeight( 0 ) ,
 
+        m_extBuf( NULL ) ,
+        m_extWidth( 0 ) ,
+        m_extHeight( 0 ) ,
+
         m_firstImage( true ) ,
 
         m_streamInst( NULL ) ,
@@ -201,6 +205,9 @@ MjpegStream::~MjpegStream() {
     delete[] m_disconnectPxl;
     delete[] m_waitPxl;
     delete[] m_backgroundPxl;
+
+    delete[] m_pxlBuf;
+    delete[] m_extBuf;
 
     DestroyWindow( m_streamWin );
     DestroyWindow( m_toggleButton );
@@ -293,6 +300,37 @@ void MjpegStream::saveCurrentImage( const std::string& fileName ) {
     m_tempImage.saveToFile( fileName );
 }
 
+uint8_t* MjpegStream::getCurrentImage() {
+    m_imageMutex.lock();
+    m_extMutex.lock();
+
+    if ( m_pxlBuf != NULL ) {
+        // If buffer is wrong size, reallocate it
+        if ( m_imgWidth != m_extWidth || m_imgHeight != m_extHeight ) {
+            if ( m_extBuf != NULL ) {
+                delete[] m_extBuf;
+            }
+
+            // Allocate new buffer to fit latest image
+            m_extBuf = new uint8_t[m_imgWidth * m_imgHeight * 4];
+            m_extWidth = m_imgWidth;
+            m_extHeight = m_imgHeight;
+        }
+
+        std::memcpy( m_extBuf , m_pxlBuf , m_extWidth * m_extHeight * 4 );
+    }
+
+    m_extMutex.unlock();
+    m_imageMutex.unlock();
+
+    return m_extBuf;
+}
+
+Vector2i MjpegStream::getCurrentSize() {
+    sf::Lock lock( m_extMutex );
+    return Vector2i( m_extWidth , m_extHeight );
+}
+
 void MjpegStream::doneCallback( void* optarg ) {
     static_cast<MjpegStream*>(optarg)->m_stopReceive = true;
     static_cast<MjpegStream*>(optarg)->m_streamInst = NULL;
@@ -306,9 +344,9 @@ void MjpegStream::readCallback( char* buf , int bufsize , void* optarg ) {
     bool loadedCorrectly = streamPtr->m_tempImage.loadFromMemory( buf , bufsize );
 
     if ( loadedCorrectly ) {
-        unsigned int length = streamPtr->m_tempImage.getSize().x * streamPtr->m_tempImage.getSize().y * 4;
-
         streamPtr->m_imageMutex.lock();
+
+        unsigned int length = streamPtr->m_tempImage.getSize().x * streamPtr->m_tempImage.getSize().y * 4;
 
         // Allocate new buffer to fit latest image
         delete[] streamPtr->m_pxlBuf;
