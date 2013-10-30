@@ -10,17 +10,17 @@
 #include "FindTarget2013.hpp"
 
 void FindTarget2013::prepareImage() {
-    IplImage* grayImage = cvCreateImage( cvGetSize(m_cvRawImage) , 8 , 3 );
-    cvCvtColor( m_cvRawImage , grayImage , CV_RGB2GRAY );
+    cvCvtColor( m_cvRawImage , m_cvGrayChannel , CV_RGB2GRAY );
 
     /* Apply binary threshold to all channels
-     * (Eliminates cross-hatching artifact in grayscale)
+     * (Eliminates cross-hatching artifact in soft blacks)
      */
-    cvThreshold( grayImage , m_grayChannel , 128 , 255 , CV_THRESH_BINARY );
+    cvThreshold( m_cvGrayChannel , m_cvGrayChannel , 128 , 255 , CV_THRESH_BINARY );
 
-    //cvDilate( m_grayChannel , m_grayChannel , NULL , 2 );
+    //cvDilate( m_cvGrayChannel , m_cvGrayChannel , NULL , 2 );
 
-    cvSaveImage( "prepareImage.png" , m_grayChannel , NULL ); // TODO Remove me
+    cvSaveImage( "rawImage.png" , m_cvRawImage , NULL ); // TODO Remove me
+    cvSaveImage( "prepareImage.png" , m_cvGrayChannel , NULL ); // TODO Remove me
 }
 
 void FindTarget2013::findTargets() {
@@ -31,7 +31,7 @@ void FindTarget2013::findTargets() {
     CvSeq* ctr;
 
     // Find the contours of the targets
-    scanner = cvStartFindContours( m_grayChannel , storage , sizeof(CvContour),
+    scanner = cvStartFindContours( m_cvGrayChannel , storage , sizeof(CvContour),
             CV_RETR_LIST , CV_CHAIN_APPROX_SIMPLE , cvPoint( 0 , 0 ) );
 
     while( (ctr = cvFindNextContour(scanner)) != NULL ) {

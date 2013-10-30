@@ -40,6 +40,8 @@
 									<listOptionValue builtIn="false" value="Gdi32"/>
 									<listOptionValue builtIn="false" value="Ws2_32"/>
 									<listOptionValue builtIn="false" value="comctl32"/>
+									<listOptionValue builtIn="false" value="jpeg"/>
+									<listOptionValue builtIn="false" value="turbojpeg"/>
 									<listOptionValue builtIn="false" value="opencv_core246.dll"/>
 									<listOptionValue builtIn="false" value="opencv_highgui246.dll"/>
 									<listOptionValue builtIn="false" value="opencv_imgproc246.dll"/>
@@ -98,6 +100,8 @@
 									<listOptionValue builtIn="false" value="Gdi32"/>
 									<listOptionValue builtIn="false" value="Ws2_32"/>
 									<listOptionValue builtIn="false" value="comctl32"/>
+									<listOptionValue builtIn="false" value="jpeg"/>
+									<listOptionValue builtIn="false" value="turbojpeg"/>
 									<listOptionValue builtIn="false" value="opencv_core246.dll"/>
 									<listOptionValue builtIn="false" value="opencv_highgui246.dll"/>
 									<listOptionValue builtIn="false" value="opencv_imgproc246.dll"/>

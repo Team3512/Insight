@@ -13,7 +13,7 @@
 
 ProcBase::ProcBase() :
         m_cvRawImage( NULL ) ,
-        m_grayChannel( NULL ) {
+        m_cvGrayChannel( NULL ) {
 
 }
 
@@ -22,8 +22,8 @@ ProcBase::~ProcBase() {
         cvReleaseImage( &m_cvRawImage );
     }
 
-    if ( m_grayChannel != NULL ) {
-        cvReleaseImage( &m_grayChannel );
+    if ( m_cvGrayChannel != NULL ) {
+        cvReleaseImage( &m_cvGrayChannel );
     }
 }
 
@@ -32,8 +32,8 @@ void ProcBase::setImage( uint8_t* image , uint32_t width , uint32_t height ) {
     if ( m_cvRawImage != NULL ) {
         cvReleaseImage( &m_cvRawImage );
     }
-    if ( m_grayChannel != NULL ) {
-        cvReleaseImage( &m_grayChannel );
+    if ( m_cvGrayChannel != NULL ) {
+        cvReleaseImage( &m_cvGrayChannel );
     }
 
     CvSize size;
@@ -45,7 +45,7 @@ void ProcBase::setImage( uint8_t* image , uint32_t width , uint32_t height ) {
     std::memcpy( m_cvRawImage->imageData , image , width * height * 3 );
 
     // Used later after image is processed
-    m_grayChannel = cvCreateImage( size , IPL_DEPTH_8U , 1 );
+    m_cvGrayChannel = cvCreateImage( size , IPL_DEPTH_8U , 1 );
 }
 
 void ProcBase::processImage() {
@@ -61,6 +61,33 @@ void ProcBase::processImage() {
 void ProcBase::getProcessedImage( uint8_t* buffer ) {
     if ( m_cvRawImage != NULL ) {
         std::memcpy( buffer , m_cvRawImage->imageData , m_cvRawImage->width * m_cvRawImage->height * m_cvRawImage->nChannels );
+    }
+}
+
+uint32_t ProcBase::getProcessedWidth() {
+    if ( m_cvRawImage != NULL ) {
+        return m_cvRawImage->width;
+    }
+    else {
+        return 0;
+    }
+}
+
+uint32_t ProcBase::getProcessedHeight() {
+    if ( m_cvRawImage != NULL ) {
+        return m_cvRawImage->height;
+    }
+    else {
+        return 0;
+    }
+}
+
+uint32_t ProcBase::getProcessedNumChannels() {
+    if ( m_cvRawImage != NULL ) {
+        return m_cvRawImage->nChannels;
+    }
+    else {
+        return 0;
     }
 }
 

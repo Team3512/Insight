@@ -13,11 +13,11 @@ struct quad_t {
 
 struct pointsort_t {
     CvPoint point;
-    int quadrant;
+    float angle;
 };
 
 void sortquad(struct quad_t *quad_in);
-int quad_getquadrant(struct quad_t *quad, CvPoint point);
+float quad_getangle(struct quad_t *quad, CvPoint point);
 int quad_sortfunc(const void *arg0, const void *arg1);
 
 #ifdef __cplusplus

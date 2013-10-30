@@ -28,15 +28,20 @@ public:
     // Processes provided image with the overriden functions
     void processImage();
 
-    // Copies the processed image into the provided buffer
+    // Copies the processed image into the provided buffer (
     void getProcessedImage( uint8_t* buffer );
+
+    // Returns dimensions of processed image
+    uint32_t getProcessedWidth();
+    uint32_t getProcessedHeight();
+    uint32_t getProcessedNumChannels();
 
     const std::vector<quad_t>& getTargetPositions();
 
 protected:
     // Internal OpenCV primitives
     IplImage* m_cvRawImage; // Raw image
-    IplImage* m_grayChannel; // Prepared grayscale channel (output of prepareImage())
+    IplImage* m_cvGrayChannel; // Prepared grayscale channel (output of prepareImage())
 
     std::vector<quad_t> m_targets;
 

@@ -109,8 +109,8 @@ MjpegStream::MjpegStream( const std::string& hostName ,
         m_pxlBuf( NULL ) ,
         m_imgWidth( 0 ) ,
         m_imgHeight( 0 ) ,
-        m_dispWidth( 0 ) ,
-        m_dispHeight( 0 ) ,
+        m_textureWidth( 0 ) ,
+        m_textureHeight( 0 ) ,
 
         m_extBuf( NULL ) ,
         m_extWidth( 0 ) ,
@@ -344,9 +344,9 @@ void MjpegStream::readCallback( char* buf , int bufsize , void* optarg ) {
     bool loadedCorrectly = streamPtr->m_tempImage.loadFromMemory( buf , bufsize );
 
     if ( loadedCorrectly ) {
-        streamPtr->m_imageMutex.lock();
-
         unsigned int length = streamPtr->m_tempImage.getSize().x * streamPtr->m_tempImage.getSize().y * 4;
+
+        streamPtr->m_imageMutex.lock();
 
         // Allocate new buffer to fit latest image
         delete[] streamPtr->m_pxlBuf;
@@ -612,7 +612,7 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
     /* If our image won't fit in the texture, make a bigger one whose width and
      * height are a power of two.
      */
-    if( m_imgWidth > m_dispWidth || m_imgHeight > m_dispHeight ) {
+    if( m_imgWidth > m_textureWidth || m_imgHeight > m_textureHeight ) {
         textureSize = npot( std::max( m_imgWidth , m_imgHeight ) );
 
         uint8_t* tmpBuf = new uint8_t[textureSize * textureSize * 3];
@@ -620,16 +620,17 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
                 GL_RGB , GL_UNSIGNED_BYTE , tmpBuf );
         delete[] tmpBuf;
 
-        m_dispWidth = textureSize;
-        m_dispHeight = textureSize;
+        m_textureWidth = textureSize;
+        m_textureHeight = textureSize;
     }
 
-    /* Represents the amount of the texture to display. This
-     * is a ratio of the actual texture size to the displayed
-     * amount. These are passed into glTexCoord2f.
+    /* Represents the amount of the texture to display. These are ratios
+     * between the dimensions of the image in the texture and the actual
+     * texture dimensions. Once these are set for the specific image to be
+     * displayed, they are passed into glTexCoord2f.
      */
-    double wratio = (float)getSize().X / (float)m_dispWidth;
-    double hratio = (float)getSize().Y / (float)m_dispHeight;
+    double wratio = 0.f;
+    double hratio = 0.f;
 
     // If streaming is enabled
     if ( isStreaming() ) {
@@ -637,10 +638,13 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
         if ( m_firstImage ) {
             m_imageMutex.lock();
 
-            glTexSubImage2D( GL_TEXTURE_2D , 0 , 0 , 0 , m_imgWidth ,
-                    m_imgHeight , GL_RGBA , GL_UNSIGNED_BYTE , m_connectPxl );
+            glTexSubImage2D( GL_TEXTURE_2D , 0 , 0 , 0 , getSize().X ,
+                    getSize().Y , GL_RGBA , GL_UNSIGNED_BYTE , m_connectPxl );
 
             m_imageMutex.unlock();
+
+            wratio = (float)getSize().X / (float)m_textureWidth;
+            hratio = (float)getSize().Y / (float)m_textureHeight;
         }
 
         // If it's been too long since we received our last image
@@ -648,13 +652,16 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
             // Display "Waiting..." over the last image received
             m_imageMutex.lock();
 
-            glTexSubImage2D( GL_TEXTURE_2D , 0 , 0 , 0 , m_imgWidth ,
-                    m_imgHeight , GL_RGBA , GL_UNSIGNED_BYTE , m_waitPxl );
+            glTexSubImage2D( GL_TEXTURE_2D , 0 , 0 , 0 , getSize().X ,
+                    getSize().Y , GL_RGBA , GL_UNSIGNED_BYTE , m_waitPxl );
 
             // Send message to parent window about the new image
             PostMessage( m_parentWin , WM_MJPEGSTREAM_NEWIMAGE , 0 , 0 );
 
             m_imageMutex.unlock();
+
+            wratio = (float)getSize().X / (float)m_textureWidth;
+            hratio = (float)getSize().Y / (float)m_textureHeight;
         }
 
         // Else display the image last received
@@ -665,6 +672,9 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
                     m_imgHeight, GL_RGBA , GL_UNSIGNED_BYTE , m_pxlBuf );
 
             m_imageMutex.unlock();
+
+            wratio = (float)m_imgWidth / (float)m_textureWidth;
+            hratio = (float)m_imgHeight / (float)m_textureHeight;
         }
     }
 
@@ -672,19 +682,22 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
     else {
         m_imageMutex.lock();
 
-        glTexSubImage2D( GL_TEXTURE_2D , 0 , 0 , 0 , m_imgWidth , m_imgHeight,
+        glTexSubImage2D( GL_TEXTURE_2D , 0 , 0 , 0 , getSize().X , getSize().Y ,
                 GL_RGBA , GL_UNSIGNED_BYTE , m_disconnectPxl );
 
         m_imageMutex.unlock();
+
+        wratio = (float)getSize().X / (float)m_textureWidth;
+        hratio = (float)getSize().Y / (float)m_textureHeight;
     }
 
-    // Position the GL texture in the window
+    // Position the GL texture in the Win32 window
     glBegin( GL_TRIANGLE_FAN );
     glColor4f( 1.f , 1.f , 1.f , 1.f );
     glTexCoord2f( 0 , 0 ); glVertex3f( 0 , 0 , 0 );
-    glTexCoord2f( wratio , 0 ); glVertex3f( m_imgWidth , 0 , 0 );
-    glTexCoord2f( wratio , hratio ); glVertex3f( m_imgWidth , m_imgHeight , 0 );
-    glTexCoord2f( 0 , hratio ); glVertex3f( 0 , m_imgHeight , 0 );
+    glTexCoord2f( wratio , 0 ); glVertex3f( getSize().X , 0 , 0 );
+    glTexCoord2f( wratio , hratio ); glVertex3f( getSize().X , getSize().Y , 0 );
+    glTexCoord2f( 0 , hratio ); glVertex3f( 0 , getSize().Y , 0 );
     glEnd();
 
     // Check for OpenGL errors

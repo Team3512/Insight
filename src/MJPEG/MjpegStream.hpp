@@ -145,8 +145,8 @@ private:
     uint8_t* m_pxlBuf;
     unsigned int m_imgWidth;
     unsigned int m_imgHeight;
-    unsigned int m_dispWidth;
-    unsigned int m_dispHeight;
+    unsigned int m_textureWidth;
+    unsigned int m_textureHeight;
 
     /* Stores copy of image for use by external programs. It only updates when
      * getCurrentImage() is called.
