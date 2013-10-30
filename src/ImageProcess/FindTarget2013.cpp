@@ -30,6 +30,9 @@ void FindTarget2013::findTargets() {
     CvContourScanner scanner;
     CvSeq* ctr;
 
+    // Clear list of targets because we found new targets
+    m_targets.clear();
+
     // Find the contours of the targets
     scanner = cvStartFindContours( m_cvGrayChannel , storage , sizeof(CvContour),
             CV_RETR_LIST , CV_CHAIN_APPROX_SIMPLE , cvPoint( 0 , 0 ) );
