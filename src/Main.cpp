@@ -313,11 +313,12 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
                 processor.getProcessedImage( tempImg );
 
                 /* ===== Convert BGR image to RGB ===== */
+                uint8_t tempByte = 0;
                 for ( unsigned int posIn = 0, posOut = 0 ; posIn < imgWidth * imgHeight * 3 ; posIn += 3 , posOut += 3 ) {
                     // Copy bytes of pixel into corresponding channels
+                    tempByte = tempImg[posOut+0];
                     tempImg[posOut+0] = tempImg[posIn+2];
-                    tempImg[posOut+1] = tempImg[posIn+1];
-                    tempImg[posOut+2] = tempImg[posIn+0];
+                    tempImg[posOut+2] = tempByte;
                 }
                 /* ===================================== */
 
