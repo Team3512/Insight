@@ -43,7 +43,7 @@ LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lP
 BOOL CALLBACK AboutCbk( HWND hDlg , UINT message , WPARAM wParam , LPARAM lParam );
 
 /*
- * Sample routine for JPEG compression.  We assume that the target file name
+ * Routine for JPEG compression.  We assume that the image output buffer
  * and a compression quality factor are passed in.
  */
 
@@ -77,10 +77,10 @@ void RGBtoJPEG( uint8_t** output_buf , unsigned long int* output_len ,
     /* First we supply a description of the input image. Four fields of the
      * cinfo struct must be filled in:
      */
-    cinfo.image_width = image_width;   // image width, in pixels
-    cinfo.image_height = image_height; // image height, in pixels
-    cinfo.input_components = 3;        // # of color components per pixel
-    cinfo.in_color_space = JCS_RGB;    // colorspace of input image
+    cinfo.image_width = image_width;     // image width, in pixels
+    cinfo.image_height = image_height;   // image height, in pixels
+    cinfo.input_components = 3;          // # of color components per pixel
+    cinfo.in_color_space = JCS_EXT_BGR;  // colorspace of input image
 
     // Use the library's routine to set default compression parameters
     jpeg_set_defaults( &cinfo );
@@ -225,7 +225,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     FindTarget2013 processor;
     /* ====================================== */
 
-    unsigned char* serveImg = NULL;
+    uint8_t* serveImg = NULL;
     unsigned long int serveLen = 0;
 
     // Make sure the main window is shown before continuing
@@ -258,10 +258,6 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
                     tempImg = new uint8_t[imgWidth * imgHeight * 3];
                 }
 
-                // Update width and height
-                lastWidth = imgWidth;
-                lastHeight = imgHeight;
-
                 /* ===== Convert RGBA image to BGR for OpenCV ===== */
                 // Copy R, G, and B channels but ignore A channel
                 for ( unsigned int posIn = 0, posOut = 0 ; posIn < imgWidth * imgHeight ; posIn++, posOut++ ) {
@@ -277,25 +273,6 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
                 processor.processImage();
 
                 processor.getProcessedImage( tempImg );
-
-                /* ===== Convert BGR image to RGB for libjpeg-turbo ===== */
-                uint8_t tempByte = 0;
-                for ( unsigned int posIn = 0, posOut = 0 ; posIn < imgWidth * imgHeight * 3 ; posIn += 3 , posOut += 3 ) {
-                    // Copy bytes of pixel into corresponding channels
-                    tempByte = tempImg[posOut+0];
-                    tempImg[posOut+0] = tempImg[posIn+2];
-                    tempImg[posOut+2] = tempByte;
-                }
-                /* ====================================================== */
-
-                // Allocate buffer for converted RGB->JPEG image
-                if ( serveImg == NULL ) {
-                    serveImg = new unsigned char[imgWidth * imgHeight * 3];
-                }
-                else if ( serveLen != imgWidth * imgHeight * 3 ) {
-                    delete[] serveImg;
-                    serveImg = new unsigned char[imgWidth * imgHeight * 3];
-                }
 
                 // Convert RGB image to JPEG
                 RGBtoJPEG( &serveImg , &serveLen , 100 , tempImg , imgWidth , imgHeight );
@@ -333,6 +310,10 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
                     // We have new target data to send to the robot
                     newData = true;
                 }
+
+                // Update width and height
+                lastWidth = imgWidth;
+                lastHeight = imgHeight;
             }
 
             if ( gCtrlSocketPtr != NULL &&
@@ -351,11 +332,12 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
         }
     }
 
-    // Delete MJPEG stream window
+    // Delete MJPEG stream window and server
     delete gStreamWinPtr;
+    delete gServer;
 
     delete[] tempImg;
-    delete[] serveImg;
+    std::free( serveImg );
 
     // Clean up windows
     DestroyWindow( mainWindow );

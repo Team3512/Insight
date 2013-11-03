@@ -395,10 +395,10 @@ void MjpegStream::recreateGraphics( const Vector2i& windowSize ) {
     ReleaseDC( m_streamWin , streamWinDC );
 
     // Give each graphic a bitmap to use
-    SelectObject( connectDC , connectBmp );
-    SelectObject( disconnectDC , disconnectBmp );
-    SelectObject( waitDC , waitBmp );
-    SelectObject( backgroundDC , backgroundBmp );
+    HBITMAP oldConnectBmp = static_cast<HBITMAP>(SelectObject( connectDC , connectBmp ));
+    HBITMAP oldDisconnectBmp = static_cast<HBITMAP>(SelectObject( disconnectDC , disconnectBmp ));
+    HBITMAP oldWaitBmp = static_cast<HBITMAP>(SelectObject( waitDC , waitBmp ));
+    HBITMAP oldBackgroundBmp = static_cast<HBITMAP>(SelectObject( backgroundDC , backgroundBmp ));
 
     // Create brushes and regions for backgrounds
     HBRUSH backgroundBrush = CreateSolidBrush( RGB( 255 , 255 , 255 ) );
@@ -486,6 +486,12 @@ void MjpegStream::recreateGraphics( const Vector2i& windowSize ) {
     /* ====================================================== */
     m_imageMutex.unlock();
 
+    // Put old bitmaps back in DCs before deleting them
+    SelectObject( connectDC , oldConnectBmp );
+    SelectObject( disconnectDC , oldDisconnectBmp );
+    SelectObject( waitDC , oldWaitBmp );
+    SelectObject( backgroundDC , oldBackgroundBmp );
+
     // Free WinGDI objects
     DeleteDC( connectDC );
     DeleteDC( disconnectDC );
@@ -529,6 +535,7 @@ void MjpegStream::EnableOpenGL() {
     // Get the device context (DC)
     m_bufferDC = GetDC( m_streamWin );
 
+    // Get the best available match of pixel format for the device context
     format = ChoosePixelFormat( m_bufferDC , &pfd );
     SetPixelFormat( m_bufferDC , format , &pfd );
 
