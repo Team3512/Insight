@@ -36,10 +36,12 @@ void MjpegServer::start() {
             int yes = 1;
             if (setsockopt(m_listenSock, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char*>(&yes), sizeof(yes)) == -1) {
                 closesocket(m_listenSock);
-                return; // Failed remove buffering
+                std::cout << "MjpegServer: failed to remove TCP buffering\n";
+                return; // Failed to remove buffering
             }
         }
         else {
+            std::cout << "MjpegServer: failed to create listener socket\n";
             return; // Failed to create socket
         }
 
@@ -52,12 +54,14 @@ void MjpegServer::start() {
 
         if (bind(m_listenSock, reinterpret_cast<sockaddr*>(&address), sizeof(address)) == -1) {
             closesocket(m_listenSock);
+            std::cout << "MjpegServer: failed to bind socket to port\n";
             return; // Failed to bind socket to port
         }
 
         // Listen to the bound port
         if (listen(m_listenSock, 0) == -1) {
             closesocket(m_listenSock);
+            std::cout << "MjpegServer: failed to listen to port " << m_port << "\n";
             return; // Failed to listen to port
         }
 

@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <cstring>
 #include <cstdio>
+#include <atomic>
 #include <jpeglib.h>
 
 #include "SFML/Network/IpAddress.hpp"
@@ -35,6 +36,7 @@ Settings gSettings( "IPSettings.txt" );
 // Allows manipulation of MjpegStream in CALLBACK OnEvent
 MjpegStream* gStreamWinPtr = NULL;
 MjpegServer* gServer = NULL;
+std::atomic<int> gJpegQuality( 100 );
 
 // Allows usage of socket in CALLBACK OnEvent
 sf::UdpSocket* gCtrlSocketPtr = NULL;
@@ -147,7 +149,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     MSG message;
 
 
-    RECT winSize = { 0 , 0 , static_cast<int>(320) , static_cast<int>(240) }; // set the size, but not the position
+    RECT winSize = { 0 , 0 , static_cast<int>(320) , static_cast<int>(278) }; // set the size, but not the position
     AdjustWindowRect(
             &winSize ,
             WS_SYSMENU | WS_CAPTION | WS_VISIBLE | WS_MINIMIZEBOX | WS_CLIPCHILDREN ,
@@ -275,7 +277,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
                 processor.getProcessedImage( tempImg );
 
                 // Convert RGB image to JPEG
-                RGBtoJPEG( &serveImg , &serveLen , 100 , tempImg , imgWidth , imgHeight );
+                RGBtoJPEG( &serveImg , &serveLen , gJpegQuality , tempImg , imgWidth , imgHeight );
                 gServer->serveImage( serveImg , serveLen );
 
                 // Retrieve positions of targets and send them to robot
@@ -348,6 +350,32 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
 
 LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lParam ) {
     switch ( message ) {
+    case WM_CREATE: {
+        RECT winSize;
+        GetClientRect( handle , &winSize );
+
+        // Create slider that controls JPEG quality of MJPEG server
+        HWND slider = CreateWindowEx( 0 ,
+                TRACKBAR_CLASS ,
+                "JPEG Quality" ,
+                WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS | TBS_BOTTOM | TBS_TOOLTIPS ,
+                (winSize.right - winSize.left) - 100 ,
+                (winSize.bottom - winSize.top) - 32 ,
+                100 ,
+                32 ,
+                handle ,
+                NULL ,
+                GetModuleHandle( NULL ) ,
+                NULL );
+
+        // Make one tick for every two values
+        SendMessage( slider , TBM_SETTICFREQ , (WPARAM)20 , (LPARAM)0 );
+
+        // Set initial server JPEG quality to 100
+        SendMessage( slider , TBM_SETPOS , (WPARAM)TRUE , (LPARAM)100 );
+
+        break;
+    }
     case WM_COMMAND: {
         /* TODO Use these if necessary
         sf::IpAddress robotIP( gSettings.getValueFor( "robotIP" ) );
@@ -355,20 +383,48 @@ LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lP
         */
 
         switch( LOWORD(wParam) ) {
+            case IDC_STREAM_BUTTON: {
+                 if ( gStreamWinPtr != NULL ) {
+                     if ( gStreamWinPtr->isStreaming() ) {
+                         // Stop streaming
+                         if ( gServer != NULL ) {
+                             gServer->stop();
+                         }
+                         gStreamWinPtr->stopStream();
+                     }
+                     else {
+                         // Start streaming
+                         gStreamWinPtr->startStream();
+                         if ( gServer != NULL ) {
+                             gServer->start();
+                         }
+                     }
+                 }
+
+                 break;
+            }
             case IDM_SERVER_START: {
-                if ( !gStreamWinPtr->isStreaming() ) {
-                    // Start streaming
-                    gStreamWinPtr->startStream();
-                    gServer->start();
+                if ( gStreamWinPtr != NULL ) {
+                    if ( !gStreamWinPtr->isStreaming() ) {
+                        // Start streaming
+                        gStreamWinPtr->startStream();
+                        if ( gServer != NULL ) {
+                            gServer->start();
+                        }
+                    }
                 }
 
                 break;
             }
             case IDM_SERVER_STOP: {
-                if ( gStreamWinPtr->isStreaming() ) {
-                    // Stop streaming
-                    gServer->stop();
-                    gStreamWinPtr->stopStream();
+                if ( gStreamWinPtr != NULL ) {
+                    if ( gStreamWinPtr->isStreaming() ) {
+                        // Stop streaming
+                        if ( gServer != NULL ) {
+                            gServer->stop();
+                        }
+                        gStreamWinPtr->stopStream();
+                    }
                 }
 
                 break;
@@ -379,6 +435,28 @@ LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lP
 
                 break;
             }
+        }
+
+        break;
+    }
+
+    case WM_HSCROLL: {
+        switch ( LOWORD(wParam) ) {
+        case SB_ENDSCROLL: {
+            gJpegQuality = SendMessage( (HWND)lParam , TBM_GETPOS , (WPARAM)0 , (LPARAM)0 );
+
+            break;
+        }
+        case SB_THUMBPOSITION: {
+            gJpegQuality = HIWORD(wParam);
+
+            break;
+        }
+        case SB_THUMBTRACK: {
+            gJpegQuality = HIWORD(wParam);
+
+            break;
+        }
         }
 
         break;

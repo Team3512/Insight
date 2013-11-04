@@ -171,7 +171,7 @@ mjpeg_sck_recv(int sockfd, void *buf, size_t len, int cancelfd)
 
         /* Otherwise, read some more. */
         error = recv(sockfd, buf+nread, len-nread, 0);
-        if(error == -1) {
+        if(error < 1) {
             return -1;
         }
         nread += error;
