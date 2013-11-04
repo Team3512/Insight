@@ -44,19 +44,17 @@ sf::UdpSocket* gCtrlSocketPtr = NULL;
 LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lParam );
 BOOL CALLBACK AboutCbk( HWND hDlg , UINT message , WPARAM wParam , LPARAM lParam );
 
-/*
- * Routine for JPEG compression.  We assume that the image output buffer
- * and a compression quality factor are passed in.
+/* Compresses RGB image into JPEG. Variables with the 'image_' prefix are for
+ * the input image while variables with the 'output_' prefix are for the
+ * outputted JPEG. 'quality' is the JPEG compression quality factor.
  */
-
 void RGBtoJPEG( uint8_t** output_buf , unsigned long int* output_len ,
         int quality , uint8_t* image_data , uint32_t image_width ,
         uint32_t image_height ) {
     struct jpeg_compress_struct cinfo;
     struct jpeg_error_mgr jerr;
 
-    JSAMPROW row_pointer[1];  // pointer to JSAMPLE row[s]
-    int row_stride;           // physical row width in image buffer
+    JSAMPROW row_pointer; // pointer to start of scanline (row of image)
 
     /* Step 1: allocate and initialize JPEG compression object */
 
@@ -102,11 +100,10 @@ void RGBtoJPEG( uint8_t** output_buf , unsigned long int* output_len ,
     /* Here we use the library's state variable cinfo.next_scanline as the loop
     * counter, so that we don't have to keep track ourselves.
     */
-    row_stride = image_width * 3; // JSAMPLEs per row in image_buffer
-
     while ( cinfo.next_scanline < cinfo.image_height ) {
-        row_pointer[0] = &image_data[cinfo.next_scanline * row_stride];
-        (void) jpeg_write_scanlines( &cinfo , row_pointer , 1 );
+        row_pointer = image_data + cinfo.next_scanline * cinfo.image_width *
+                cinfo.input_components;
+        (void) jpeg_write_scanlines( &cinfo , &row_pointer , 1 );
     }
 
     /* Step 6: Finish compression */
@@ -179,7 +176,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             std::atoi( gSettings.getValueFor( "streamPort" ).c_str() ) ,
             gSettings.getValueFor( "streamRequestPath" ) ,
             mainWindow ,
-            ( winSize.right - winSize.left - 320 ) / 2 ,
+            0 ,
             0 ,
             320 ,
             240 ,
@@ -275,6 +272,10 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
                 processor.processImage();
 
                 processor.getProcessedImage( tempImg );
+
+                std::free( serveImg );
+                serveImg = NULL;
+                serveLen = 0;
 
                 // Convert RGB image to JPEG
                 RGBtoJPEG( &serveImg , &serveLen , gJpegQuality , tempImg , imgWidth , imgHeight );
