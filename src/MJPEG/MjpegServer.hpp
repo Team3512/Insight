@@ -7,8 +7,8 @@
 #ifndef MJPEG_SERVER_HPP
 #define MJPEG_SERVER_HPP
 
-#include "../SFML/System/Clock.hpp"
-#include "../SFML/System/Thread.hpp"
+#include "mjpeg_thread.h"
+#include "mjpeg_sck.h"
 
 #include <iostream>
 #include <atomic>
@@ -16,17 +16,10 @@
 
 #include <cstdint>
 
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0601
-#endif
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <winsock2.h>
-
 struct selector_t {
     fd_set allSockets; // set containing all the sockets handles
     fd_set socketsReady; // set containing handles of the sockets that are ready
-    unsigned int maxSocket; // maximum socket handle
+    mjpeg_socket_t maxSocket; // maximum socket handle
 };
 
 class MjpegServer {
@@ -41,13 +34,13 @@ public:
 
 private:
     struct selector_t m_clientSelector;
-    std::list<unsigned int> m_clientSockets;
+    std::list<mjpeg_socket_t> m_clientSockets;
 
-    unsigned int m_listenSock;
+    mjpeg_socket_t m_listenSock;
     unsigned short m_port;
 
-    sf::Thread m_serverThread;
-    void serverFunc();
+    mjpeg_thread_t m_serverThread;
+    static void* serverFunc( void* obj );
     std::atomic<bool> m_isRunning;
 };
 

@@ -1,3 +1,9 @@
+#ifndef _MJPEG_THREAD_H
+#define _MJPEG_THREAD_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -38,3 +44,9 @@ mjpeg_thread_join(mjpeg_thread_t *thread,
 unsigned int
 __stdcall win32_threadfunc(void *optarg);
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _MJPEG_THREAD_H */

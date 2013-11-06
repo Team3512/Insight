@@ -1,5 +1,5 @@
 
-#include "mjpegrx_thread.h"
+#include "mjpeg_thread.h"
 
 int
 mjpeg_thread_create(mjpeg_thread_t *thread,

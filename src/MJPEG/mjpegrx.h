@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-#include "mjpegrx_thread.h"
+#include "mjpeg_thread.h"
 
 struct keyvalue_t {
     char *key;
