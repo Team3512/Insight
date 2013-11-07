@@ -9,6 +9,9 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#define _WIN32_IE 0x0400
+#include <commctrl.h>
+
 #include <cstdlib>
 #include <cstdint>
 #include <cstring>
@@ -17,20 +20,15 @@
 #include <functional>
 #include <jpeglib.h>
 
-#include "SFML/Network/IpAddress.hpp"
-#include "SFML/Network/UdpSocket.hpp"
-
 #include "SFML/System/Clock.hpp"
 
 #include "MJPEG/MjpegStream.hpp"
 #include "MJPEG/MjpegServer.hpp"
+#include "MJPEG/mjpeg_sck.h"
 #include "Settings.hpp"
 #include "Resource.h"
 
 #include "ImageProcess/FindTarget2013.hpp"
-
-#define _WIN32_IE 0x0400
-#include <commctrl.h>
 
 // Global because IP configuration settings are needed in CALLBACK OnEvent
 Settings gSettings( "IPSettings.txt" );
@@ -41,7 +39,7 @@ MjpegServer* gServer = NULL;
 std::atomic<int> gJpegQuality( 100 );
 
 // Allows usage of socket in CALLBACK OnEvent
-sf::UdpSocket* gCtrlSocketPtr = NULL;
+std::atomic<mjpeg_socket_t> gCtrlSocket( INVALID_SOCKET );
 
 std::function<void(void)> gNewImageFunc = NULL;
 
@@ -190,9 +188,14 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             "streamServerPort" ).c_str() ) );
 
     /* ===== Robot Data Sending Variables ===== */
-    sf::UdpSocket robotControl;
-    robotControl.setBlocking( false );
-    gCtrlSocketPtr = &robotControl;
+    gCtrlSocket = socket(AF_INET, SOCK_DGRAM, 0);
+
+    if ( mjpeg_sck_valid(gCtrlSocket) ) {
+        mjpeg_sck_setnonblocking(gCtrlSocket, 1);
+    }
+    else {
+        std::cout << "Main.cpp: failed to create robot control socket\n";
+    }
 
     /* Used for sending control packets to robot
      * data format:
@@ -211,8 +214,31 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     std::memset( data + 8 , 0 , sizeof(data) - 8 );
     bool newData = false;
 
-    sf::IpAddress robotIP( gSettings.getValueFor( "robotIP" ) );
-    unsigned short robotControlPort = std::atoi( gSettings.getValueFor( "robotControlPort" ).c_str() );
+
+    uint32_t robotIP = 0;
+    std::string robotIPStr = gSettings.getValueFor( "robotIP" );
+
+    if ( robotIPStr == "255.255.255.255" ) {
+        robotIP = INADDR_BROADCAST;
+    }
+    else {
+        robotIP = inet_addr( robotIPStr.c_str() );
+
+        if ( robotIP == INADDR_NONE ) {
+            // Not a valid address, try to convert it as a host name
+            hostent* host = gethostbyname( robotIPStr.c_str() );
+
+            if ( host ) {
+                robotIP = reinterpret_cast<in_addr*>(host->h_addr)->s_addr;
+            }
+            else {
+                // Not a valid address nor a host name
+                robotIP = 0;
+            }
+        }
+    }
+
+    unsigned short robotCtrlPort = std::atoi( gSettings.getValueFor( "robotControlPort" ).c_str() );
 
     // Make sure control data isn't sent too fast
     sf::Clock sendTime;
@@ -308,10 +334,19 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             lastHeight = imgHeight;
         }
 
-        if ( gCtrlSocketPtr != NULL && sendTime.getElapsedTime() > 200 &&
+        if ( mjpeg_sck_valid(gCtrlSocket) && sendTime.getElapsedTime() > 200 &&
                 newData ) {
-            sf::Socket::Status status = gCtrlSocketPtr->send( data , sizeof(data) , robotIP , robotControlPort );
-            if ( status == sf::Socket::Done ) {
+            // Build the target address
+            sockaddr_in addr;
+            std::memset(addr.sin_zero, 0, sizeof(addr.sin_zero));
+            addr.sin_addr.s_addr = htonl(robotIP);
+            addr.sin_family      = AF_INET;
+            addr.sin_port        = htons(robotCtrlPort);
+
+            int sent = sendto(gCtrlSocket, data, sizeof(data), 0, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
+
+            // Check for errors
+            if (sent >= 0) {
                 sendTime.restart();
             }
         }
@@ -369,11 +404,6 @@ LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lP
         break;
     }
     case WM_COMMAND: {
-        /* TODO Use these if necessary
-        sf::IpAddress robotIP( gSettings.getValueFor( "robotIP" ) );
-        unsigned short robotDataPort = std::atoi( gSettings.getValueFor( "robotControlPort" ).c_str() );
-        */
-
         switch( LOWORD(wParam) ) {
             case IDC_STREAM_BUTTON: {
                  if ( gStreamWinPtr != NULL ) {

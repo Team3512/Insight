@@ -29,34 +29,25 @@
  * supports more platforms.
  */
 
-////////////////////////////////////////////////////////////
-// Headers
-////////////////////////////////////////////////////////////
 #include "../SFML/System/Clock.hpp"
 
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 LARGE_INTEGER getFrequency();
 
 namespace sf
 {
-////////////////////////////////////////////////////////////
 Clock::Clock() :
 m_startTime(getCurrentTime())
 {
 }
 
-
-////////////////////////////////////////////////////////////
-unsigned int Clock::getElapsedTime() const
-{
+unsigned int Clock::getElapsedTime() const {
     return getCurrentTime() - m_startTime;
 }
 
-
-////////////////////////////////////////////////////////////
-unsigned int Clock::restart()
-{
+unsigned int Clock::restart() {
     unsigned int now = getCurrentTime();
     unsigned int elapsed = now - m_startTime;
     m_startTime = now;
@@ -64,34 +55,32 @@ unsigned int Clock::restart()
     return elapsed;
 }
 
-////////////////////////////////////////////////////////////
-unsigned int Clock::getCurrentTime()
-{
+unsigned int Clock::getCurrentTime() {
     // Force the following code to run on first core
     // (see http://msdn.microsoft.com/en-us/library/windows/desktop/ms644904(v=vs.85).aspx)
     HANDLE currentThread = GetCurrentThread();
     DWORD_PTR previousMask = SetThreadAffinityMask(currentThread, 1);
 
-    // Get the frequency of the performance counter
-    // (it is constant across the program lifetime)
+    /* Get the frequency of the performance counter
+     * (it is constant across the program lifetime)
+     */
     static LARGE_INTEGER frequency = getFrequency();
 
     // Get the current time
     LARGE_INTEGER time;
-    QueryPerformanceCounter(&time);
+    QueryPerformanceCounter( &time );
 
     // Restore the thread affinity
-    SetThreadAffinityMask(currentThread, previousMask);
+    SetThreadAffinityMask( currentThread , previousMask );
 
-    // Return the current time as milliseconds
+    // Return the current time in milliseconds
     return 1000000 * time.QuadPart / frequency.QuadPart / 1000;
 }
 
 } // namespace sf
 
-LARGE_INTEGER getFrequency()
-{
+LARGE_INTEGER getFrequency() {
     LARGE_INTEGER frequency;
-    QueryPerformanceFrequency(&frequency);
+    QueryPerformanceFrequency( &frequency );
     return frequency;
 }

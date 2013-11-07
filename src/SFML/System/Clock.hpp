@@ -34,62 +34,28 @@
 
 namespace sf
 {
-////////////////////////////////////////////////////////////
-/// \brief Utility class that measures the elapsed time
-///
-////////////////////////////////////////////////////////////
-class Clock
-{
+class Clock {
 public :
-
-    ////////////////////////////////////////////////////////////
-    /// \brief Default constructor
-    ///
-    /// The clock starts automatically after being constructed.
-    ///
-    ////////////////////////////////////////////////////////////
+    // The clock starts automatically after being constructed.
     Clock();
 
-    ////////////////////////////////////////////////////////////
-    /// \brief Get the elapsed time
-    ///
-    /// This function returns the time elapsed since the last call
-    /// to restart() (or the construction of the instance if restart()
-    /// has not been called).
-    ///
-    /// \return Time elapsed
-    ///
-    ////////////////////////////////////////////////////////////
+    /* This function returns the time elapsed since the last call
+     * to restart() (or the construction of the instance if restart()
+     * has not been called).
+     */
     unsigned int getElapsedTime() const;
 
-    ////////////////////////////////////////////////////////////
-    /// \brief Restart the clock
-    ///
-    /// This function puts the time counter back to zero.
-    /// It also returns the time elapsed since the clock was started.
-    ///
-    /// \return Time elapsed
-    ///
-    ////////////////////////////////////////////////////////////
+    /* This function puts the time counter back to zero.
+     * It also returns the time elapsed since the clock was started.
+     */
     unsigned int restart();
 
 private :
-
-    ////////////////////////////////////////////////////////////
-    /// \brief Get the current time
-    ///
-    /// \return Current time
-    ///
-    ////////////////////////////////////////////////////////////
     static unsigned int getCurrentTime();
 
-    ////////////////////////////////////////////////////////////
-    // Member data
-    ////////////////////////////////////////////////////////////
-    unsigned int m_startTime; ///< Time of last reset, in microseconds
+    unsigned int m_startTime; // Time of last reset, in milliseconds
 };
 
 } // namespace sf
-
 
 #endif // SFML_CLOCK_HPP

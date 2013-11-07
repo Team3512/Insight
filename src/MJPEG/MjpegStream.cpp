@@ -334,7 +334,7 @@ void MjpegStream::saveCurrentImage( const std::string& fileName ) {
             stbi_write_png( fileName.c_str(), m_imgWidth, m_imgHeight, 4, m_pxlBuf, 0 );
         }
         else {
-            std::cout << "MjpegStream: Failed to save image to '" << fileName << "'\n";
+            std::cout << "MjpegStream: failed to save image to '" << fileName << "'\n";
         }
     }
 
