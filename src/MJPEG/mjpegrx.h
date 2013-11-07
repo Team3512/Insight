@@ -8,6 +8,7 @@ extern "C" {
 #endif
 
 #include "mjpeg_thread.h"
+#include "mjpeg_mutex.h"
 
 struct keyvalue_t {
     char *key;
@@ -29,6 +30,7 @@ struct mjpeg_inst_t {
     struct mjpeg_callbacks_t callbacks;
 
     volatile int threadrunning;
+    mjpeg_mutex_t mutex;
     mjpeg_thread_t thread;
     int cancelfdr;
     int cancelfdw;

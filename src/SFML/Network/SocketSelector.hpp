@@ -32,12 +32,6 @@
 #ifndef SFML_SOCKETSELECTOR_HPP
 #define SFML_SOCKETSELECTOR_HPP
 
-////////////////////////////////////////////////////////////
-// Headers
-////////////////////////////////////////////////////////////
-#include "../System/Time.hpp"
-
-
 namespace sf
 {
 class Socket;
@@ -119,14 +113,15 @@ public :
     /// If you use a timeout and no socket is ready before the timeout
     /// is over, the function returns false.
     ///
-    /// \param timeout Maximum time to wait, (use Time::Zero for infinity)
+    /// \param timeout Maximum time to wait in milliseconds,
+    /// (use 0 for infinity)
     ///
     /// \return True if there are sockets ready, false otherwise
     ///
     /// \see isReady
     ///
     ////////////////////////////////////////////////////////////
-    bool wait(Time timeout = Time::Zero);
+    bool wait(unsigned int timeout = 0);
 
     ////////////////////////////////////////////////////////////
     /// \brief Test a socket to know if it is ready to receive data

@@ -48,24 +48,24 @@ m_startTime(getCurrentTime())
 
 
 ////////////////////////////////////////////////////////////
-Time Clock::getElapsedTime() const
+unsigned int Clock::getElapsedTime() const
 {
     return getCurrentTime() - m_startTime;
 }
 
 
 ////////////////////////////////////////////////////////////
-Time Clock::restart()
+unsigned int Clock::restart()
 {
-    Time now = getCurrentTime();
-    Time elapsed = now - m_startTime;
+    unsigned int now = getCurrentTime();
+    unsigned int elapsed = now - m_startTime;
     m_startTime = now;
 
     return elapsed;
 }
 
 ////////////////////////////////////////////////////////////
-Time Clock::getCurrentTime()
+unsigned int Clock::getCurrentTime()
 {
     // Force the following code to run on first core
     // (see http://msdn.microsoft.com/en-us/library/windows/desktop/ms644904(v=vs.85).aspx)
@@ -83,8 +83,8 @@ Time Clock::getCurrentTime()
     // Restore the thread affinity
     SetThreadAffinityMask(currentThread, previousMask);
 
-    // Return the current time as microseconds
-    return sf::microseconds(1000000 * time.QuadPart / frequency.QuadPart);
+    // Return the current time as milliseconds
+    return 1000000 * time.QuadPart / frequency.QuadPart / 1000;
 }
 
 } // namespace sf

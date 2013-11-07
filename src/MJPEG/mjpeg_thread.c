@@ -6,7 +6,7 @@ mjpeg_thread_create(mjpeg_thread_t *thread,
   void *(*start_routine) (void *),
   void *arg)
 {
-#ifdef WIN32
+#ifdef __WIN32
   thread->optarg = arg;
   thread->start_routine = start_routine;
   thread->thread = (HANDLE)(_beginthreadex(NULL, 0, win32_threadfunc, (void *) thread, 0, &thread->threadId));
@@ -20,7 +20,7 @@ mjpeg_thread_create(mjpeg_thread_t *thread,
 int
 mjpeg_thread_join(mjpeg_thread_t *thread, void **retval)
 {
-#ifdef WIN32
+#ifdef _WIN32
   int error;
 
   /* Make sure we didn't already join the thread. */
@@ -50,7 +50,7 @@ mjpeg_thread_join(mjpeg_thread_t *thread, void **retval)
 #endif
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 unsigned int
 __stdcall win32_threadfunc(void *optarg)
 {

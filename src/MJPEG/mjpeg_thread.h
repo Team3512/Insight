@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <process.h>
@@ -13,14 +13,14 @@ extern "C" {
 #include <pthread.h>
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 #define mjpeg_thread_exit(a) return a
 #else
 #define mjpeg_thread_exit(a) pthread_exit(a)
 #endif
 
 typedef struct mjpeg_thread_t_ {
-#ifdef WIN32
+#ifdef _WIN32
   HANDLE thread;
   void *optarg;
   void *retval;
@@ -40,7 +40,7 @@ int
 mjpeg_thread_join(mjpeg_thread_t *thread,
   void **retval);
 
-#ifdef WIN32
+#ifdef _WIN32
 unsigned int
 __stdcall win32_threadfunc(void *optarg);
 #endif

@@ -109,18 +109,18 @@ void SocketSelector::clear()
 
 
 ////////////////////////////////////////////////////////////
-bool SocketSelector::wait(Time timeout)
+bool SocketSelector::wait(unsigned int timeout)
 {
     // Setup the timeout
     timeval time;
-    time.tv_sec  = static_cast<long>(timeout.asMicroseconds() / 1000000);
-    time.tv_usec = static_cast<long>(timeout.asMicroseconds() % 1000000);
+    time.tv_sec  = static_cast<long>(timeout/1000 / 1000000);
+    time.tv_usec = static_cast<long>(timeout/1000 % 1000000);
 
     // Initialize the set that will contain the sockets that are ready
     m_impl->SocketsReady = m_impl->AllSockets;
 
     // Wait until one of the sockets is ready for reading, or timeout is reached
-    int count = select(m_impl->MaxSocket + 1, &m_impl->SocketsReady, NULL, NULL, timeout != Time::Zero ? &time : NULL);
+    int count = select(m_impl->MaxSocket + 1, &m_impl->SocketsReady, NULL, NULL, timeout != 0 ? &time : NULL);
 
     return count > 0;
 }

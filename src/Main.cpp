@@ -9,10 +9,12 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#include <cstdlib>
 #include <cstdint>
 #include <cstring>
 #include <cstdio>
 #include <atomic>
+#include <functional>
 #include <jpeglib.h>
 
 #include "SFML/Network/IpAddress.hpp"
@@ -40,6 +42,9 @@ std::atomic<int> gJpegQuality( 100 );
 
 // Allows usage of socket in CALLBACK OnEvent
 sf::UdpSocket* gCtrlSocketPtr = NULL;
+
+std::function<void(void)> gNewImageFunc = NULL;
+//void (*gNewImageFunc)() = NULL;
 
 LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lParam );
 BOOL CALLBACK AboutCbk( HWND hDlg , UINT message , WPARAM wParam , LPARAM lParam );
@@ -227,112 +232,99 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     uint8_t* serveImg = NULL;
     unsigned long int serveLen = 0;
 
+    gNewImageFunc = [&]{
+        // Get new image to process
+        imgBuffer = gStreamWinPtr->getCurrentImage();
+        imgWidth = gStreamWinPtr->getCurrentSize().X;
+        imgHeight = gStreamWinPtr->getCurrentSize().Y;
+
+        if ( imgBuffer != NULL && imgWidth > 0 && imgHeight > 0 ) {
+            if ( tempImg == NULL ) {
+                tempImg = new uint8_t[imgWidth * imgHeight * 3];
+            }
+            else if ( lastWidth != imgWidth || lastHeight != imgHeight ) {
+                delete[] tempImg;
+                tempImg = new uint8_t[imgWidth * imgHeight * 3];
+            }
+
+            /* ===== Convert RGBA image to BGR for OpenCV ===== */
+            // Copy R, G, and B channels but ignore A channel
+            for ( unsigned int posIn = 0, posOut = 0 ; posIn < imgWidth * imgHeight ; posIn++, posOut++ ) {
+                // Copy bytes of pixel into corresponding channels
+                tempImg[3*posOut+0] = imgBuffer[4*posIn+2];
+                tempImg[3*posOut+1] = imgBuffer[4*posIn+1];
+                tempImg[3*posOut+2] = imgBuffer[4*posIn+0];
+            }
+            /* ================================================ */
+
+            // Process the new image
+            processor.setImage( tempImg , imgWidth , imgHeight );
+            processor.processImage();
+
+            processor.getProcessedImage( tempImg );
+
+            std::free( serveImg );
+            serveImg = NULL;
+            serveLen = 0;
+
+            // Convert RGB image to JPEG
+            RGBtoJPEG( &serveImg , &serveLen , gJpegQuality , tempImg , imgWidth , imgHeight );
+            gServer->serveImage( serveImg , serveLen );
+
+            // Retrieve positions of targets and send them to robot
+            if ( processor.getTargetPositions().size() > 0 ) {
+                char x = 0;
+                char y = 0;
+
+                // Pack data structure with points
+                for ( unsigned int i = 0 ; i < processor.getTargetPositions().size() &&
+                        i < 3 ; i++ ) {
+                    quad_t target = processor.getTargetPositions()[i];
+                    for ( unsigned int j = 0 ; j < 4 ; j++ ) {
+                        x += target.point[j].x;
+                        y += target.point[j].y;
+                    }
+                    x /= 4;
+                    y /= 4;
+
+                    data[9 + 2*i] = x;
+                    data[10 + 2*i] = y;
+                }
+
+                /* If there are less than three points in the data
+                 * structure, zero the rest out.
+                 */
+                for ( unsigned int i = processor.getTargetPositions().size() ;
+                        i < 3 ; i++ ) {
+                    data[9 + 2*i] = 0;
+                    data[10 + 2*i] = 0;
+                }
+
+                // We have new target data to send to the robot
+                newData = true;
+            }
+
+            // Update width and height
+            lastWidth = imgWidth;
+            lastHeight = imgHeight;
+        }
+
+        if ( gCtrlSocketPtr != NULL && sendTime.getElapsedTime() > 200 &&
+                newData ) {
+            sf::Socket::Status status = gCtrlSocketPtr->send( data , sizeof(data) , robotIP , robotControlPort );
+            if ( status == sf::Socket::Done ) {
+                sendTime.restart();
+            }
+        }
+    };
+
     // Make sure the main window is shown before continuing
     ShowWindow( mainWindow , SW_SHOW );
 
-    bool isExiting = false;
-    while ( !isExiting ) {
-        if ( PeekMessage( &message , NULL , 0 , 0 , PM_REMOVE ) ) {
-            if ( message.message != WM_QUIT ) {
-                // If a message was waiting in the message queue, process it
-                TranslateMessage( &message );
-                DispatchMessage( &message );
-            }
-            else {
-                isExiting = true;
-            }
-        }
-        else {
-            // Get new image to process
-            imgBuffer = gStreamWinPtr->getCurrentImage();
-            imgWidth = gStreamWinPtr->getCurrentSize().X;
-            imgHeight = gStreamWinPtr->getCurrentSize().Y;
-
-            if ( imgBuffer != NULL && imgWidth > 0 && imgHeight > 0 ) {
-                if ( tempImg == NULL ) {
-                    tempImg = new uint8_t[imgWidth * imgHeight * 3];
-                }
-                else if ( lastWidth != imgWidth || lastHeight != imgHeight ) {
-                    delete[] tempImg;
-                    tempImg = new uint8_t[imgWidth * imgHeight * 3];
-                }
-
-                /* ===== Convert RGBA image to BGR for OpenCV ===== */
-                // Copy R, G, and B channels but ignore A channel
-                for ( unsigned int posIn = 0, posOut = 0 ; posIn < imgWidth * imgHeight ; posIn++, posOut++ ) {
-                    // Copy bytes of pixel into corresponding channels
-                    tempImg[3*posOut+0] = imgBuffer[4*posIn+2];
-                    tempImg[3*posOut+1] = imgBuffer[4*posIn+1];
-                    tempImg[3*posOut+2] = imgBuffer[4*posIn+0];
-                }
-                /* ================================================ */
-
-                // Process the new image
-                processor.setImage( tempImg , imgWidth , imgHeight );
-                processor.processImage();
-
-                processor.getProcessedImage( tempImg );
-
-                std::free( serveImg );
-                serveImg = NULL;
-                serveLen = 0;
-
-                // Convert RGB image to JPEG
-                RGBtoJPEG( &serveImg , &serveLen , gJpegQuality , tempImg , imgWidth , imgHeight );
-                gServer->serveImage( serveImg , serveLen );
-
-                // Retrieve positions of targets and send them to robot
-                if ( processor.getTargetPositions().size() > 0 ) {
-                    char x = 0;
-                    char y = 0;
-
-                    // Pack data structure with points
-                    for ( unsigned int i = 0 ; i < processor.getTargetPositions().size() &&
-                            i < 3 ; i++ ) {
-                        quad_t target = processor.getTargetPositions()[i];
-                        for ( unsigned int j = 0 ; j < 4 ; j++ ) {
-                            x += target.point[j].x;
-                            y += target.point[j].y;
-                        }
-                        x /= 4;
-                        y /= 4;
-
-                        data[9 + 2*i] = x;
-                        data[10 + 2*i] = y;
-                    }
-
-                    /* If there are less than three points in the data
-                     * structure, zero the rest out.
-                     */
-                    for ( unsigned int i = processor.getTargetPositions().size() ;
-                            i < 3 ; i++ ) {
-                        data[9 + 2*i] = 0;
-                        data[10 + 2*i] = 0;
-                    }
-
-                    // We have new target data to send to the robot
-                    newData = true;
-                }
-
-                // Update width and height
-                lastWidth = imgWidth;
-                lastHeight = imgHeight;
-            }
-
-            if ( gCtrlSocketPtr != NULL &&
-                    sendTime.getElapsedTime().asMilliseconds() > 200 &&
-                    newData ) {
-                sf::Socket::Status status = gCtrlSocketPtr->send( data , sizeof(data) , robotIP , robotControlPort );
-                if ( status == sf::Socket::Done ) {
-                    sendTime.restart();
-                }
-            }
-
-            // Make the window redraw the controls
-            InvalidateRect( mainWindow , NULL , FALSE );
-
-            Sleep( 100 );
-        }
+    while ( GetMessage( &message , NULL , 0 , 0 ) > 0 ) {
+        // If a message was waiting in the message queue, process it
+        TranslateMessage( &message );
+        DispatchMessage( &message );
     }
 
     // Delete MJPEG stream window and server
@@ -521,6 +513,9 @@ LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lP
 
     case WM_MJPEGSTREAM_NEWIMAGE: {
         gStreamWinPtr->repaint();
+
+        // Processes new images
+        gNewImageFunc();
 
         break;
     }

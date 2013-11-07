@@ -37,7 +37,6 @@
 ////////////////////////////////////////////////////////////
 #include <cstdint>
 #include "Socket.hpp"
-#include "../System/Time.hpp"
 
 
 namespace sf
@@ -108,14 +107,14 @@ public :
     ///
     /// \param remoteAddress Address of the remote peer
     /// \param remotePort    Port of the remote peer
-    /// \param timeout       Optional maximum time to wait
+    /// \param timeout       Optional maximum time to wait in milliseconds
     ///
     /// \return Status code
     ///
     /// \see disconnect
     ///
     ////////////////////////////////////////////////////////////
-    Status connect(const IpAddress& remoteAddress, unsigned short remotePort, Time timeout = Time::Zero);
+    Status connect(const IpAddress& remoteAddress, unsigned short remotePort, unsigned int timeout = 0);
 
     ////////////////////////////////////////////////////////////
     /// \brief Disconnect the socket from its remote peer

@@ -10,6 +10,7 @@
 
 #include "mjpegrx.h"
 #include "mjpeg_sck.h"
+#include "mjpeg_mutex.h"
 
 /* Returns the larger of a or b */
 #define mjpeg_max(a, b) ((a > b) ? a : b)
@@ -462,8 +463,12 @@ mjpeg_launchthread(
         sizeof(struct mjpeg_callbacks_t)
     );
 
+    mjpeg_mutex_init(&inst->mutex);
+
     /* Mark the thread as running. */
+    mjpeg_mutex_lock(&inst->mutex);
     inst->threadrunning = 1;
+    mjpeg_mutex_unlock(&inst->mutex);
 
     /* Spawn the thread. */
     error = mjpeg_thread_create(&inst->thread, mjpeg_threadmain, inst);
@@ -494,6 +499,7 @@ mjpeg_stopthread(struct mjpeg_inst_t *inst)
     /* Free the mjpeg_inst_t and associated memory. */
     free(inst->host);
     free(inst->reqpath);
+    mjpeg_mutex_destroy(&inst->mutex);
     free(inst);
 
     return;
@@ -538,7 +544,8 @@ mjpeg_threadmain(void *optarg)
     send(sd, tmp, strlen(tmp), 0);
     printf("%s", tmp);
 
-    while(inst->threadrunning > 0){
+    int threadrunning = 1;
+    while(threadrunning > 0){
         /* Read and parse incoming HTTP response headers. */
         if(mjpeg_rxheaders(&headerbuf, &headerbufsize, sd, inst->cancelfdr) == -1) {
             fprintf(stderr, "mjpegrx: recv(2) failed\n");
@@ -578,6 +585,10 @@ mjpeg_threadmain(void *optarg)
                 inst->callbacks.optarg);
         }
         free(buf);
+
+        mjpeg_mutex_lock(&inst->mutex);
+        threadrunning = inst->threadrunning;
+        mjpeg_mutex_unlock(&inst->mutex);
     }
 
     /* The loop has exited. We should now clean up and exit the thread. */

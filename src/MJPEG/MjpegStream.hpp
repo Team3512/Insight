@@ -41,15 +41,13 @@
 #include <cstdint>
 
 #include "../SFML/Graphics/Image.hpp"
-
 #include "../SFML/System/Clock.hpp"
-#include "../SFML/System/Mutex.hpp"
-#include "../SFML/System/Thread.hpp"
 
 #include "../WinGDI/Text.hpp"
 #include "../WinGDI/Vector.hpp"
 
 #include "mjpegrx.h"
+#include "mjpeg_thread.h"
 
 #define WM_MJPEGSTREAM_START     (WM_APP + 0x0001)
 #define WM_MJPEGSTREAM_STOP      (WM_APP + 0x0002)
@@ -102,6 +100,11 @@ public:
     // Returns size image currently in secondary buffer
     Vector2i getCurrentSize();
 
+    /* Returns state of boolean 'm_newImageAvailable'. One could use this
+     * instead of handling the WM_MJPEGSTREAM_NEWIMAGE message.
+     */
+    bool newImageAvailable();
+
 protected:
     static void doneCallback( void* optarg );
     static void readCallback( char* buf , int bufsize , void* optarg );
@@ -139,7 +142,7 @@ private:
 
     // Holds image most recently received from the host
     sf::Image m_tempImage;
-    sf::Mutex m_imageMutex;
+    mjpeg_mutex_t m_imageMutex;
 
     // Stores image before displaying it on the screen
     uint8_t* m_pxlBuf;
@@ -154,7 +157,12 @@ private:
     uint8_t* m_extBuf;
     unsigned int m_extWidth;
     unsigned int m_extHeight;
-    sf::Mutex m_extMutex;
+    mjpeg_mutex_t m_extMutex;
+
+    /* Set to true when a new image is received from the MJPEG server
+     * Set back to false upon the first call to getCurrentImage()
+     */
+    std::atomic<bool> m_newImageAvailable;
 
     /* Used to determine when to draw the "Connecting..." message
      * (when the stream first starts)
@@ -169,7 +177,7 @@ private:
     sf::Clock m_imageAge;
 
     // Locks window so only one thread can access or draw to it at a time
-    sf::Mutex m_windowMutex;
+    mjpeg_mutex_t m_windowMutex;
 
     /* If true:
      *     Lets receive thread run
@@ -178,8 +186,16 @@ private:
      */
     std::atomic<bool> m_stopReceive;
 
+    /* If true:
+     *     Lets update thread run
+     * If false:
+     *     Closes update thread
+     */
+    std::atomic<bool> m_stopUpdate;
+
     // Makes sure "Waiting..." graphic is drawn after timeout
-    sf::Thread m_updateThread;
+    mjpeg_thread_t m_updateThread;
+    static void* (*m_updateFunc)(void*);
 
     /* Recreates the graphics that display messages in the stream window
      * (Resizes them and recenters the text in the window)
@@ -189,6 +205,8 @@ private:
     // Initializes variables used for OpenGL rendering
     void EnableOpenGL();
     void DisableOpenGL();
+
+    static void* updateFunc( void* obj );
 
     static std::map<HWND , MjpegStream*> m_map;
     static LRESULT CALLBACK WindowProc( HWND handle , UINT message , WPARAM wParam , LPARAM lParam );

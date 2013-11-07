@@ -71,8 +71,9 @@ void MjpegServer::start() {
             m_clientSelector.maxSocket = m_listenSock;
         }
 
-        if ( mjpeg_thread_create( &m_serverThread , &MjpegServer::serverFunc , this ) != -1 ) {
-            m_isRunning = true;
+        m_isRunning = true;
+        if ( mjpeg_thread_create( &m_serverThread , &MjpegServer::serverFunc , this ) == -1 ) {
+            m_isRunning = false;
         }
     }
 }
