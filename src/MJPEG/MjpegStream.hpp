@@ -40,7 +40,6 @@
 #include <map>
 #include <cstdint>
 
-#include "../SFML/Graphics/Image.hpp"
 #include "../SFML/System/Clock.hpp"
 
 #include "../WinGDI/Text.hpp"
@@ -140,16 +139,13 @@ private:
     // Contains background color
     BYTE* m_backgroundPxl;
 
-    // Holds image most recently received from the host
-    sf::Image m_tempImage;
-    mjpeg_mutex_t m_imageMutex;
-
     // Stores image before displaying it on the screen
     uint8_t* m_pxlBuf;
     unsigned int m_imgWidth;
     unsigned int m_imgHeight;
     unsigned int m_textureWidth;
     unsigned int m_textureHeight;
+    mjpeg_mutex_t m_imageMutex;
 
     /* Stores copy of image for use by external programs. It only updates when
      * getCurrentImage() is called.

@@ -10,6 +10,10 @@
 #include "MjpegStream.hpp"
 #include "mjpeg_sleep.h"
 
+#include "stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 #include <iostream>
 #include <wingdi.h>
 #include <cstring>
@@ -40,6 +44,14 @@ void BMPtoPXL( HDC dc , HBITMAP bmp , int width , int height , BYTE* pxlData ) {
     bmi.biSizeImage = 0;// 3 * ScreenX * ScreenY; for PNG or JPEG
 
     GetDIBits( dc , bmp , 0 , height , pxlData , (BITMAPINFO*)&bmi , DIB_RGB_COLORS );
+}
+
+// Convert a string to lower case
+std::string toLower( std::string str ) {
+    for ( std::string::iterator i = str.begin() ; i != str.end() ; ++i ) {
+        *i = static_cast<char>(std::tolower(*i));
+    }
+    return str;
 }
 
 class StreamClassInit {
@@ -302,7 +314,31 @@ void MjpegStream::repaint() {
 }
 
 void MjpegStream::saveCurrentImage( const std::string& fileName ) {
-    m_tempImage.saveToFile( fileName );
+    mjpeg_mutex_lock( &m_imageMutex );
+
+    // Deduce the image type from its extension
+    if ( fileName.size() > 3 ) {
+        // Extract the extension
+        std::string extension = fileName.substr(fileName.size() - 3);
+
+        if ( toLower(extension) == "bmp" ) {
+            // BMP format
+            stbi_write_bmp( fileName.c_str(), m_imgWidth, m_imgHeight, 4, m_pxlBuf );
+        }
+        else if ( toLower(extension) == "tga" ) {
+            // TGA format
+            stbi_write_tga( fileName.c_str(), m_imgWidth, m_imgHeight, 4, m_pxlBuf );
+        }
+        else if( toLower(extension) == "png" ) {
+            // PNG format
+            stbi_write_png( fileName.c_str(), m_imgWidth, m_imgHeight, 4, m_pxlBuf, 0 );
+        }
+        else {
+            std::cout << "MjpegStream: Failed to save image to '" << fileName << "'\n";
+        }
+    }
+
+    mjpeg_mutex_unlock( &m_imageMutex );
 }
 
 uint8_t* MjpegStream::getCurrentImage() {
@@ -362,21 +398,19 @@ void MjpegStream::readCallback( char* buf , int bufsize , void* optobj ) {
     MjpegStream* streamPtr = static_cast<MjpegStream*>( optobj );
 
     // Load the image received (converts from JPEG to pixel array)
-    bool loadedCorrectly = streamPtr->m_tempImage.loadFromMemory( buf , bufsize );
+    int width, height, channels;
+    uint8_t* ptr = stbi_load_from_memory((unsigned char*)buf, bufsize, &width, &height, &channels, STBI_rgb_alpha);
 
-    if ( loadedCorrectly ) {
-        unsigned int length = streamPtr->m_tempImage.getSize().x * streamPtr->m_tempImage.getSize().y * 4;
-
+    if ( ptr && width && height ) {
         mjpeg_mutex_lock( &streamPtr->m_imageMutex );
 
-        // Allocate new buffer to fit latest image
+        // Free old buffer and store new one created by stbi_load_from_memory()
         delete[] streamPtr->m_pxlBuf;
-        streamPtr->m_pxlBuf = new uint8_t[length];
 
-        std::memcpy( streamPtr->m_pxlBuf , streamPtr->m_tempImage.getPixelsPtr() , length );
+        streamPtr->m_pxlBuf = ptr;
 
-        streamPtr->m_imgWidth = streamPtr->m_tempImage.getSize().x;
-        streamPtr->m_imgHeight = streamPtr->m_tempImage.getSize().y;
+        streamPtr->m_imgWidth = width;
+        streamPtr->m_imgHeight = height;
 
         mjpeg_mutex_unlock( &streamPtr->m_imageMutex );
 
@@ -387,7 +421,6 @@ void MjpegStream::readCallback( char* buf , int bufsize , void* optobj ) {
 
         if ( !streamPtr->m_newImageAvailable ) {
             streamPtr->m_newImageAvailable = true;
-            std::cout << "framerate=" << 1000.f / streamPtr->m_imageAge.getElapsedTime() << " fps\n";
         }
 
         // Reset the image age timer
@@ -396,6 +429,9 @@ void MjpegStream::readCallback( char* buf , int bufsize , void* optobj ) {
         // Send message to parent window about the new image
         PostMessage( streamPtr->m_parentWin , WM_MJPEGSTREAM_NEWIMAGE , 0 , 0 );
 	}
+    else {
+        std::cout << "MjpegStream: image failed to load: " << stbi_failure_reason() << "\n";
+    }
 }
 
 void MjpegStream::recreateGraphics( const Vector2i& windowSize ) {

@@ -44,7 +44,6 @@ std::atomic<int> gJpegQuality( 100 );
 sf::UdpSocket* gCtrlSocketPtr = NULL;
 
 std::function<void(void)> gNewImageFunc = NULL;
-//void (*gNewImageFunc)() = NULL;
 
 LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lParam );
 BOOL CALLBACK AboutCbk( HWND hDlg , UINT message , WPARAM wParam , LPARAM lParam );
@@ -242,7 +241,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             if ( tempImg == NULL ) {
                 tempImg = new uint8_t[imgWidth * imgHeight * 3];
             }
-            else if ( lastWidth != imgWidth || lastHeight != imgHeight ) {
+            else if ( lastWidth * lastHeight != imgWidth * imgHeight ) {
                 delete[] tempImg;
                 tempImg = new uint8_t[imgWidth * imgHeight * 3];
             }
