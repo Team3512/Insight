@@ -74,14 +74,17 @@ public:
     Vector2i getSize();
     void setSize( const Vector2i& size );
 
-    // Starts Kinect stream
+    // Request MJPEG stream and begin displaying it
     void startStream();
 
-    // Stops Kinect stream
+    // Stop receiving MJPEG stream
     void stopStream();
 
     // Returns true if streaming is on
     bool isStreaming();
+
+    // Set max frame rate of images displaying in window
+    void setFPS( unsigned int fps );
 
     // Displays the stream or a message if the stream isn't working
     void repaint();
@@ -171,6 +174,10 @@ private:
 
     // Determines when a video frame is old
     sf::Clock m_imageAge;
+
+    // Used to limit display frame rate
+    sf::Clock m_displayTime;
+    unsigned int m_frameRate;
 
     // Locks window so only one thread can access or draw to it at a time
     mjpeg_mutex_t m_windowMutex;

@@ -133,6 +133,8 @@ MjpegStream::MjpegStream( const std::string& hostName ,
 
         m_streamInst( NULL ) ,
 
+        m_frameRate( 15 ) ,
+
         m_stopReceive( true ) ,
         m_stopUpdate( true )
 {
@@ -307,6 +309,10 @@ bool MjpegStream::isStreaming() {
     return !m_stopReceive;
 }
 
+void MjpegStream::setFPS( unsigned int fps ) {
+    m_frameRate = fps;
+}
+
 void MjpegStream::repaint() {
     mjpeg_mutex_lock( &m_windowMutex );
     InvalidateRect( m_streamWin , NULL , FALSE );
@@ -427,7 +433,10 @@ void MjpegStream::readCallback( char* buf , int bufsize , void* optobj ) {
         streamPtr->m_imageAge.restart();
 
         // Send message to parent window about the new image
-        PostMessage( streamPtr->m_parentWin , WM_MJPEGSTREAM_NEWIMAGE , 0 , 0 );
+        if ( streamPtr->m_displayTime.getElapsedTime() > 1000.f / streamPtr->m_frameRate ) {
+            PostMessage( streamPtr->m_parentWin , WM_MJPEGSTREAM_NEWIMAGE , 0 , 0 );
+            streamPtr->m_displayTime.restart();
+        }
 	}
     else {
         std::cout << "MjpegStream: image failed to load: " << stbi_failure_reason() << "\n";
