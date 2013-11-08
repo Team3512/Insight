@@ -38,6 +38,11 @@ public:
 
     const std::vector<quad_t>& getTargetPositions();
 
+    /* When enabled, PNG images of the intermediate processing steps are saved
+     * to disk.
+     */
+    void enableDebugging( bool enable );
+
 protected:
     // Internal OpenCV primitives
     IplImage* m_cvRawImage; // Raw image
@@ -46,6 +51,8 @@ protected:
     std::vector<quad_t> m_targets;
 
 private:
+    bool m_debugEnabled;
+
     // Override these to process different objects
     virtual void prepareImage() = 0;
     virtual void findTargets() = 0;

@@ -63,31 +63,7 @@ quad_getangle(struct quad_t *quad, CvPoint point)
     px -= mpx;
     py -= mpy;
 
-    float angle = atan2(py, px);
-    if (px != 0){
-        /* second quadrant */
-        if (px < 0 && py > 0){
-            return 180.f + angle;
-        }
-        /* third quadrant */
-        if (px < 0 && py < 0){
-            return 180.f + angle;
-        }
-        /* fourth quadrant */
-        if (px > 0 && py < 0){
-            return 360.f + angle;
-        }
-        return angle;
-    }
-    else if (py > 0){
-        return M_PI_2;
-    }
-    else if (py < 0){
-        return 3.f * M_PI_2;
-    }
-    else{
-        return 0.f;
-    }
+    return atan2(py, px);
 }
 
 /* The internal sorting function used by qsort(3) as used by

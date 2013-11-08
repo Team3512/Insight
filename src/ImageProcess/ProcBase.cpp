@@ -13,7 +13,8 @@
 
 ProcBase::ProcBase() :
         m_cvRawImage( NULL ) ,
-        m_cvGrayChannel( NULL ) {
+        m_cvGrayChannel( NULL ) ,
+        m_debugEnabled( false ) {
 
 }
 
@@ -49,12 +50,20 @@ void ProcBase::setImage( uint8_t* image , uint32_t width , uint32_t height ) {
 }
 
 void ProcBase::processImage() {
-    prepareImage();
-    findTargets();
-    overlayTargets();
+    if ( m_debugEnabled ) {
+        cvSaveImage( "rawImage.png" , m_cvRawImage , NULL );
+    }
 
-    if ( m_cvRawImage != NULL ) {
-        cvSaveImage( "processedImage.png" , m_cvRawImage , NULL ); // TODO Remove me
+    prepareImage();
+    if ( m_debugEnabled ) {
+        cvSaveImage( "prepareImage.png" , m_cvGrayChannel , NULL );
+    }
+
+    findTargets();
+
+    overlayTargets();
+    if ( m_debugEnabled && m_cvRawImage != NULL ) {
+        cvSaveImage( "processedImage.png" , m_cvRawImage , NULL );
     }
 }
 
@@ -93,6 +102,10 @@ uint32_t ProcBase::getProcessedNumChannels() {
 
 const std::vector<quad_t>& ProcBase::getTargetPositions() {
     return m_targets;
+}
+
+void ProcBase::enableDebugging( bool enable ) {
+    m_debugEnabled = enable;
 }
 
 void ProcBase::overlayTargets() {

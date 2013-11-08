@@ -18,9 +18,6 @@ void FindTarget2013::prepareImage() {
     cvThreshold( m_cvGrayChannel , m_cvGrayChannel , 128 , 255 , CV_THRESH_BINARY );
 
     cvDilate( m_cvGrayChannel , m_cvGrayChannel , NULL , 2 );
-
-    cvSaveImage( "rawImage.png" , m_cvRawImage , NULL ); // TODO Remove me
-    cvSaveImage( "prepareImage.png" , m_cvGrayChannel , NULL ); // TODO Remove me
 }
 
 void FindTarget2013::findTargets() {
@@ -53,7 +50,7 @@ void FindTarget2013::findTargets() {
         }
 
         // Sort the quadrilateral's points counter-clockwise
-        //sortquad( &quad );
+        sortquad( &quad );
 
         m_targets.push_back( quad );
     }

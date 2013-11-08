@@ -254,6 +254,11 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     FindTarget2013 processor;
     /* ====================================== */
 
+    // Image processing debugging is disabled by default
+    if ( gSettings.getValueFor( "enableImgProcDebug" ) == "true" ) {
+        processor.enableDebugging( true );
+    }
+
     uint8_t* serveImg = NULL;
     unsigned long int serveLen = 0;
 
