@@ -352,6 +352,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
 
             // Check for errors
             if (sent >= 0) {
+                newData = false;
                 sendTime.restart();
             }
         }
