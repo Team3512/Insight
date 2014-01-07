@@ -35,9 +35,9 @@
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.mingw.exe.debug.279725534" name="MinGW C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.mingw.exe.debug"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.mingw.exe.debug.2048711174" name="MinGW C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.mingw.exe.debug">
 								<option id="gnu.cpp.link.option.libs.1142709150" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
-									<listOptionValue builtIn="false" value="opencv_highgui246.dll"/>
-									<listOptionValue builtIn="false" value="opencv_imgproc246.dll"/>
-									<listOptionValue builtIn="false" value="opencv_core246.dll"/>
+									<listOptionValue builtIn="false" value="opencv_highgui248.dll"/>
+									<listOptionValue builtIn="false" value="opencv_imgproc248.dll"/>
+									<listOptionValue builtIn="false" value="opencv_core248.dll"/>
 									<listOptionValue builtIn="false" value="Glu32"/>
 									<listOptionValue builtIn="false" value="Opengl32"/>
 									<listOptionValue builtIn="false" value="Gdi32"/>
@@ -95,9 +95,9 @@
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.mingw.exe.release.1673975326" name="MinGW C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.mingw.exe.release"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.mingw.exe.release.1999648226" name="MinGW C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.mingw.exe.release">
 								<option id="gnu.cpp.link.option.libs.1615083171" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
-									<listOptionValue builtIn="false" value="opencv_highgui246.dll"/>
-									<listOptionValue builtIn="false" value="opencv_imgproc246.dll"/>
-									<listOptionValue builtIn="false" value="opencv_core246.dll"/>
+									<listOptionValue builtIn="false" value="opencv_highgui248.dll"/>
+									<listOptionValue builtIn="false" value="opencv_imgproc248.dll"/>
+									<listOptionValue builtIn="false" value="opencv_core248.dll"/>
 									<listOptionValue builtIn="false" value="Glu32"/>
 									<listOptionValue builtIn="false" value="Opengl32"/>
 									<listOptionValue builtIn="false" value="Gdi32"/>
@@ -146,5 +146,12 @@
 		</scannerConfigBuildInfo>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/Insight"/>
+		</configuration>
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="/Insight"/>
+		</configuration>
+	</storageModule>
 </cproject>

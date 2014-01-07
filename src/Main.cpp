@@ -194,7 +194,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
         mjpeg_sck_setnonblocking(gCtrlSocket, 1);
     }
     else {
-        std::cout << "Main.cpp: failed to create robot control socket\n";
+        std::cout << __FILE__ << ": failed to create robot control socket\n";
     }
 
     /* Used for sending control packets to robot
@@ -229,7 +229,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             hostent* host = gethostbyname( robotIPStr.c_str() );
 
             if ( host ) {
-                robotIP = reinterpret_cast<in_addr*>(host->h_addr)->s_addr;
+                robotIP = reinterpret_cast<in_addr*>(host->h_addr_list[0])->s_addr;
             }
             else {
                 // Not a valid address nor a host name

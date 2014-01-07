@@ -15,7 +15,7 @@ BEGIN
     ICON             mainIcon,                               IDC_STATIC, 30, 8,  32,  32
     LTEXT            "Insight, Version 1.0",                 IDC_STATIC, 55, 12, 114, 10
     LTEXT            "Copyright (c) 2013 FRC Team 3512",     IDC_STATIC, 30, 30, 159, 10
-    LTEXT            "FRC Team 3512, Spartatroniks",         IDC_STATIC, 30, 39, 106,  10
+    LTEXT            "FRC Team 3512",                        IDC_STATIC, 30, 39, 106,  10
     LTEXT            "All Rights Reserved",                  IDC_STATIC, 30, 48, 63,  10
 END
 
@@ -42,7 +42,7 @@ BEGIN
   BEGIN
     BLOCK "040904E4"
     BEGIN
-      VALUE "CompanyName", "FRC Team 3512, Spartatroniks"
+      VALUE "CompanyName", "FRC Team 3512"
       VALUE "FileVersion", "1,0,0,0"
       VALUE "InternalName", "Insight"
       VALUE "LegalCopyright", "(c) 2013 FRC Team 3512"
