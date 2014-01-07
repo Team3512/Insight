@@ -28,7 +28,7 @@
 #include "Settings.hpp"
 #include "Resource.h"
 
-#include "ImageProcess/FindTarget2013.hpp"
+#include "ImageProcess/FindTarget2014.hpp"
 
 // Global because IP configuration settings are needed in CALLBACK OnEvent
 Settings gSettings( "IPSettings.txt" );
@@ -251,7 +251,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     uint32_t imgHeight = 0;
     uint32_t lastWidth = 0;
     uint32_t lastHeight = 0;
-    FindTarget2013 processor;
+    FindTarget2014 processor;
     /* ====================================== */
 
     // Image processing debugging is disabled by default
