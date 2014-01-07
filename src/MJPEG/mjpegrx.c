@@ -182,7 +182,7 @@ mjpeg_sck_connect(char *host, int port, int cancelfd)
     /* Set up the sockaddr_in structure. */
     memset(&pin, 0, sizeof(struct sockaddr_in));
     pin.sin_family = AF_INET;
-    pin.sin_addr.s_addr = ((struct in_addr *)(hp->h_addr))->s_addr;
+    pin.sin_addr.s_addr = ((struct in_addr *)(hp->h_addr_list[0]))->s_addr;
     pin.sin_port = htons(port);
 
     /* Try to connect */
@@ -423,7 +423,7 @@ mjpeg_pipe(int sv[2])
 }
 
 /* Create a new mjpegrx instance, and launch it's thread. This
-   begins streaming of the specified MJPEG stream. 
+   begins streaming of the specified MJPEG stream.
    On success, a pointer to an mjpeg_inst_t structure is returned.
    On error, NULL is returned.*/
 struct mjpeg_inst_t *
@@ -515,7 +515,7 @@ mjpeg_threadmain(void *optarg)
 
     char *asciisize;
     int datasize;
-    char *buf; 
+    char *buf;
     char tmp[256];
 
     char *headerbuf;
