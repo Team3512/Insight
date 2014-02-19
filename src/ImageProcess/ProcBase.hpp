@@ -57,6 +57,9 @@ private:
     virtual void prepareImage() = 0;
     virtual void findTargets() = 0;
 
+    // Click event
+    virtual void clickEvent(int x, int y) = 0;
+
     void overlayTargets();
 };
 
