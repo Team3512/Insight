@@ -120,3 +120,9 @@ void ProcBase::overlayTargets() {
         cvLine( m_cvRawImage , i->point[3] , i->point[0] , lineColor , 2 , 8 , 0 );
     }
 }
+
+/* Empty clickEvent() function */
+void clickEvent(int x, int y)
+{
+
+}

@@ -43,6 +43,9 @@ public:
      */
     void enableDebugging( bool enable );
 
+    // Click event
+    virtual void clickEvent(int x, int y);
+
 protected:
     // Internal OpenCV primitives
     IplImage* m_cvRawImage; // Raw image
@@ -56,9 +59,6 @@ private:
     // Override these to process different objects
     virtual void prepareImage() = 0;
     virtual void findTargets() = 0;
-
-    // Click event
-    virtual void clickEvent(int x, int y) = 0;
 
     void overlayTargets();
 };

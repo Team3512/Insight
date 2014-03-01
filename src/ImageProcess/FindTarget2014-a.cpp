@@ -10,7 +10,7 @@
 #include "FindTarget2014-a.hpp"
 #include <stdio.h>
 
-void FindTarget2014-a::prepareImage() {
+void FindTarget2014a::prepareImage() {
 #if 0
     cvCvtColor( m_cvRawImage , m_cvGrayChannel , CV_RGB2GRAY );
 
@@ -23,9 +23,10 @@ void FindTarget2014-a::prepareImage() {
 #endif
 }
 
-void FindTarget2014-a::findTargets() {
+void FindTarget2014a::findTargets() {
     int b, g, r;
     int x, y;
+    IplImage* img = m_cvRawImage;
 
     x = m_mx;
     y = m_my;
@@ -77,7 +78,7 @@ void FindTarget2014-a::findTargets() {
 #endif
 }
 
-void FindTarget2014::clickEvent(int x, int y) {
+void FindTarget2014a::clickEvent(int x, int y) {
   m_mx = x;
   m_my = y;
 }

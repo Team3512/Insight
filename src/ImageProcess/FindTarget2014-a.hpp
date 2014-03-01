@@ -10,7 +10,7 @@
 
 #include "ProcBase.hpp"
 
-class FindTarget2014-a : public ProcBase {
+class FindTarget2014a : public ProcBase {
 private:
     void prepareImage();
     void findTargets();
