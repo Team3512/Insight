@@ -19,8 +19,6 @@
 #include <windowsx.h>
 #include <cstring>
 
-MjpegStream *mjpegStreamGlobalPtr = NULL;
-
 std::map<HWND , MjpegStream*> MjpegStream::m_map;
 
 // Bit-twiddling hack: Return the next power of two
@@ -142,9 +140,6 @@ MjpegStream::MjpegStream( const std::string& hostName ,
         m_stopReceive( true ) ,
         m_stopUpdate( true )
 {
-	/* HACK FIXME: Set up the global pointer */
-	mjpegStreamGlobalPtr = this;
-
 	/* Initialize the MjpegStreamCallback pointer */
 	m_ncallbacks = ncallbacks;
 
@@ -705,20 +700,24 @@ LRESULT CALLBACK MjpegStream::WindowProc( HWND handle , UINT message , WPARAM wP
 
         break;
     }
+
     case WM_MOUSEMOVE: {
-      /* Mouse moved */
-      mjpegStreamGlobalPtr->m_lx = GET_X_LPARAM(lParam);
-      mjpegStreamGlobalPtr->m_ly = GET_Y_LPARAM(lParam);
-      break;
+        /* Mouse moved */
+        m_map[handle]->m_lx = GET_X_LPARAM(lParam);
+        m_map[handle]->m_ly = GET_Y_LPARAM(lParam);
+
+        break;
     }
 
     case WM_LBUTTONDOWN: {
-      /* Button clicked */
-      mjpegStreamGlobalPtr->m_cx = mjpegStreamGlobalPtr->m_lx;
-      mjpegStreamGlobalPtr->m_cy = mjpegStreamGlobalPtr->m_ly;
-      mjpegStreamGlobalPtr->m_ncallbacks->clickEvent(mjpegStreamGlobalPtr->m_cx, mjpegStreamGlobalPtr->m_cy);
+        /* Button clicked */
+        m_map[handle]->m_cx = m_map[handle]->m_lx;
+        m_map[handle]->m_cy = m_map[handle]->m_ly;
+        m_map[handle]->m_ncallbacks->clickEvent(m_map[handle]->m_cx, m_map[handle]->m_cy);
+
       break;
     }
+
     default: {
         return DefWindowProc( handle , message , wParam , lParam );
     }
