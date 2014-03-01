@@ -46,6 +46,21 @@ std::function<void(void)> gNewImageFunc = NULL;
 LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lParam );
 BOOL CALLBACK AboutCbk( HWND hDlg , UINT message , WPARAM wParam , LPARAM lParam );
 
+typedef struct InsightData {
+  /* The image processor we're using */
+  ProcBase *processor;
+
+  /* Last mouse position */
+  int lx;
+  int ly; 
+
+  /* Last clicked position */
+  int cx;
+  int cy;
+} InsightData;
+
+InsightData *gData;
+
 /* Compresses RGB image into JPEG. Variables with the 'image_' prefix are for
  * the input image while variables with the 'output_' prefix are for the
  * outputted JPEG. 'quality' is the JPEG compression quality factor.
@@ -116,6 +131,13 @@ void RGBtoJPEG( uint8_t** output_buf , unsigned long int* output_len ,
 }
 
 INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
+    InsightData insightData;
+    gData = &insightData;
+    insightData.lx = 0;
+    insightData.ly = 0;
+    insightData.cx = 0;
+    insightData.cy = 0;
+
     INITCOMMONCONTROLSEX icc;
 
     // Initialize common controls
@@ -210,10 +232,9 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
      *     char y
      * 2 empty bytes
      */
-    char data[16] = "ctrl\r\n\0\0";
+    char data[17] = "ctrl\r\n\0\0";
     std::memset( data + 8 , 0 , sizeof(data) - 8 );
     bool newData = false;
-
 
     uint32_t robotIP = 0;
     std::string robotIPStr = gSettings.getValueFor( "robotIP" );
@@ -252,6 +273,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     uint32_t lastWidth = 0;
     uint32_t lastHeight = 0;
     FindTarget2014 processor;
+    insightData.processor = processor;
     /* ====================================== */
 
     // Image processing debugging is disabled by default
@@ -408,6 +430,17 @@ LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lP
         SendMessage( slider , TBM_SETPOS , (WPARAM)TRUE , (LPARAM)100 );
 
         break;
+    }
+    case WM_MOUSEMOVE: {
+      /* Mouse moved */
+      gData->lx = GET_X_LPARAM(lParam)
+      gData->ly = GET_Y_LPARAM(lParam)
+    }
+    case WM_LBUTTONDOWN: {
+      /* Button clicked */
+      gData->cx = gData->lx;
+      gData->cy = gData->ly;
+      gData->processor->clickEvent(gData->cx, gData->cy);
     }
     case WM_COMMAND: {
         switch( LOWORD(wParam) ) {
