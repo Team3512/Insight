@@ -31,6 +31,8 @@
 
 #include "ImageProcess/FindTarget2014-a.hpp"
 
+#include "MainClass.hpp"
+
 // Global because IP configuration settings are needed in CALLBACK OnEvent
 Settings gSettings( "IPSettings.txt" );
 
@@ -47,20 +49,7 @@ std::function<void(void)> gNewImageFunc = NULL;
 LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lParam );
 BOOL CALLBACK AboutCbk( HWND hDlg , UINT message , WPARAM wParam , LPARAM lParam );
 
-typedef struct InsightData {
-  /* The image processor we're using */
-  ProcBase *processor;
-
-  /* Last mouse position */
-  int lx;
-  int ly; 
-
-  /* Last clicked position */
-  int cx;
-  int cy;
-} InsightData;
-
-InsightData *gData;
+MainClass *gData;
 
 /* Compresses RGB image into JPEG. Variables with the 'image_' prefix are for
  * the input image while variables with the 'output_' prefix are for the
@@ -132,13 +121,8 @@ void RGBtoJPEG( uint8_t** output_buf , unsigned long int* output_len ,
 }
 
 INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
-    InsightData insightData;
-    gData = &insightData;
-    insightData.lx = 0;
-    insightData.ly = 0;
-    insightData.cx = 0;
-    insightData.cy = 0;
-
+	MainClass mainClass;
+    gData = &mainClass;
     INITCOMMONCONTROLSEX icc;
 
     // Initialize common controls
@@ -205,7 +189,8 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             0 ,
             320 ,
             240 ,
-            Instance );
+            Instance,
+            &mainClass );
 
     gServer = new MjpegServer( std::atoi( gSettings.getValueFor(
             "streamServerPort" ).c_str() ) );
@@ -274,7 +259,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     uint32_t lastWidth = 0;
     uint32_t lastHeight = 0;
     FindTarget2014a processor;
-    insightData.processor = &processor;
+    mainClass.m_processor = &processor;
     /* ====================================== */
 
     // Image processing debugging is disabled by default
@@ -431,17 +416,6 @@ LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lP
         SendMessage( slider , TBM_SETPOS , (WPARAM)TRUE , (LPARAM)100 );
 
         break;
-    }
-    case WM_MOUSEMOVE: {
-      /* Mouse moved */
-      gData->lx = GET_X_LPARAM(lParam);
-      gData->ly = GET_Y_LPARAM(lParam);
-    }
-    case WM_LBUTTONDOWN: {
-      /* Button clicked */
-      gData->cx = gData->lx;
-      gData->cy = gData->ly;
-      gData->processor->clickEvent(gData->cx, gData->cy);
     }
     case WM_COMMAND: {
         switch( LOWORD(wParam) ) {

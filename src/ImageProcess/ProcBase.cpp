@@ -122,7 +122,7 @@ void ProcBase::overlayTargets() {
 }
 
 /* Empty clickEvent() function */
-void clickEvent(int x, int y)
+void ProcBase::clickEvent(int x, int y)
 {
 
 }

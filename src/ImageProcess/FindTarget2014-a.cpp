@@ -10,7 +10,12 @@
 #include "FindTarget2014-a.hpp"
 #include <stdio.h>
 
-void FindTarget2014a::prepareImage() {
+FindTarget2014a::FindTarget2014a() {
+	m_mx = 0;
+	m_my = 0;
+}
+
+void FindTarget2014a::findTargets() {
 #if 0
     cvCvtColor( m_cvRawImage , m_cvGrayChannel , CV_RGB2GRAY );
 
@@ -23,19 +28,39 @@ void FindTarget2014a::prepareImage() {
 #endif
 }
 
-void FindTarget2014a::findTargets() {
-    int b, g, r;
+void FindTarget2014a::prepareImage() {
+    /* int b, g, r; */
+	int v;
     int x, y;
     IplImage* img = m_cvRawImage;
+    IplImage *srcimg;
+    IplImage *dstimg;
 
+#if 1
     x = m_mx;
     y = m_my;
 
-    b = m_cvRawImage->imageData[img->widthStep * y * x * 3 + 0];
+    /* b = m_cvRawImage->imageData[img->widthStep * y * x * 3 + 0];
     g = m_cvRawImage->imageData[img->widthStep * y * x * 3 + 1];
-    r = m_cvRawImage->imageData[img->widthStep * y * x * 3 + 2];
+    r = m_cvRawImage->imageData[img->widthStep * y * x * 3 + 2]; */
 
-    printf("(%d, %d, %d)\n", r, g, b);
+    srcimg = cvCreateImage(cvSize(img->width, img->height), 8, 1);
+    dstimg = cvCreateImage(cvSize(img->width, img->height), 8, 1);
+    cvCvtColor(img, srcimg, CV_BGR2GRAY);
+    //cvAdaptiveThreshold(srcimg, dstimg, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 3, 0);
+    cvThreshold( srcimg , dstimg , 128 , 255 , CV_THRESH_BINARY );
+    /* cvCvtColor(srcimg, img, CV_GRAY2BGR); */
+
+    /* b = CV_IMAGE_ELEM( img, uchar, y, x * 3);
+    g = CV_IMAGE_ELEM( img, uchar, y, (x * 3) + 1);
+    r = CV_IMAGE_ELEM( img, uchar, y, (x * 3) + 2); */
+    v = CV_IMAGE_ELEM( dstimg, uchar, y, x );
+
+    /* printf("(%d, %d, %d)\n", r, g, b); */
+    printf("(%d)\n", v);
+
+#endif
+
 #if 0
     struct quad_t quad;
 
@@ -79,6 +104,7 @@ void FindTarget2014a::findTargets() {
 }
 
 void FindTarget2014a::clickEvent(int x, int y) {
+  printf("clickEvent(%d, %d)\n", x, y);
   m_mx = x;
   m_my = y;
 }

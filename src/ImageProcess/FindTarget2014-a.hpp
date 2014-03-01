@@ -11,6 +11,8 @@
 #include "ProcBase.hpp"
 
 class FindTarget2014a : public ProcBase {
+public:
+	FindTarget2014a();
 private:
     void prepareImage();
     void findTargets();

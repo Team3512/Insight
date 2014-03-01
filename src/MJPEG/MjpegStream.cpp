@@ -16,7 +16,10 @@
 
 #include <iostream>
 #include <wingdi.h>
+#include <windowsx.h>
 #include <cstring>
+
+MjpegStream *mjpegStreamGlobalPtr = NULL;
 
 std::map<HWND , MjpegStream*> MjpegStream::m_map;
 
@@ -94,7 +97,8 @@ MjpegStream::MjpegStream( const std::string& hostName ,
         int yPosition ,
         int width ,
         int height ,
-        HINSTANCE appInstance
+        HINSTANCE appInstance,
+        MjpegStreamCallback *ncallbacks
         ) :
         m_hostName( hostName ) ,
         m_port( port ) ,
@@ -138,6 +142,13 @@ MjpegStream::MjpegStream( const std::string& hostName ,
         m_stopReceive( true ) ,
         m_stopUpdate( true )
 {
+	/* HACK FIXME: Set up the global pointer */
+	mjpegStreamGlobalPtr = this;
+
+	/* Initialize the MjpegStreamCallback pointer */
+	m_ncallbacks = ncallbacks;
+
+	/* Initialize the parent window handle */
     m_parentWin = parentWin;
 
     m_streamWin = CreateWindowEx( 0 ,
@@ -694,7 +705,20 @@ LRESULT CALLBACK MjpegStream::WindowProc( HWND handle , UINT message , WPARAM wP
 
         break;
     }
+    case WM_MOUSEMOVE: {
+      /* Mouse moved */
+      mjpegStreamGlobalPtr->m_lx = GET_X_LPARAM(lParam);
+      mjpegStreamGlobalPtr->m_ly = GET_Y_LPARAM(lParam);
+      break;
+    }
 
+    case WM_LBUTTONDOWN: {
+      /* Button clicked */
+      mjpegStreamGlobalPtr->m_cx = mjpegStreamGlobalPtr->m_lx;
+      mjpegStreamGlobalPtr->m_cy = mjpegStreamGlobalPtr->m_ly;
+      mjpegStreamGlobalPtr->m_ncallbacks->clickEvent(mjpegStreamGlobalPtr->m_cx, mjpegStreamGlobalPtr->m_cy);
+      break;
+    }
     default: {
         return DefWindowProc( handle , message , wParam , lParam );
     }

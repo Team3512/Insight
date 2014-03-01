@@ -59,7 +59,7 @@
 								</option>
 								<option id="gnu.cpp.link.option.flags.1560513394" name="Linker flags" superClass="gnu.cpp.link.option.flags" value="-static-libgcc -static-libstdc++" valueType="string"/>
 								<option id="gnu.cpp.link.option.paths.1880004625" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="&quot;C:\Users\Classroom\Downloads\opencv\build\x86\vc10\staticlib&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\Users\Classroom\Downloads\opencv\build-gcc\lib&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\libjpeg-turbo-gcc\lib&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.752462783" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">

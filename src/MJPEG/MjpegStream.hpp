@@ -48,6 +48,8 @@
 #include "mjpegrx.h"
 #include "mjpeg_thread.h"
 
+#include "MjpegStreamCallback.hpp"
+
 #define WM_MJPEGSTREAM_START     (WM_APP + 0x0001)
 #define WM_MJPEGSTREAM_STOP      (WM_APP + 0x0002)
 #define WM_MJPEGSTREAM_NEWIMAGE  (WM_APP + 0x0003)
@@ -64,7 +66,8 @@ public:
             int yPosition ,
             int width ,
             int height ,
-            HINSTANCE appInstance
+            HINSTANCE appInstance,
+            MjpegStreamCallback *ncallbacks
             );
     virtual ~MjpegStream();
 
@@ -195,6 +198,14 @@ private:
      *     Closes update thread
      */
     std::atomic<bool> m_stopUpdate;
+
+    MjpegStreamCallback *m_ncallbacks;
+
+    /* Mouse position state variables */
+    int m_lx;
+    int m_ly;
+    int m_cx;
+    int m_cy;
 
     // Makes sure "Waiting..." graphic is drawn after timeout
     mjpeg_thread_t m_updateThread;
