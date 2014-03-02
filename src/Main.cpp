@@ -181,9 +181,9 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
      * causes the cleanup in this object's destructor to not complete
      * successfully.
      */
-    gStreamWinPtr = new MjpegStream( gSettings.getValueFor( "streamHost" ) ,
-            std::atoi( gSettings.getValueFor( "streamPort" ).c_str() ) ,
-            gSettings.getValueFor( "streamRequestPath" ) ,
+    gStreamWinPtr = new MjpegStream( gSettings.getString( "streamHost" ) ,
+            gSettings.getInt( "streamPort" ) ,
+            gSettings.getString( "streamRequestPath" ) ,
             mainWindow ,
             0 ,
             0 ,
@@ -192,8 +192,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             Instance,
             &mainClass );
 
-    gServer = new MjpegServer( std::atoi( gSettings.getValueFor(
-            "streamServerPort" ).c_str() ) );
+    gServer = new MjpegServer( gSettings.getInt( "streamServerPort" ) );
 
     /* ===== Robot Data Sending Variables ===== */
     gCtrlSocket = socket(AF_INET, SOCK_DGRAM, 0);
@@ -223,7 +222,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     bool newData = false;
 
     uint32_t robotIP = 0;
-    std::string robotIPStr = gSettings.getValueFor( "robotIP" );
+    std::string robotIPStr = gSettings.getString( "robotIP" );
 
     if ( robotIPStr == "255.255.255.255" ) {
         robotIP = INADDR_BROADCAST;
@@ -245,7 +244,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
         }
     }
 
-    unsigned short robotCtrlPort = std::atoi( gSettings.getValueFor( "robotControlPort" ).c_str() );
+    unsigned short robotCtrlPort = gSettings.getInt( "robotControlPort" );
 
     // Make sure control data isn't sent too fast
     sf::Clock sendTime;
@@ -263,7 +262,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     /* ====================================== */
 
     // Image processing debugging is disabled by default
-    if ( gSettings.getValueFor( "enableImgProcDebug" ) == "true" ) {
+    if ( gSettings.getString( "enableImgProcDebug" ) == "true" ) {
         processor.enableDebugging( true );
     }
 
