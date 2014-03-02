@@ -11,9 +11,16 @@
 #include "ProcBase.hpp"
 
 class FindTarget2014 : public ProcBase {
+public:
+	FindTarget2014();
 private:
     void prepareImage();
     void findTargets();
+    void clickEvent( int x , int y );
+
+    /* Mouse x and y position */
+    int m_mx;
+    int m_my;
 };
 
 #endif // FIND_TARGET_2014_HPP

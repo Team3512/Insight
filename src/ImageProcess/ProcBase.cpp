@@ -121,8 +121,6 @@ void ProcBase::overlayTargets() {
     }
 }
 
-/* Empty clickEvent() function */
-void ProcBase::clickEvent(int x, int y)
-{
-
+/* Empty clickEvent() function in case not overridden */
+void ProcBase::clickEvent( int x , int y ) {
 }

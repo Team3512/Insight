@@ -29,7 +29,7 @@
 #include "Settings.hpp"
 #include "Resource.h"
 
-#include "ImageProcess/FindTarget2014-a.hpp"
+#include "ImageProcess/FindTarget2014.hpp"
 
 #include "MainClass.hpp"
 
@@ -257,7 +257,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     uint32_t imgHeight = 0;
     uint32_t lastWidth = 0;
     uint32_t lastHeight = 0;
-    FindTarget2014a processor;
+    FindTarget2014 processor;
     mainClass.m_processor = &processor;
     /* ====================================== */
 

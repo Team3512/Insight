@@ -44,7 +44,7 @@ public:
     void enableDebugging( bool enable );
 
     // Click event
-    virtual void clickEvent(int x, int y);
+    virtual void clickEvent( int x , int y );
 
 protected:
     // Internal OpenCV primitives
