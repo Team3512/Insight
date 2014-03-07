@@ -12,11 +12,11 @@
 FindTarget2014::FindTarget2014() {
 	m_mx = 0;
 	m_my = 0;
+	m_foundTarget = false;
 }
 
 void FindTarget2014::prepareImage() {
     /* int b, g, r; */
-    int v;
     int x, y;
 
     x = m_mx;
@@ -35,10 +35,10 @@ void FindTarget2014::prepareImage() {
     /* b = CV_IMAGE_ELEM( m_cvRawImage, uchar, y, x * 3);
     g = CV_IMAGE_ELEM( m_cvRawImage, uchar, y, (x * 3) + 1);
     r = CV_IMAGE_ELEM( m_cvRawImage, uchar, y, (x * 3) + 2); */
-    v = CV_IMAGE_ELEM( m_cvGrayChannel, uchar, y, x );
+    m_foundTarget = CV_IMAGE_ELEM( m_cvGrayChannel, uchar, y, x );
 
     /* printf("(%d, %d, %d)\n", r, g, b); */
-    printf("(%d)\n", v);
+    printf("(%d)\n", static_cast<int>(m_foundTarget));
 }
 
 void FindTarget2014::findTargets() {
@@ -48,4 +48,8 @@ void FindTarget2014::clickEvent( int x , int y ) {
     printf("clickEvent(%d, %d)\n", x, y);
     m_mx = x;
     m_my = y;
+}
+
+bool FindTarget2014::foundTarget() const {
+    return m_foundTarget;
 }

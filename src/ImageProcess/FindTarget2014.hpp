@@ -13,6 +13,12 @@
 class FindTarget2014 : public ProcBase {
 public:
 	FindTarget2014();
+
+    /* Returns true if point selected is bright enough to be considered part
+     * of a target
+     */
+    bool foundTarget() const;
+
 private:
     void prepareImage();
     void findTargets();
@@ -21,6 +27,8 @@ private:
     /* Mouse x and y position */
     int m_mx;
     int m_my;
+
+    bool m_foundTarget;
 };
 
 #endif // FIND_TARGET_2014_HPP

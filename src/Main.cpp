@@ -217,7 +217,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
      *     char y
      * 2 empty bytes
      */
-    char data[17] = "ctrl\r\n\0\0";
+    char data[9] = "ctrl\r\n\0\0";
     std::memset( data + 8 , 0 , sizeof(data) - 8 );
     bool newData = false;
 
@@ -308,6 +308,10 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             RGBtoJPEG( &serveImg , &serveLen , gJpegQuality , tempImg , imgWidth , imgHeight );
             gServer->serveImage( serveImg , serveLen );
 
+            // Send status on target search to robot
+            data[8] = processor.foundTarget();
+
+#if 0
             // Retrieve positions of targets and send them to robot
             if ( processor.getTargetPositions().size() > 0 ) {
                 char x = 0;
@@ -340,6 +344,8 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
                 // We have new target data to send to the robot
                 newData = true;
             }
+#endif
+            newData = true;
 
             // Update width and height
             lastWidth = imgWidth;
