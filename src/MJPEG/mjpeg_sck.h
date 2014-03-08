@@ -31,6 +31,13 @@ typedef int mjpeg_socket_t;
 
 #endif
 
+typedef enum mjpeg_sck_status {
+    SCK_DONE,       // The socket has sent/received the data
+    SCK_NOTREADY,   // The socket is not ready to send/receive data yet
+    SCK_DISCONNECT, // The TCP socket has been disconnected
+    SCK_ERROR       // An unexpected error occurred
+} mjpeg_sck_status;
+
 /* Returns 1 if socket is valid
  * Returns 0 if socket is invalid
  */
@@ -40,6 +47,9 @@ int mjpeg_sck_valid(mjpeg_socket_t sd);
  * enable == 0 sets socket to blocking
  */
 int mjpeg_sck_setnonblocking(mjpeg_socket_t sd, int enable);
+
+/* Returns platform independent error condition */
+mjpeg_sck_status mjpeg_sck_geterror();
 
 int mjpeg_sck_close(mjpeg_socket_t sd);
 
