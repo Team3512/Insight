@@ -61,7 +61,7 @@ void ProcBase::processImage() {
 
     findTargets();
 
-    overlayTargets();
+    drawOverlay();
     if ( m_debugEnabled && m_cvRawImage != NULL ) {
         cvSaveImage( "processedImage.png" , m_cvRawImage , NULL );
     }
@@ -108,19 +108,12 @@ void ProcBase::enableDebugging( bool enable ) {
     m_debugEnabled = enable;
 }
 
-void ProcBase::overlayTargets() {
-    // R , G , B , A
-    CvScalar lineColor = cvScalar( 0x00 , 0xFF , 0x00 , 0xFF );
-
-    // Draw lines to show user where the targets are
-    for ( std::vector<quad_t>::iterator i = m_targets.begin() ; i != m_targets.end() ; i++ ) {
-        cvLine( m_cvRawImage , i->point[0] , i->point[1] , lineColor , 2 , 8 , 0 );
-        cvLine( m_cvRawImage , i->point[1] , i->point[2] , lineColor , 2 , 8 , 0 );
-        cvLine( m_cvRawImage , i->point[2] , i->point[3] , lineColor , 2 , 8 , 0 );
-        cvLine( m_cvRawImage , i->point[3] , i->point[0] , lineColor , 2 , 8 , 0 );
-    }
+void ProcBase::findTargets() {
 }
 
-/* Empty clickEvent() function in case not overridden */
+void ProcBase::drawOverlay() {
+}
+
+// Empty clickEvent() function in case not overridden
 void ProcBase::clickEvent( int x , int y ) {
 }

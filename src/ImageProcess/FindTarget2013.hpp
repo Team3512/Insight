@@ -14,6 +14,7 @@ class FindTarget2013 : public ProcBase {
 private:
     void prepareImage();
     void findTargets();
+    void drawOverlay();
 };
 
 #endif // FIND_TARGET_2013_HPP

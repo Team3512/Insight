@@ -41,7 +41,24 @@ void FindTarget2014::prepareImage() {
     printf("(%d)\n", static_cast<int>(m_foundTarget));
 }
 
-void FindTarget2014::findTargets() {
+void FindTarget2014::drawOverlay() {
+    // R , G , B , A
+    CvScalar lineColor = cvScalar( 0x00 , 0xFF , 0x00 , 0xFF );
+
+    // Determines scale of drawn box compared to full image
+    float scale = 0.5;
+
+    // Contain top-left and bottom-right corners of box respectively
+    CvPoint box[2];
+
+    // Calculate top-left and bottom-right points
+    box[0].x = m_cvRawImage->width * (1 - scale) / 2.f;
+    box[0].y = m_cvRawImage->height * (1 - scale) / 2.f;
+    box[1].x = m_cvRawImage->width * scale / 2.f;
+    box[1].y = m_cvRawImage->height * scale / 2.f;
+
+    // Draw rectangle with points of box
+    cvRectangle( m_cvRawImage , box[0] , box[1] , lineColor );
 }
 
 void FindTarget2014::clickEvent( int x , int y ) {

@@ -21,7 +21,7 @@ public:
 
 private:
     void prepareImage();
-    void findTargets();
+    void drawOverlay();
     void clickEvent( int x , int y );
 
     /* Mouse x and y position */

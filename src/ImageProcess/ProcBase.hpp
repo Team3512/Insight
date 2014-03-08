@@ -58,9 +58,8 @@ private:
 
     // Override these to process different objects
     virtual void prepareImage() = 0;
-    virtual void findTargets() = 0;
-
-    void overlayTargets();
+    virtual void findTargets();
+    virtual void drawOverlay();
 };
 
 #endif // PROC_BASE_HPP
