@@ -31,7 +31,7 @@
 
 #include "ImageProcess/FindTarget2014.hpp"
 
-#include "MainClass.hpp"
+#include "ProcessorClass.hpp"
 
 // Global because IP configuration settings are needed in CALLBACK OnEvent
 Settings gSettings( "IPSettings.txt" );
@@ -48,8 +48,6 @@ std::function<void(void)> gNewImageFunc = NULL;
 
 LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lParam );
 BOOL CALLBACK AboutCbk( HWND hDlg , UINT message , WPARAM wParam , LPARAM lParam );
-
-MainClass *gData;
 
 /* Compresses RGB image into JPEG. Variables with the 'image_' prefix are for
  * the input image while variables with the 'output_' prefix are for the
@@ -121,8 +119,6 @@ void RGBtoJPEG( uint8_t** output_buf , unsigned long int* output_len ,
 }
 
 INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
-	MainClass mainClass;
-    gData = &mainClass;
     INITCOMMONCONTROLSEX icc;
 
     // Initialize common controls
@@ -175,6 +171,9 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             Instance ,
             NULL );
 
+    FindTarget2014 processor;
+    ProcessorClass processorClass( &processor );
+
     /* If this isn't allocated on the heap, it can't be destroyed soon enough.
      * If it were allocated on the stack, it would be destroyed when it leaves
      * WinMain's scope, which is after its parent window is destroyed. This
@@ -190,7 +189,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             320 ,
             240 ,
             Instance,
-            &mainClass );
+            &processorClass );
 
     gServer = new MjpegServer( gSettings.getInt( "streamServerPort" ) );
 
@@ -257,8 +256,6 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     uint32_t imgHeight = 0;
     uint32_t lastWidth = 0;
     uint32_t lastHeight = 0;
-    FindTarget2014 processor;
-    mainClass.m_processor = &processor;
     /* ====================================== */
 
     // Image processing debugging is disabled by default

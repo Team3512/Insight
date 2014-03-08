@@ -1,12 +1,11 @@
-/*
- * MjpegStreamCallback.hpp
- *
- *  Created on: Feb 28, 2014
- *      Author: Classroom
- */
+//=============================================================================
+//File Name: MjpegStreamCallback.hpp
+//Description: Provides callback interface for MjpegStream's window events
+//Author: FRC Team 3512, Spartatroniks
+//=============================================================================
 
-#ifndef MJPEGSTREAMCALLBACK_HPP_
-#define MJPEGSTREAMCALLBACK_HPP_
+#ifndef MJPEG_STREAM_CALLBACK_HPP
+#define MJPEG_STREAM_CALLBACK_HPP
 
 class MjpegStreamCallback {
 public:
@@ -14,4 +13,4 @@ public:
 	virtual void clickEvent(int x, int y) = 0;
 };
 
-#endif /* MJPEGSTREAMCALLBACK_HPP_ */
+#endif // MJPEG_STREAM_CALLBACK_HPP
