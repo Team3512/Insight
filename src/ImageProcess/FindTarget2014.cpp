@@ -21,13 +21,15 @@ void FindTarget2014::prepareImage() {
     //cv::adaptiveThreshold(m_grayChannel, m_grayChannel, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 3, 0);
     cv::threshold( m_grayChannel , m_grayChannel , 128 , 255 , CV_THRESH_BINARY );
 
-    /* A pixel returned from at() here will be either 255 in all channels or 0,
-     * which casts to either true or false respectively
+    /* A pixel (1 channel) returned from at() here will be either 255 in all
+     * channels or 0, which casts to either true or false respectively.
      */
-
-    m_foundTarget = m_grayChannel.at<int>( m_my , m_mx );
-
-    printf("(%d)\n", static_cast<int>(m_foundTarget));
+    if ( m_grayChannel.at<uint8_t>( m_my , m_mx ) ) {
+        m_foundTarget = true;
+    }
+    else {
+        m_foundTarget = false;
+    }
 }
 
 void FindTarget2014::drawOverlay() {
@@ -43,11 +45,11 @@ void FindTarget2014::drawOverlay() {
     // Calculate top-left and bottom-right points
     box[0].x = m_rawImage.cols * (1.f - scale) / 2.f;
     box[0].y = m_rawImage.rows * (1.f - scale) / 2.f;
-    box[1].x = m_rawImage.cols * scale / 2.f;
-    box[1].y = m_rawImage.rows * scale / 2.f;
+    box[1].x = m_rawImage.cols * (1.f + scale) / 2.f;
+    box[1].y = m_rawImage.rows * (1.f + scale) / 2.f;
 
     // Draw rectangle with points of box
-    cv::rectangle( m_rawImage , box[0] , box[1] , lineColor );
+    cv::rectangle( m_rawImage , box[0] , box[1] , lineColor , 2 );
 }
 
 void FindTarget2014::clickEvent( int x , int y ) {
