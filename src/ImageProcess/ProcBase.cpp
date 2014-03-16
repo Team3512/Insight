@@ -7,100 +7,58 @@
 
 #include <cstddef>
 #include <cstring>
-#include <opencv2/imgproc/imgproc_c.h>
-#include <opencv2/highgui/highgui_c.h>
+#include <opencv2/highgui/highgui.hpp>
 #include "ProcBase.hpp"
 
-ProcBase::ProcBase() :
-        m_cvRawImage( NULL ) ,
-        m_cvGrayChannel( NULL ) ,
-        m_debugEnabled( false ) {
-
+ProcBase::ProcBase() : m_debugEnabled( false ) {
 }
 
 ProcBase::~ProcBase() {
-    if ( m_cvRawImage != NULL ) {
-        cvReleaseImage( &m_cvRawImage );
-    }
-
-    if ( m_cvGrayChannel != NULL ) {
-        cvReleaseImage( &m_cvGrayChannel );
-    }
 }
 
 void ProcBase::setImage( uint8_t* image , uint32_t width , uint32_t height ) {
-    // Free old image if there is one
-    if ( m_cvRawImage != NULL ) {
-        cvReleaseImage( &m_cvRawImage );
-    }
-    if ( m_cvGrayChannel != NULL ) {
-        cvReleaseImage( &m_cvGrayChannel );
-    }
-
-    CvSize size;
-    size.width = width;
-    size.height = height;
-
     // Create new image and store data from provided image into it
-    m_cvRawImage = cvCreateImage( size , IPL_DEPTH_8U , 3 );
-    std::memcpy( m_cvRawImage->imageData , image , width * height * 3 );
+    m_rawImage = cv::Mat( height , width , CV_8UC(3) , image );
 
     // Used later after image is processed
-    m_cvGrayChannel = cvCreateImage( size , IPL_DEPTH_8U , 1 );
+    m_grayChannel.create( width , height , CV_8UC(1) );
 }
 
 void ProcBase::processImage() {
     if ( m_debugEnabled ) {
-        cvSaveImage( "rawImage.png" , m_cvRawImage , NULL );
+        cv::imwrite( "rawImage.png" , m_rawImage );
     }
 
     prepareImage();
     if ( m_debugEnabled ) {
-        cvSaveImage( "prepareImage.png" , m_cvGrayChannel , NULL );
+        cv::imwrite( "preparedImage.png" , m_grayChannel );
     }
 
     findTargets();
 
     drawOverlay();
-    if ( m_debugEnabled && m_cvRawImage != NULL ) {
-        cvSaveImage( "processedImage.png" , m_cvRawImage , NULL );
+    if ( m_debugEnabled ) {
+        cv::imwrite( "processedImage.png" , m_rawImage );
     }
 }
 
-void ProcBase::getProcessedImage( uint8_t* buffer ) {
-    if ( m_cvRawImage != NULL ) {
-        std::memcpy( buffer , m_cvRawImage->imageData , m_cvRawImage->width * m_cvRawImage->height * m_cvRawImage->nChannels );
-    }
+uint8_t* ProcBase::getProcessedImage() const {
+    return m_rawImage.data;
 }
 
-uint32_t ProcBase::getProcessedWidth() {
-    if ( m_cvRawImage != NULL ) {
-        return m_cvRawImage->width;
-    }
-    else {
-        return 0;
-    }
+uint32_t ProcBase::getProcessedWidth() const {
+    return m_rawImage.cols;
 }
 
-uint32_t ProcBase::getProcessedHeight() {
-    if ( m_cvRawImage != NULL ) {
-        return m_cvRawImage->height;
-    }
-    else {
-        return 0;
-    }
+uint32_t ProcBase::getProcessedHeight() const {
+    return m_rawImage.rows;
 }
 
-uint32_t ProcBase::getProcessedNumChannels() {
-    if ( m_cvRawImage != NULL ) {
-        return m_cvRawImage->nChannels;
-    }
-    else {
-        return 0;
-    }
+uint32_t ProcBase::getProcessedNumChannels() const {
+    return m_rawImage.channels();
 }
 
-const std::vector<quad_t>& ProcBase::getTargetPositions() {
+const std::vector<quad_t>& ProcBase::getTargetPositions() const {
     return m_targets;
 }
 

@@ -295,8 +295,6 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             processor.setImage( tempImg , imgWidth , imgHeight );
             processor.processImage();
 
-            processor.getProcessedImage( tempImg );
-
             std::free( serveImg );
             serveImg = NULL;
             serveLen = 0;

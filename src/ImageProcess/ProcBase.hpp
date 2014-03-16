@@ -10,7 +10,7 @@
 
 #include <cstdint>
 #include <vector>
-#include <opencv2/core/types_c.h>
+#include <opencv2/core/core.hpp>
 #include "quad_t.h"
 
 class ProcBase {
@@ -20,23 +20,24 @@ public:
 
     /* Sets internal image to process
      *
-     * The data is copied from the image provided into an internal format, so
-     * the pointer isn't retained. An RGB image is expected.
+     * The data's pointer is copied and all image processing is done directly
+     * to that buffer. Since a shallow copy is used, the buffer must exist for
+     * the duration of processing. An RGB image is expected.
      */
     void setImage( uint8_t* image , uint32_t width , uint32_t height );
 
     // Processes provided image with the overriden functions
     void processImage();
 
-    // Copies the processed image into the provided buffer (
-    void getProcessedImage( uint8_t* buffer );
+    // Returns buffer used to contain OpenCV image
+    uint8_t* getProcessedImage() const;
 
     // Returns dimensions of processed image
-    uint32_t getProcessedWidth();
-    uint32_t getProcessedHeight();
-    uint32_t getProcessedNumChannels();
+    uint32_t getProcessedWidth() const;
+    uint32_t getProcessedHeight() const;
+    uint32_t getProcessedNumChannels() const;
 
-    const std::vector<quad_t>& getTargetPositions();
+    const std::vector<quad_t>& getTargetPositions() const;
 
     /* When enabled, PNG images of the intermediate processing steps are saved
      * to disk.
@@ -48,8 +49,8 @@ public:
 
 protected:
     // Internal OpenCV primitives
-    IplImage* m_cvRawImage; // Raw image
-    IplImage* m_cvGrayChannel; // Prepared grayscale channel (output of prepareImage())
+    cv::Mat m_rawImage; // Raw image
+    cv::Mat m_grayChannel; // Prepared grayscale channel (output of prepareImage())
 
     std::vector<quad_t> m_targets;
 

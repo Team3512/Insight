@@ -5,7 +5,7 @@
 //Author: FRC Team 3512, Spartatroniks
 //=============================================================================
 
-#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/imgproc/imgproc.hpp>
 #include "FindTarget2014.hpp"
 #include <stdio.h>
 
@@ -16,49 +16,38 @@ FindTarget2014::FindTarget2014() {
 }
 
 void FindTarget2014::prepareImage() {
-    /* int b, g, r; */
-    int x, y;
+    cv::cvtColor( m_rawImage , m_grayChannel , CV_BGR2GRAY );
 
-    x = m_mx;
-    y = m_my;
+    //cv::adaptiveThreshold(m_grayChannel, m_grayChannel, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 3, 0);
+    cv::threshold( m_grayChannel , m_grayChannel , 128 , 255 , CV_THRESH_BINARY );
 
-    cvCvtColor( m_cvRawImage , m_cvGrayChannel , CV_RGB2GRAY );
+    /* A pixel returned from at() here will be either 255 in all channels or 0,
+     * which casts to either true or false respectively
+     */
 
-    /* b = m_cvRawImage->imageData[m_cvRawImage->widthStep * y * x * 3 + 0];
-    g = m_cvRawImage->imageData[m_cvRawImage->widthStep * y * x * 3 + 1];
-    r = m_cvRawImage->imageData[m_cvRawImage->widthStep * y * x * 3 + 2]; */
+    m_foundTarget = m_grayChannel.at<int>( m_my , m_mx );
 
-    //cvAdaptiveThreshold(m_cvGrayChannel, m_cvGrayChannel, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 3, 0);
-    cvThreshold( m_cvGrayChannel , m_cvGrayChannel , 128 , 255 , CV_THRESH_BINARY );
-    //cvCvtColor( m_cvGrayChannel, m_cvRawImage , CV_GRAY2BGR );
-
-    /* b = CV_IMAGE_ELEM( m_cvRawImage, uchar, y, x * 3);
-    g = CV_IMAGE_ELEM( m_cvRawImage, uchar, y, (x * 3) + 1);
-    r = CV_IMAGE_ELEM( m_cvRawImage, uchar, y, (x * 3) + 2); */
-    m_foundTarget = CV_IMAGE_ELEM( m_cvGrayChannel, uchar, y, x );
-
-    /* printf("(%d, %d, %d)\n", r, g, b); */
     printf("(%d)\n", static_cast<int>(m_foundTarget));
 }
 
 void FindTarget2014::drawOverlay() {
     // R , G , B , A
-    CvScalar lineColor = cvScalar( 0x00 , 0xFF , 0x00 , 0xFF );
+    cv::Scalar lineColor = cvScalar( 0x00 , 0xFF , 0x00 , 0xFF );
 
     // Determines scale of drawn box compared to full image
     float scale = 0.5;
 
     // Contain top-left and bottom-right corners of box respectively
-    CvPoint box[2];
+    cv::Point box[2];
 
     // Calculate top-left and bottom-right points
-    box[0].x = m_cvRawImage->width * (1 - scale) / 2.f;
-    box[0].y = m_cvRawImage->height * (1 - scale) / 2.f;
-    box[1].x = m_cvRawImage->width * scale / 2.f;
-    box[1].y = m_cvRawImage->height * scale / 2.f;
+    box[0].x = m_rawImage.cols * (1.f - scale) / 2.f;
+    box[0].y = m_rawImage.rows * (1.f - scale) / 2.f;
+    box[1].x = m_rawImage.cols * scale / 2.f;
+    box[1].y = m_rawImage.rows * scale / 2.f;
 
     // Draw rectangle with points of box
-    cvRectangle( m_cvRawImage , box[0] , box[1] , lineColor );
+    cv::rectangle( m_rawImage , box[0] , box[1] , lineColor );
 }
 
 void FindTarget2014::clickEvent( int x , int y ) {

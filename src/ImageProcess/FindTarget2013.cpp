@@ -5,18 +5,24 @@
 //Author: FRC Team 3512, Spartatroniks
 //=============================================================================
 
-#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/imgproc/imgproc_c.h> // For contour finding
 #include "FindTarget2013.hpp"
 
 void FindTarget2013::prepareImage() {
-    cvCvtColor( m_cvRawImage , m_cvGrayChannel , CV_RGB2GRAY );
+    cv::cvtColor( m_rawImage , m_grayChannel , CV_RGB2GRAY );
 
     /* Apply binary threshold to all channels
      * (Eliminates cross-hatching artifact in soft blacks)
      */
-    cvThreshold( m_cvGrayChannel , m_cvGrayChannel , 128 , 255 , CV_THRESH_BINARY );
+    cv::threshold( m_grayChannel , m_grayChannel , 128 , 255 , CV_THRESH_BINARY );
 
-    cvDilate( m_cvGrayChannel , m_cvGrayChannel , NULL , 2 );
+    // Perform dilation
+    int dilationSize = 2;
+    cv::Mat element = getStructuringElement( cv::MORPH_RECT,
+            cv::Size( 2 * dilationSize + 1 , 2 * dilationSize + 1 ),
+            cv::Point( dilationSize , dilationSize ) );
+    cv::dilate( m_grayChannel , m_grayChannel , element );
 }
 
 void FindTarget2013::findTargets() {
@@ -30,8 +36,8 @@ void FindTarget2013::findTargets() {
     m_targets.clear();
 
     // Find the contours of the targets
-    scanner = cvStartFindContours( m_cvGrayChannel , storage , sizeof(CvContour),
-            CV_RETR_LIST , CV_CHAIN_APPROX_SIMPLE , cvPoint( 0 , 0 ) );
+    scanner = cvStartFindContours( m_grayChannel.data , storage , sizeof(CvContour),
+            CV_RETR_LIST , CV_CHAIN_APPROX_SIMPLE , cv::Point( 0 , 0 ) );
 
     while( (ctr = cvFindNextContour(scanner)) != NULL ) {
         // Approximate the polygon, and find the points
@@ -66,9 +72,9 @@ void FindTarget2013::drawOverlay() {
 
     // Draw lines to show user where the targets are
     for ( std::vector<quad_t>::iterator i = m_targets.begin() ; i != m_targets.end() ; i++ ) {
-        cvLine( m_cvRawImage , i->point[0] , i->point[1] , lineColor , 2 , 8 , 0 );
-        cvLine( m_cvRawImage , i->point[1] , i->point[2] , lineColor , 2 , 8 , 0 );
-        cvLine( m_cvRawImage , i->point[2] , i->point[3] , lineColor , 2 , 8 , 0 );
-        cvLine( m_cvRawImage , i->point[3] , i->point[0] , lineColor , 2 , 8 , 0 );
+        cv::line( m_rawImage , i->point[0] , i->point[1] , lineColor , 2 , 8 , 0 );
+        cv::line( m_rawImage , i->point[1] , i->point[2] , lineColor , 2 , 8 , 0 );
+        cv::line( m_rawImage , i->point[2] , i->point[3] , lineColor , 2 , 8 , 0 );
+        cv::line( m_rawImage , i->point[3] , i->point[0] , lineColor , 2 , 8 , 0 );
     }
 }
