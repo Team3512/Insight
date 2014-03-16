@@ -5,8 +5,6 @@
 //Author: FRC Team 3512, Spartatroniks
 //=============================================================================
 
-#include <cstddef>
-#include <cstring>
 #include <opencv2/highgui/highgui.hpp>
 #include "ProcBase.hpp"
 

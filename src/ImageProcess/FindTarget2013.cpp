@@ -10,7 +10,7 @@
 #include "FindTarget2013.hpp"
 
 void FindTarget2013::prepareImage() {
-    cv::cvtColor( m_rawImage , m_grayChannel , CV_RGB2GRAY );
+    cv::cvtColor( m_rawImage , m_grayChannel , CV_BGR2GRAY );
 
     /* Apply binary threshold to all channels
      * (Eliminates cross-hatching artifact in soft blacks)
@@ -72,9 +72,9 @@ void FindTarget2013::drawOverlay() {
 
     // Draw lines to show user where the targets are
     for ( std::vector<quad_t>::iterator i = m_targets.begin() ; i != m_targets.end() ; i++ ) {
-        cv::line( m_rawImage , i->point[0] , i->point[1] , lineColor , 2 , 8 , 0 );
-        cv::line( m_rawImage , i->point[1] , i->point[2] , lineColor , 2 , 8 , 0 );
-        cv::line( m_rawImage , i->point[2] , i->point[3] , lineColor , 2 , 8 , 0 );
-        cv::line( m_rawImage , i->point[3] , i->point[0] , lineColor , 2 , 8 , 0 );
+        cv::line( m_rawImage , i->point[0] , i->point[1] , lineColor , 2 );
+        cv::line( m_rawImage , i->point[1] , i->point[2] , lineColor , 2 );
+        cv::line( m_rawImage , i->point[2] , i->point[3] , lineColor , 2 );
+        cv::line( m_rawImage , i->point[3] , i->point[0] , lineColor , 2 );
     }
 }

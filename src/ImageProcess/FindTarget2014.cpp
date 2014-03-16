@@ -7,7 +7,6 @@
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include "FindTarget2014.hpp"
-#include <stdio.h>
 
 FindTarget2014::FindTarget2014() {
 	m_mx = 0;
@@ -53,7 +52,6 @@ void FindTarget2014::drawOverlay() {
 }
 
 void FindTarget2014::clickEvent( int x , int y ) {
-    printf("clickEvent(%d, %d)\n", x, y);
     m_mx = x;
     m_my = y;
 }
