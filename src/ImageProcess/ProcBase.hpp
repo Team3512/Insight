@@ -11,7 +11,8 @@
 #include <cstdint>
 #include <vector>
 #include <opencv2/core/core.hpp>
-#include "quad_t.h"
+
+typedef std::vector<cv::Point> Target;
 
 class ProcBase {
 public:
@@ -37,7 +38,7 @@ public:
     uint32_t getProcessedHeight() const;
     uint32_t getProcessedNumChannels() const;
 
-    const std::vector<quad_t>& getTargetPositions() const;
+    const std::vector<Target>& getTargetPositions() const;
 
     /* When enabled, PNG images of the intermediate processing steps are saved
      * to disk.
@@ -52,7 +53,7 @@ protected:
     cv::Mat m_rawImage; // Raw image
     cv::Mat m_grayChannel; // Prepared grayscale channel (output of prepareImage())
 
-    std::vector<quad_t> m_targets;
+    std::vector<Target> m_targets;
 
 private:
     bool m_debugEnabled;

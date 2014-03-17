@@ -56,7 +56,7 @@ uint32_t ProcBase::getProcessedNumChannels() const {
     return m_rawImage.channels();
 }
 
-const std::vector<quad_t>& ProcBase::getTargetPositions() const {
+const std::vector<Target>& ProcBase::getTargetPositions() const {
     return m_targets;
 }
 

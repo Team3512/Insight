@@ -6,7 +6,6 @@
 //=============================================================================
 
 #include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/imgproc/imgproc_c.h> // For contour finding
 #include "FindTarget2013.hpp"
 
 void FindTarget2013::prepareImage() {
@@ -26,44 +25,25 @@ void FindTarget2013::prepareImage() {
 }
 
 void FindTarget2013::findTargets() {
-    struct quad_t quad;
-
-    CvMemStorage* storage = cvCreateMemStorage( 0 );
-    CvContourScanner scanner;
-    CvSeq* ctr;
+    Target target;
 
     // Clear list of targets because we found new targets
     m_targets.clear();
 
+    std::vector<std::vector<cv::Point>> contours;
+    std::vector<cv::Vec4i> hierarchy;
+
     // Find the contours of the targets
-    scanner = cvStartFindContours( m_grayChannel.data , storage , sizeof(CvContour),
-            CV_RETR_LIST , CV_CHAIN_APPROX_SIMPLE , cv::Point( 0 , 0 ) );
+    cv::findContours( m_grayChannel , contours , hierarchy , CV_RETR_LIST , CV_CHAIN_APPROX_SIMPLE );
 
-    while( (ctr = cvFindNextContour(scanner)) != NULL ) {
-        // Approximate the polygon, and find the points
-        ctr = cvApproxPoly( ctr , sizeof(CvContour) , storage ,
-                CV_POLY_APPROX_DP , 10 , 0 );
+    for ( unsigned int i = 0 ; i < contours.size() ; i++ ) {
+        target.clear();
+        cv::approxPolyDP( contours[i] , target , 10 , true );
 
-        // If contour not found or polygon is wrong shape
-        if( ctr == NULL || ctr->total != 4 ) {
-            continue;
+        if ( target.size() == 4 ) {
+            m_targets.push_back( target );
         }
-
-        // Extract the points
-        for( int i = 0 ; i < 4 ; i++ ) {
-            quad.point[i] = *CV_GET_SEQ_ELEM( CvPoint , ctr , i );
-        }
-
-        // Sort the quadrilateral's points counter-clockwise
-        sortquad( &quad );
-
-        m_targets.push_back( quad );
     }
-
-    // Clean up from finding our contours
-    cvEndFindContours( &scanner );
-    cvClearMemStorage( storage );
-    cvReleaseMemStorage( &storage );
 }
 
 void FindTarget2013::drawOverlay() {
@@ -71,10 +51,10 @@ void FindTarget2013::drawOverlay() {
     CvScalar lineColor = cvScalar( 0x00 , 0xFF , 0x00 , 0xFF );
 
     // Draw lines to show user where the targets are
-    for ( std::vector<quad_t>::iterator i = m_targets.begin() ; i != m_targets.end() ; i++ ) {
-        cv::line( m_rawImage , i->point[0] , i->point[1] , lineColor , 2 );
-        cv::line( m_rawImage , i->point[1] , i->point[2] , lineColor , 2 );
-        cv::line( m_rawImage , i->point[2] , i->point[3] , lineColor , 2 );
-        cv::line( m_rawImage , i->point[3] , i->point[0] , lineColor , 2 );
+    for ( std::vector<Target>::iterator i = m_targets.begin() ; i != m_targets.end() ; i++ ) {
+        cv::line( m_rawImage , (*i)[0] , (*i)[1] , lineColor , 2 );
+        cv::line( m_rawImage , (*i)[1] , (*i)[2] , lineColor , 2 );
+        cv::line( m_rawImage , (*i)[2] , (*i)[3] , lineColor , 2 );
+        cv::line( m_rawImage , (*i)[3] , (*i)[0] , lineColor , 2 );
     }
 }

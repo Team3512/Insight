@@ -208,14 +208,11 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     // Initialize the JPEG compression object
     jpeg_create_compress( &cinfo );
 
-    // Specify data destination (eg, memory buffer)
-    jpeg_mem_dest( &cinfo , &serveImg , &serveLen );
-
     /* First we supply a description of the input image. Four fields of the
      * cinfo struct must be filled in:
      */
-    cinfo.image_width = 320;     // image width, in pixels
-    cinfo.image_height = 240;   // image height, in pixels
+    cinfo.image_width = 320;             // image width, in pixels
+    cinfo.image_height = 240;            // image height, in pixels
     cinfo.input_components = 3;          // # of color components per pixel
     cinfo.in_color_space = JCS_EXT_BGR;  // colorspace of input image
 
@@ -259,6 +256,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             std::free( serveImg );
             serveImg = NULL;
 
+            // Specify data destination (e.g. memory buffer)
             jpeg_mem_dest( &cinfo , &serveImg , &serveLen );
 
             /* ===== Convert RGB image to JPEG ===== */
