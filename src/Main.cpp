@@ -16,7 +16,6 @@
 #include <cstdlib>
 #include <cstdint>
 #include <cstring>
-#include <cstdio>
 #include <atomic>
 #include <functional>
 #include <jpeglib.h>
@@ -48,75 +47,6 @@ std::function<void(void)> gNewImageFunc = NULL;
 
 LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lParam );
 BOOL CALLBACK AboutCbk( HWND hDlg , UINT message , WPARAM wParam , LPARAM lParam );
-
-/* Compresses RGB image into JPEG. Variables with the 'image_' prefix are for
- * the input image while variables with the 'output_' prefix are for the
- * outputted JPEG. 'quality' is the JPEG compression quality factor.
- */
-void RGBtoJPEG( uint8_t** output_buf , unsigned long int* output_len ,
-        int quality , uint8_t* image_data , uint32_t image_width ,
-        uint32_t image_height ) {
-    struct jpeg_compress_struct cinfo;
-    struct jpeg_error_mgr jerr;
-
-    JSAMPROW row_pointer; // pointer to start of scanline (row of image)
-
-    /* Step 1: allocate and initialize JPEG compression object */
-
-    // Set up the error handler
-    cinfo.err = jpeg_std_error( &jerr );
-
-    // Initialize the JPEG compression object
-    jpeg_create_compress( &cinfo );
-
-    /* Step 2: specify data destination (eg, a file) */
-    // Note: steps 2 and 3 can be done in either order
-
-    /* Here we use the library-supplied code to send compressed data to a
-     * memory buffer.
-     */
-    jpeg_mem_dest( &cinfo , output_buf , output_len );
-
-    /* Step 3: set parameters for compression */
-
-    /* First we supply a description of the input image. Four fields of the
-     * cinfo struct must be filled in:
-     */
-    cinfo.image_width = image_width;     // image width, in pixels
-    cinfo.image_height = image_height;   // image height, in pixels
-    cinfo.input_components = 3;          // # of color components per pixel
-    cinfo.in_color_space = JCS_EXT_BGR;  // colorspace of input image
-
-    // Use the library's routine to set default compression parameters
-    jpeg_set_defaults( &cinfo );
-
-    // Set any non-default parameters
-    jpeg_set_quality( &cinfo , quality , TRUE /* limit to baseline-JPEG values */);
-
-    /* Step 4: Start compressor */
-
-    // TRUE ensures that we will write a complete interchange-JPEG file
-    jpeg_start_compress( &cinfo , TRUE );
-
-    /* Step 5: while (scan lines remain to be written)
-     *           jpeg_write_scanlines(...);
-     */
-
-    /* Here we use the library's state variable cinfo.next_scanline as the loop
-    * counter, so that we don't have to keep track ourselves.
-    */
-    while ( cinfo.next_scanline < cinfo.image_height ) {
-        row_pointer = image_data + cinfo.next_scanline * cinfo.image_width *
-                cinfo.input_components;
-        (void) jpeg_write_scanlines( &cinfo , &row_pointer , 1 );
-    }
-
-    /* Step 6: Finish compression */
-    jpeg_finish_compress( &cinfo );
-
-    /* Step 7: release JPEG compression object */
-    jpeg_destroy_compress( &cinfo );
-}
 
 INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     INITCOMMONCONTROLSEX icc;
@@ -266,6 +196,33 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     uint8_t* serveImg = NULL;
     unsigned long int serveLen = 0;
 
+    /* ===== Set up libjpeg objects ===== */
+    struct jpeg_compress_struct cinfo;
+    struct jpeg_error_mgr jerr;
+
+    JSAMPROW row_pointer; // pointer to start of scanline (row of image)
+
+    // Set up the error handler
+    cinfo.err = jpeg_std_error( &jerr );
+
+    // Initialize the JPEG compression object
+    jpeg_create_compress( &cinfo );
+
+    // Specify data destination (eg, memory buffer)
+    jpeg_mem_dest( &cinfo , &serveImg , &serveLen );
+
+    /* First we supply a description of the input image. Four fields of the
+     * cinfo struct must be filled in:
+     */
+    cinfo.image_width = 320;     // image width, in pixels
+    cinfo.image_height = 240;   // image height, in pixels
+    cinfo.input_components = 3;          // # of color components per pixel
+    cinfo.in_color_space = JCS_EXT_BGR;  // colorspace of input image
+
+    // Use the library's routine to set default compression parameters
+    jpeg_set_defaults( &cinfo );
+    /* ================================== */
+
     gNewImageFunc = [&]{
         // Get new image to process
         imgBuffer = gStreamWinPtr->getCurrentImage();
@@ -295,12 +252,41 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             processor.setImage( tempImg , imgWidth , imgHeight );
             processor.processImage();
 
+            /* Free output buffer for JPEG compression because libjpeg leaks
+             * memory from jpeg_mem_dest() if it's not NULL (see libjpeg's
+             * jdatadst.c line 242 for the function)
+             */
             std::free( serveImg );
             serveImg = NULL;
-            serveLen = 0;
 
-            // Convert RGB image to JPEG
-            RGBtoJPEG( &serveImg , &serveLen , gJpegQuality , tempImg , imgWidth , imgHeight );
+            jpeg_mem_dest( &cinfo , &serveImg , &serveLen );
+
+            /* ===== Convert RGB image to JPEG ===== */
+            cinfo.image_width = imgWidth;
+            cinfo.image_height = imgHeight;
+
+            // Set any non-default parameters
+            jpeg_set_quality( &cinfo , gJpegQuality , TRUE /* limit to baseline-JPEG values */);
+
+            // TRUE ensures that we will write a complete interchange-JPEG file
+            jpeg_start_compress( &cinfo , TRUE );
+
+            /* while (scan lines remain to be written)
+             *     jpeg_write_scanlines(...);
+             */
+
+            /* Here we use the library's state variable cinfo.next_scanline as
+             * the loop counter, so that we don't have to keep track ourselves.
+             */
+            while ( cinfo.next_scanline < cinfo.image_height ) {
+                row_pointer = tempImg + cinfo.next_scanline * cinfo.image_width *
+                        cinfo.input_components;
+                (void) jpeg_write_scanlines( &cinfo , &row_pointer , 1 );
+            }
+
+            jpeg_finish_compress( &cinfo );
+            /* ===================================== */
+
             gServer->serveImage( serveImg , serveLen );
 
             // Send status on target search to robot
@@ -378,6 +364,8 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     // Delete MJPEG stream window and server
     delete gStreamWinPtr;
     delete gServer;
+
+    jpeg_destroy_compress( &cinfo );
 
     delete[] tempImg;
     std::free( serveImg );
