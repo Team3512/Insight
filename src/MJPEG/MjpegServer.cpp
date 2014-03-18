@@ -5,6 +5,7 @@
 //=============================================================================
 
 #include <sstream>
+#include <cstdlib>
 #include <cstring>
 #include "MjpegServer.hpp"
 #include "mjpeg_sleep.h"
@@ -17,10 +18,35 @@ MjpegServer::MjpegServer( unsigned short port ) :
     FD_ZERO(&m_clientSelector.allSockets);
     FD_ZERO(&m_clientSelector.socketsReady);
     m_clientSelector.maxSocket = 0;
+
+    m_serveImg = NULL;
+    m_serveLen = 0;
+
+    // Set up the error handler
+    m_cinfo.err = jpeg_std_error( &m_jerr );
+
+    // Initialize the JPEG compression object
+    jpeg_create_compress( &m_cinfo );
+
+    /* First we supply a description of the input image. Four fields of the
+     * cinfo struct must be filled in:
+     */
+    m_cinfo.image_width = 320;             // image width, in pixels
+    m_cinfo.image_height = 240;            // image height, in pixels
+    m_cinfo.input_components = 3;          // # of color components per pixel
+    m_cinfo.in_color_space = JCS_EXT_BGR;  // colorspace of input image
+
+    // Use the library's routine to set default compression parameters
+    jpeg_set_defaults( &m_cinfo );
+
+    m_row_pointer = NULL;
 }
 
 MjpegServer::~MjpegServer() {
     stop();
+
+    jpeg_destroy_compress( &m_cinfo );
+    std::free( m_serveImg );
 }
 
 void MjpegServer::start() {
@@ -99,28 +125,61 @@ void MjpegServer::stop() {
     }
 }
 
-void MjpegServer::serveImage( uint8_t* image , size_t size ) {
-    // Send image to all clients
+void MjpegServer::serveImage( uint8_t* image , unsigned int width , unsigned int height ) {
+    /* Free output buffer for JPEG compression because libjpeg leaks
+     * memory from jpeg_mem_dest() if it's not NULL (see libjpeg's
+     * jdatadst.c line 242 for the function)
+     */
+    std::free( m_serveImg );
+    m_serveImg = NULL;
+
+    // Specify data destination (e.g. memory buffer)
+    jpeg_mem_dest( &m_cinfo , &m_serveImg , &m_serveLen );
+
+    /* ===== Convert RGB image to JPEG ===== */
+    m_cinfo.image_width = width;
+    m_cinfo.image_height = height;
+
+    // Set any non-default parameters
+    jpeg_set_quality( &m_cinfo , 100 , TRUE /* limit to baseline-JPEG values */);
+
+    // TRUE ensures that we will write a complete interchange-JPEG file
+    jpeg_start_compress( &m_cinfo , TRUE );
+
+    /* while scan lines remain to be written...
+     * Here we use the library's state variable cinfo.next_scanline as
+     * the loop counter, so that we don't have to keep track ourselves.
+     */
+    while ( m_cinfo.next_scanline < m_cinfo.image_height ) {
+        m_row_pointer = image + m_cinfo.next_scanline * m_cinfo.image_width *
+                m_cinfo.input_components;
+        (void) jpeg_write_scanlines( &m_cinfo , &m_row_pointer , 1 );
+    }
+
+    jpeg_finish_compress( &m_cinfo );
+    /* ===================================== */
+
+    // Send JPEG to all clients
     for ( std::list<mjpeg_socket_t>::iterator i = m_clientSockets.begin() ; i != m_clientSockets.end() ; i++ ) {
         std::string imgFrame = "--myboundary\r\n";
         imgFrame += "Content-Type: image/jpeg\r\n";
         imgFrame += "Content-Length: ";
 
         std::stringstream ss;
-        ss << size;
+        ss << m_serveLen;
 
         imgFrame += ss.str(); // Add image size
         imgFrame += "\r\n\r\n";
 
         bool didSend = true;
-        char buffer[imgFrame.length() + size + 2];
+        char buffer[imgFrame.length() + m_serveLen + 2];
         std::memcpy( buffer , imgFrame.c_str() , imgFrame.length() );
-        std::memcpy( buffer + imgFrame.length() , image , size );
-        std::memcpy( buffer + imgFrame.length() + size , "\r\n" , 2 );
+        std::memcpy( buffer + imgFrame.length() , m_serveImg , m_serveLen );
+        std::memcpy( buffer + imgFrame.length() + m_serveLen , "\r\n" , 2 );
 
         // Loop until every byte has been sent
         int sent = 0;
-        int sizeToSend = imgFrame.length() + size + 2;
+        int sizeToSend = imgFrame.length() + m_serveLen + 2;
         for (int length = 0; length < sizeToSend; length += sent) {
             // Send a chunk of data
             sent = send(*i, buffer + length, sizeToSend - length, 0);

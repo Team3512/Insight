@@ -13,8 +13,9 @@
 #include <iostream>
 #include <atomic>
 #include <list>
-
 #include <cstdint>
+
+#include <jpeglib.h>
 
 struct selector_t {
     fd_set allSockets; // set containing all the sockets handles
@@ -30,7 +31,8 @@ public:
     void start();
     void stop();
 
-    void serveImage( uint8_t* image , size_t size );
+    // Converts BGR image to JPEG before serving it
+    void serveImage( uint8_t* image , unsigned int width , unsigned int height );
 
 private:
     struct selector_t m_clientSelector;
@@ -42,6 +44,13 @@ private:
     mjpeg_thread_t m_serverThread;
     static void* serverFunc( void* obj );
     std::atomic<bool> m_isRunning;
+
+    struct jpeg_compress_struct m_cinfo;
+    struct jpeg_error_mgr m_jerr;
+    JSAMPROW m_row_pointer; // pointer to start of scanline (row of image)
+
+    uint8_t* m_serveImg;
+    unsigned long int m_serveLen;
 };
 
 #endif // MJPEG_SERVER_HPP
