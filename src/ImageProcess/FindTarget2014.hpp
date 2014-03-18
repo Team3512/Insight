@@ -14,10 +14,15 @@ class FindTarget2014 : public ProcBase {
 public:
 	FindTarget2014();
 
-    /* Returns true if point selected is bright enough to be considered part
-     * of a target
+    /* Returns true if point selected is bright enough to be considered part of
+     * a target
      */
     bool foundTarget() const;
+
+    /* Sets scale of box dimensions compared to image dimensions
+     * 'percent' should be a percentage from 0 to 100 inclusive
+     */
+    void setOverlayPercent( const float percent );
 
 private:
     void prepareImage();
@@ -29,6 +34,8 @@ private:
     int m_my;
 
     bool m_foundTarget;
+
+    float m_overlayScale;
 };
 
 #endif // FIND_TARGET_2014_HPP

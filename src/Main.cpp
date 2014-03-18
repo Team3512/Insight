@@ -35,10 +35,10 @@
 // Global because IP configuration settings are needed in CALLBACK OnEvent
 Settings gSettings( "IPSettings.txt" );
 
-// Allows manipulation of MjpegStream in CALLBACK OnEvent
+// Allows manipulation of objects in CALLBACK OnEvent
 MjpegStream* gStreamWinPtr = NULL;
 MjpegServer* gServer = NULL;
-std::atomic<int> gJpegQuality( 100 );
+FindTarget2014* gProcessor = NULL;
 
 // Allows usage of socket in CALLBACK OnEvent
 std::atomic<mjpeg_socket_t> gCtrlSocket( INVALID_SOCKET );
@@ -80,6 +80,9 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
 
     MSG message;
 
+    FindTarget2014 processor;
+    ProcessorClass processorClass( &processor );
+    gProcessor = &processor;
 
     RECT winSize = { 0 , 0 , static_cast<int>(320) , static_cast<int>(278) }; // set the size, but not the position
     AdjustWindowRect(
@@ -100,9 +103,6 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             mainMenu ,
             Instance ,
             NULL );
-
-    FindTarget2014 processor;
-    ProcessorClass processorClass( &processor );
 
     /* If this isn't allocated on the heap, it can't be destroyed soon enough.
      * If it were allocated on the stack, it would be destroyed when it leaves
@@ -264,7 +264,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             cinfo.image_height = imgHeight;
 
             // Set any non-default parameters
-            jpeg_set_quality( &cinfo , gJpegQuality , TRUE /* limit to baseline-JPEG values */);
+            jpeg_set_quality( &cinfo , 100 , TRUE /* limit to baseline-JPEG values */);
 
             // TRUE ensures that we will write a complete interchange-JPEG file
             jpeg_start_compress( &cinfo , TRUE );
@@ -465,17 +465,27 @@ LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lP
     case WM_HSCROLL: {
         switch ( LOWORD(wParam) ) {
         case SB_ENDSCROLL: {
-            gJpegQuality = SendMessage( (HWND)lParam , TBM_GETPOS , (WPARAM)0 , (LPARAM)0 );
+            int overlayPercent = SendMessage( (HWND)lParam , TBM_GETPOS , (WPARAM)0 , (LPARAM)0 );
+            /* NULL check on gProcessor isn't necessary since gProcessor is
+             * assigned before window creation
+             */
+            gProcessor->setOverlayPercent( overlayPercent );
 
             break;
         }
         case SB_THUMBPOSITION: {
-            gJpegQuality = HIWORD(wParam);
+            /* NULL check on gProcessor isn't necessary since gProcessor is
+             * assigned before window creation
+             */
+            gProcessor->setOverlayPercent( HIWORD(wParam) );
 
             break;
         }
         case SB_THUMBTRACK: {
-            gJpegQuality = HIWORD(wParam);
+            /* NULL check on gProcessor isn't necessary since gProcessor is
+             * assigned before window creation
+             */
+            gProcessor->setOverlayPercent( HIWORD(wParam) );
 
             break;
         }

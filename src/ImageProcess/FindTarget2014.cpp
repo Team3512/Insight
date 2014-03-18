@@ -12,6 +12,7 @@ FindTarget2014::FindTarget2014() {
 	m_mx = 0;
 	m_my = 0;
 	m_foundTarget = false;
+	m_overlayScale = 1.f;
 }
 
 void FindTarget2014::prepareImage() {
@@ -36,7 +37,7 @@ void FindTarget2014::drawOverlay() {
     cv::Scalar lineColor = cvScalar( 0x00 , 0xFF , 0x00 , 0xFF );
 
     // Determines scale of drawn box compared to full image
-    float scale = 0.5;
+    float scale = m_overlayScale;
 
     // Contain top-left and bottom-right corners of box respectively
     cv::Point box[2];
@@ -58,4 +59,8 @@ void FindTarget2014::clickEvent( int x , int y ) {
 
 bool FindTarget2014::foundTarget() const {
     return m_foundTarget;
+}
+
+void FindTarget2014::setOverlayPercent( const float overlayPercent ) {
+    m_overlayScale = overlayPercent / 100.f;
 }
