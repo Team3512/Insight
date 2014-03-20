@@ -330,8 +330,10 @@ LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lP
         // Make one tick for every two values
         SendMessage( slider , TBM_SETTICFREQ , (WPARAM)20 , (LPARAM)0 );
 
-        // Set initial server JPEG quality to 100
-        SendMessage( slider , TBM_SETPOS , (WPARAM)TRUE , (LPARAM)100 );
+        // Set initial box size
+        int overlayPercent = gSettings.getInt( "overlayPercent" );
+        SendMessage( slider , TBM_SETPOS , (WPARAM)TRUE , (LPARAM)overlayPercent );
+        gProcessor->setOverlayPercent( overlayPercent );
 
         break;
     }
