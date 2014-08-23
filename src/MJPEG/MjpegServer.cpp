@@ -253,7 +253,8 @@ void* MjpegServer::serverFunc( void* obj ) {
             }
             else {
                 // Check if sockets are requesting data stream
-                for ( std::list<mjpeg_socket_t>::iterator i = objPtr->m_clientSockets.begin() ; i != objPtr->m_clientSockets.end() ; i++ ) {
+                std::list<mjpeg_socket_t>::iterator i = objPtr->m_clientSockets.begin();
+                while ( i != objPtr->m_clientSockets.end() ) {
                     // If current client is ready
                     if ( FD_ISSET(*i, &objPtr->m_clientSelector.socketsReady) != 0 ) {
                         // Receive a chunk of bytes
@@ -270,21 +271,19 @@ void* MjpegServer::serverFunc( void* obj ) {
 
                                 // TODO Finish parsing
 
-                                std::string ack = "HTTP/1.0 200 OK\r\n";
-                                ack += "Cache-Control: no-cache\r\n";
-                                ack += "Connection: close\r\n";
-                                ack += "Content-Type: multipart/x-mixed-replace; boundary=--myboundary\r\n\r\n";
+                                std::string ack = "HTTP/1.0 200 OK\r\n"
+                                        "Cache-Control: no-cache\r\n"
+                                        "Connection: close\r\n"
+                                        "Content-Type: multipart/x-mixed-replace; boundary=--myboundary\r\n\r\n";
 
                                 // Loop until every byte has been sent
                                 int sent = 0;
-                                int sizeToSend = static_cast<int>(ack.length());
-                                for (int length = 0; length < sizeToSend; length += sent)
-                                {
+                                for ( unsigned int pos = 0 ; pos < ack.length() ; pos += sent ) {
                                     // Send a chunk of data
-                                    sent = send(*i, ack.c_str() + length, sizeToSend - length, 0);
+                                    sent = send(*i, ack.c_str() + pos, ack.length() - pos, 0);
 
                                     // Check for errors
-                                    if (sent < 0) {
+                                    if ( sent < 0 ) {
                                         break; // Failed to send
                                     }
                                 }
@@ -299,11 +298,13 @@ void* MjpegServer::serverFunc( void* obj ) {
                             FD_CLR(*i, &objPtr->m_clientSelector.socketsReady);
 
                             // Remove socket from the list of clients
-                            objPtr->m_clientSockets.erase( i );
+                            i = objPtr->m_clientSockets.erase( i );
 
-                            break; // Exit the loop since we lost the iterator
+                            continue;
                         }
                     }
+
+                    i++;
                 }
             }
         }
