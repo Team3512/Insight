@@ -24,10 +24,11 @@ public:
      */
     void setOverlayPercent( const float percent );
 
+    void clickEvent( int x , int y );
+
 private:
     void prepareImage();
     void drawOverlay();
-    void clickEvent( int x , int y );
 
     /* Mouse x and y position */
     int m_mx;

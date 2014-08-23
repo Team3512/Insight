@@ -22,13 +22,12 @@
 
 #include "MJPEG/MjpegStream.hpp"
 #include "MJPEG/MjpegServer.hpp"
+#include "MJPEG/MjpegStreamCallback.hpp"
 #include "MJPEG/mjpeg_sck.h"
 #include "Settings.hpp"
 #include "Resource.h"
 
 #include "ImageProcess/FindTarget2014.hpp"
-
-#include "ProcessorClass.hpp"
 
 // Global because IP configuration settings are needed in CALLBACK OnEvent
 Settings gSettings( "IPSettings.txt" );
@@ -79,7 +78,8 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     MSG message;
 
     FindTarget2014 processor;
-    ProcessorClass processorClass( &processor );
+    MjpegStreamCallback streamCallback;
+    streamCallback.clickEvent = [&](int x , int y) { processor.clickEvent( x , y ); };
     gProcessor = &processor;
 
     RECT winSize = { 0 , 0 , static_cast<int>(320) , static_cast<int>(278) }; // set the size, but not the position
@@ -117,7 +117,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             320 ,
             240 ,
             Instance,
-            &processorClass );
+            &streamCallback );
 
     gServer = new MjpegServer( gSettings.getInt( "streamServerPort" ) );
 

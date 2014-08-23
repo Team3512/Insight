@@ -7,10 +7,14 @@
 #ifndef MJPEG_STREAM_CALLBACK_HPP
 #define MJPEG_STREAM_CALLBACK_HPP
 
+#include <functional>
+
 class MjpegStreamCallback {
 public:
 	virtual ~MjpegStreamCallback();
-	virtual void clickEvent(int x, int y) = 0;
+
+	// The arguments are 'int x' and 'int y'
+	std::function<void (int,int)> clickEvent;
 };
 
 #endif // MJPEG_STREAM_CALLBACK_HPP

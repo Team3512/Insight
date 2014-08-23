@@ -209,7 +209,6 @@ private:
 
     // Makes sure "Waiting..." graphic is drawn after timeout
     mjpeg_thread_t m_updateThread;
-    static void* (*m_updateFunc)(void*);
 
     /* Recreates the graphics that display messages in the stream window
      * (Resizes them and recenters the text in the window)

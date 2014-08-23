@@ -15,6 +15,11 @@ FindTarget2014::FindTarget2014() {
 	m_overlayScale = 1.f;
 }
 
+void FindTarget2014::clickEvent( int x , int y ) {
+    m_mx = x;
+    m_my = y;
+}
+
 void FindTarget2014::prepareImage() {
     cv::cvtColor( m_rawImage , m_grayChannel , CV_BGR2GRAY );
 
@@ -50,11 +55,6 @@ void FindTarget2014::drawOverlay() {
 
     // Draw rectangle with points of box
     cv::rectangle( m_rawImage , box[0] , box[1] , lineColor , 2 );
-}
-
-void FindTarget2014::clickEvent( int x , int y ) {
-    m_mx = x;
-    m_my = y;
 }
 
 bool FindTarget2014::foundTarget() const {
