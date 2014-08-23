@@ -95,7 +95,7 @@ MjpegStream::MjpegStream( const std::string& hostName ,
         int width ,
         int height ,
         HINSTANCE appInstance,
-        MjpegStreamCallback *ncallbacks
+        WindowCallbacks* windowCallbacks
         ) :
         m_hostName( hostName ) ,
         m_port( port ) ,
@@ -139,10 +139,10 @@ MjpegStream::MjpegStream( const std::string& hostName ,
         m_stopReceive( true ) ,
         m_stopUpdate( true )
 {
-	/* Initialize the MjpegStreamCallback pointer */
-	m_ncallbacks = ncallbacks;
+	// Initialize the WindowCallbacks pointer
+	m_windowCallbacks = windowCallbacks;
 
-	/* Initialize the parent window handle */
+	// Initialize the parent window handle
     m_parentWin = parentWin;
 
     m_streamWin = CreateWindowEx( 0 ,
@@ -709,10 +709,10 @@ LRESULT CALLBACK MjpegStream::WindowProc( HWND handle , UINT message , WPARAM wP
     }
 
     case WM_LBUTTONDOWN: {
-        /* Button clicked */
+        // Button clicked
         m_map[handle]->m_cx = m_map[handle]->m_lx;
         m_map[handle]->m_cy = m_map[handle]->m_ly;
-        m_map[handle]->m_ncallbacks->clickEvent(m_map[handle]->m_cx, m_map[handle]->m_cy);
+        m_map[handle]->m_windowCallbacks->clickEvent(m_map[handle]->m_cx, m_map[handle]->m_cy);
 
       break;
     }

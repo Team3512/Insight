@@ -48,7 +48,7 @@
 #include "mjpegrx.h"
 #include "mjpeg_thread.h"
 
-#include "MjpegStreamCallback.hpp"
+#include "WindowCallbacks.hpp"
 
 #define WM_MJPEGSTREAM_START     (WM_APP + 0x0001)
 #define WM_MJPEGSTREAM_STOP      (WM_APP + 0x0002)
@@ -67,7 +67,7 @@ public:
             int width ,
             int height ,
             HINSTANCE appInstance,
-            MjpegStreamCallback *ncallbacks
+            WindowCallbacks* windowCallbacks
             );
     virtual ~MjpegStream();
 
@@ -199,7 +199,7 @@ private:
      */
     std::atomic<bool> m_stopUpdate;
 
-    MjpegStreamCallback *m_ncallbacks;
+    WindowCallbacks* m_windowCallbacks;
 
     /* Mouse position state variables */
     int m_lx;

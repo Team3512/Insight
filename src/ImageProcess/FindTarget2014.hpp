@@ -30,7 +30,7 @@ private:
     void prepareImage();
     void drawOverlay();
 
-    /* Mouse x and y position */
+    // Mouse x and y position
     int m_mx;
     int m_my;
 

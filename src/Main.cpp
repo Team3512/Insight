@@ -22,7 +22,7 @@
 
 #include "MJPEG/MjpegStream.hpp"
 #include "MJPEG/MjpegServer.hpp"
-#include "MJPEG/MjpegStreamCallback.hpp"
+#include "MJPEG/WindowCallbacks.hpp"
 #include "MJPEG/mjpeg_sck.h"
 #include "Settings.hpp"
 #include "Resource.h"
@@ -78,7 +78,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     MSG message;
 
     FindTarget2014 processor;
-    MjpegStreamCallback streamCallback;
+    WindowCallbacks streamCallback;
     streamCallback.clickEvent = [&](int x , int y) { processor.clickEvent( x , y ); };
     gProcessor = &processor;
 

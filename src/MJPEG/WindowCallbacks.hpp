@@ -1,20 +1,18 @@
 //=============================================================================
-//File Name: MjpegStreamCallback.hpp
+//File Name: WindowCallbacks.hpp
 //Description: Provides callback interface for MjpegStream's window events
 //Author: FRC Team 3512, Spartatroniks
 //=============================================================================
 
-#ifndef MJPEG_STREAM_CALLBACK_HPP
-#define MJPEG_STREAM_CALLBACK_HPP
+#ifndef WINDOW_CALLBACKS_HPP
+#define WINDOW_CALLBACKS_HPP
 
 #include <functional>
 
-class MjpegStreamCallback {
+class WindowCallbacks {
 public:
-	virtual ~MjpegStreamCallback();
-
 	// The arguments are 'int x' and 'int y'
 	std::function<void (int,int)> clickEvent;
 };
 
-#endif // MJPEG_STREAM_CALLBACK_HPP
+#endif // WINDOW_CALLBACKS_HPP
