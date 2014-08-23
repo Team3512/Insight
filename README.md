@@ -24,8 +24,8 @@ OpenCV is a vision processing library written in C++. Since Insight links static
 
 #### Download and installation
 
-Clone the Git repository with:
-#### `git clone git://github.com/Itseez/opencv`
+##### Clone the Git repository with:
+    git clone git://github.com/Itseez/opencv
 
 ##### Run the following commands in MSys shell:
     cd opencv
@@ -92,7 +92,7 @@ Robot's IP address
 
 Port to which to send data relating to the processed image. The data may be target coordinates, drive commands, etc.
 
-#### MIscellaneous
+#### Miscellaneous
 
 #### `enableImgProcDebug`
 
