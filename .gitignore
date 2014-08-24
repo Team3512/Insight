@@ -1,4 +1,6 @@
 *.dll
 *.o
+*.d
+*.res
 *.exe
 *.png
