@@ -27,7 +27,7 @@ OpenCV is a vision processing library written in C++. Since Insight links static
 ##### Clone the Git repository with:
     git clone git://github.com/Itseez/opencv
 
-##### Run the following commands in MSys shell:
+##### Run the following commands in Msys shell:
     cd opencv
     git checkout 2.4.9
     mkdir build
