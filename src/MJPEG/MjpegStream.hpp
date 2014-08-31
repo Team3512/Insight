@@ -37,10 +37,9 @@
 #include <GL/glu.h>
 
 #include <atomic>
+#include <chrono>
 #include <map>
 #include <cstdint>
-
-#include "../SFML/System/Clock.hpp"
 
 #include "../WinGDI/Text.hpp"
 #include "../WinGDI/Vector.hpp"
@@ -176,25 +175,25 @@ private:
     struct mjpeg_inst_t* m_streamInst;
 
     // Determines when a video frame is old
-    sf::Clock m_imageAge;
+    std::chrono::time_point<std::chrono::system_clock> m_imageAge;
 
     // Used to limit display frame rate
-    sf::Clock m_displayTime;
+    std::chrono::time_point<std::chrono::system_clock> m_displayTime;
     unsigned int m_frameRate;
 
     // Locks window so only one thread can access or draw to it at a time
     mjpeg_mutex_t m_windowMutex;
 
-    /* If true:
+    /* If false:
      *     Lets receive thread run
-     * If false:
+     * If true:
      *     Closes receive thread
      */
     std::atomic<bool> m_stopReceive;
 
-    /* If true:
+    /* If false:
      *     Lets update thread run
-     * If false:
+     * If true:
      *     Closes update thread
      */
     std::atomic<bool> m_stopUpdate;

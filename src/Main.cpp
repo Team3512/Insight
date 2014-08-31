@@ -17,8 +17,7 @@
 #include <cstring>
 #include <atomic>
 #include <functional>
-
-#include "SFML/System/Clock.hpp"
+#include <chrono>
 
 #include "MJPEG/MjpegStream.hpp"
 #include "MJPEG/MjpegServer.hpp"
@@ -174,7 +173,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
     unsigned short robotCtrlPort = gSettings.getInt( "robotControlPort" );
 
     // Make sure control data isn't sent too fast
-    sf::Clock sendTime;
+    std::chrono::time_point<std::chrono::system_clock> lastSendTime;
     /* ======================================== */
 
     /* ===== Image Processing Variables ===== */
@@ -266,7 +265,8 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             lastHeight = imgHeight;
         }
 
-        if ( mjpeg_sck_valid(gCtrlSocket) && sendTime.getElapsedTime() > 200 &&
+        // If socket is valid, data was sent at least 200ms ago, and there is new data
+        if ( mjpeg_sck_valid(gCtrlSocket) && std::chrono::system_clock::now() - lastSendTime > std::chrono::milliseconds(200) &&
                 newData ) {
             // Build the target address
             sockaddr_in addr;
@@ -280,7 +280,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             // Check for errors
             if (sent >= 0) {
                 newData = false;
-                sendTime.restart();
+                lastSendTime = std::chrono::system_clock::now();
             }
         }
     };
@@ -324,7 +324,7 @@ LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lP
                 32 ,
                 handle ,
                 NULL ,
-                GetModuleHandle( NULL ) ,
+                GetModuleHandle(NULL) ,
                 NULL );
 
         // Make one tick for every two values

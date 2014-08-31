@@ -282,7 +282,7 @@ void MjpegStream::startStream() {
         m_stopReceive = false;
         m_firstImage = true;
 
-        m_imageAge.restart();
+        m_imageAge = std::chrono::system_clock::now();
 
         // Launch the MJPEG receiving/processing thread
         m_streamInst = mjpeg_launchthread( const_cast<char*>( m_hostName.c_str() ) , m_port , const_cast<char*>( m_requestPath.c_str() ) , &m_callbacks );
@@ -435,12 +435,12 @@ void MjpegStream::readCallback( char* buf , int bufsize , void* optobj ) {
         }
 
         // Reset the image age timer
-        streamPtr->m_imageAge.restart();
+        streamPtr->m_imageAge = std::chrono::system_clock::now();
 
         // Send message to parent window about the new image
-        if ( streamPtr->m_displayTime.getElapsedTime() > 1000.f / streamPtr->m_frameRate ) {
+        if ( std::chrono::system_clock::now() - streamPtr->m_displayTime > std::chrono::duration<double>(1.0 / streamPtr->m_frameRate) ) {
             PostMessage( streamPtr->m_parentWin , WM_MJPEGSTREAM_NEWIMAGE , 0 , 0 );
-            streamPtr->m_displayTime.restart();
+            streamPtr->m_displayTime = std::chrono::system_clock::now();
         }
 	}
     else {
@@ -662,14 +662,14 @@ void MjpegStream::DisableOpenGL() {
 }
 
 void* MjpegStream::updateFunc( void* obj ) {
-    int lastTime = 0;
-    int currentTime = 0;
+    std::chrono::duration<double> lastTime( 0.0 );
+    std::chrono::duration<double> currentTime( 0.0 );
 
     while ( !static_cast<MjpegStream*>(obj)->m_stopUpdate ) {
-        currentTime = static_cast<MjpegStream*>(obj)->m_imageAge.getElapsedTime();
+        currentTime = std::chrono::system_clock::now() - static_cast<MjpegStream*>(obj)->m_imageAge;
 
         // Make "Waiting..." graphic show up
-        if ( currentTime > 1000 && lastTime <= 1000 ) {
+        if ( currentTime > std::chrono::milliseconds(1000) && lastTime <= std::chrono::milliseconds(1000) ) {
             static_cast<MjpegStream*>(obj)->repaint();
         }
 
@@ -768,7 +768,7 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
         }
 
         // If it's been too long since we received our last image
-        else if ( m_imageAge.getElapsedTime() > 1000 ) {
+        else if ( std::chrono::system_clock::now() - m_imageAge > std::chrono::milliseconds(1000) ) {
             // Display "Waiting..." over the last image received
             mjpeg_mutex_lock( &m_imageMutex );
 
