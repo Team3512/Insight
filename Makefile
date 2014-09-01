@@ -51,7 +51,7 @@ else
 	EXEC := $(NAME).exe
 endif
 
-	# Append optional prefix
+	# Prepend optional prefix
 	CC := $(PREFIX)$(strip $(CC))
 	CXX := $(PREFIX)$(strip $(CXX))
 	RC := $(PREFIX)$(strip $(RC))
