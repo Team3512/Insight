@@ -9,10 +9,10 @@
 #include "FindTarget2014.hpp"
 
 FindTarget2014::FindTarget2014() {
-	m_mx = 0;
-	m_my = 0;
-	m_foundTarget = false;
-	m_overlayScale = 1.f;
+    m_mx = 0;
+    m_my = 0;
+    m_foundTarget = false;
+    m_overlayScale = 1.f;
 }
 
 void FindTarget2014::clickEvent( int x , int y ) {

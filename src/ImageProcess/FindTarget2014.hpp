@@ -12,7 +12,7 @@
 
 class FindTarget2014 : public ProcBase {
 public:
-	FindTarget2014();
+    FindTarget2014();
 
     /* Returns true if point selected is bright enough to be considered part of
      * a target

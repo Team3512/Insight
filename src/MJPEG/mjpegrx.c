@@ -527,7 +527,7 @@ mjpeg_threadmain(void *optarg)
     /* Connect to the remote host. */
     sd = mjpeg_sck_connect(inst->host, inst->port, inst->cancelfdr);
     if(sd == -1){
-    	fprintf(stderr, "mjpegrx: Connection failed\n");
+        fprintf(stderr, "mjpegrx: Connection failed\n");
         /* call the thread finished callback */
         if(inst->callbacks.donecallback != NULL){
             inst->callbacks.donecallback(
