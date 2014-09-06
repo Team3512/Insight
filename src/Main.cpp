@@ -5,12 +5,10 @@
 //Author: FRC Team 3512, Spartatroniks
 //=============================================================================
 
-#define _WIN32_WINNT 0x0601
+#include <sdkddkver.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <windowsx.h>
-
-#define _WIN32_IE 0x0400
 #include <commctrl.h>
 
 #include <cstdint>
