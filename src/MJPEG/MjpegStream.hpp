@@ -42,12 +42,14 @@
 #include <cstdint>
 
 #include "../WinGDI/Text.hpp"
-#include "../WinGDI/Vector.hpp"
+#include "../Vector.hpp"
 
 #include "mjpegrx.h"
 #include "mjpeg_thread.h"
 
 #include "WindowCallbacks.hpp"
+
+void BMPtoPXL( HDC dc , HBITMAP bmp , int width , int height , uint8_t* pxlData );
 
 #define WM_MJPEGSTREAM_START     (WM_APP + 0x0001)
 #define WM_MJPEGSTREAM_STOP      (WM_APP + 0x0002)
@@ -131,18 +133,18 @@ private:
 
     // Contains "Connecting" message
     Text m_connectMsg;
-    BYTE* m_connectPxl;
+    uint8_t* m_connectPxl;
 
     // Contains "Disconnected" message
     Text m_disconnectMsg;
-    BYTE* m_disconnectPxl;
+    uint8_t* m_disconnectPxl;
 
     // Contains "Waiting..." message
     Text m_waitMsg;
-    BYTE* m_waitPxl;
+    uint8_t* m_waitPxl;
 
     // Contains background color
-    BYTE* m_backgroundPxl;
+    uint8_t* m_backgroundPxl;
 
     // Stores image before displaying it on the screen
     uint8_t* m_pxlBuf;

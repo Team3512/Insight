@@ -14,8 +14,8 @@ struct Vector {
         Y = y;
     }
 
-    short X;
-    short Y;
+    T X;
+    U Y;
 };
 
 typedef Vector<int , int> Vector2i;

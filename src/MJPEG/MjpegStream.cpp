@@ -6,6 +6,7 @@
 //=============================================================================
 
 #include "../WinGDI/UIFont.hpp"
+#include "../Util.hpp"
 #include "../Resource.h"
 #include "MjpegStream.hpp"
 #include "mjpeg_sleep.h"
@@ -20,20 +21,7 @@
 
 std::map<HWND , MjpegStream*> MjpegStream::m_map;
 
-// Bit-twiddling hack: Return the next power of two
-int npot( int num ) {
-    num--;
-    num |= num >> 1;
-    num |= num >> 2;
-    num |= num >> 4;
-    num |= num >> 8;
-    num |= num >> 16;
-    num++;
-
-    return num;
-}
-
-void BMPtoPXL( HDC dc , HBITMAP bmp , int width , int height , BYTE* pxlData ) {
+void BMPtoPXL( HDC dc , HBITMAP bmp , int width , int height , uint8_t* pxlData ) {
     BITMAPINFOHEADER bmi = {0};
     bmi.biSize = sizeof(BITMAPINFOHEADER);
     bmi.biPlanes = 1;
@@ -139,10 +127,10 @@ MjpegStream::MjpegStream( const std::string& hostName ,
         m_stopReceive( true ) ,
         m_stopUpdate( true )
 {
-	// Initialize the WindowCallbacks pointer
-	m_windowCallbacks = windowCallbacks;
+    // Initialize the WindowCallbacks pointer
+    m_windowCallbacks = windowCallbacks;
 
-	// Initialize the parent window handle
+    // Initialize the parent window handle
     m_parentWin = parentWin;
 
     m_streamWin = CreateWindowEx( 0 ,
@@ -442,7 +430,7 @@ void MjpegStream::readCallback( char* buf , int bufsize , void* optobj ) {
             PostMessage( streamPtr->m_parentWin , WM_MJPEGSTREAM_NEWIMAGE , 0 , 0 );
             streamPtr->m_displayTime = std::chrono::system_clock::now();
         }
-	}
+    }
     else {
         std::cout << "MjpegStream: image failed to load: " << stbi_failure_reason() << "\n";
     }
@@ -542,16 +530,16 @@ void MjpegStream::recreateGraphics( const Vector2i& windowSize ) {
     mjpeg_mutex_lock( &m_imageMutex );
     /* ===== Allocate buffers for pixels of graphics ===== */
     delete[] m_connectPxl;
-    m_connectPxl = new BYTE[windowSize.X * windowSize.Y * 4];
+    m_connectPxl = new uint8_t[windowSize.X * windowSize.Y * 4];
 
     delete[] m_disconnectPxl;
-    m_disconnectPxl = new BYTE[windowSize.X * windowSize.Y * 4];
+    m_disconnectPxl = new uint8_t[windowSize.X * windowSize.Y * 4];
 
     delete[] m_waitPxl;
-    m_waitPxl = new BYTE[windowSize.X * windowSize.Y * 4];
+    m_waitPxl = new uint8_t[windowSize.X * windowSize.Y * 4];
 
     delete[] m_backgroundPxl;
-    m_backgroundPxl = new BYTE[windowSize.X * windowSize.Y * 4];
+    m_backgroundPxl = new uint8_t[windowSize.X * windowSize.Y * 4];
     /* =================================================== */
 
     /* ===== Store bits from graphics in another buffer ===== */
