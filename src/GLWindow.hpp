@@ -20,7 +20,7 @@ public:
     GLWindow( HWND window );
     virtual ~GLWindow();
 
-    void makeBufferCurrent();
+    void makeContextCurrent();
     void swapBuffers();
 
     // Arguments are buffer dimensions

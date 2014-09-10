@@ -58,7 +58,7 @@ GLWindow::~GLWindow() {
     ReleaseDC( m_window , m_dc );
 }
 
-void GLWindow::makeBufferCurrent() {
+void GLWindow::makeContextCurrent() {
     wglMakeCurrent( m_dc , m_threadRC );
 }
 

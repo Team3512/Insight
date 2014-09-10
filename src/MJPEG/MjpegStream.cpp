@@ -627,7 +627,7 @@ LRESULT CALLBACK MjpegStream::WindowProc( HWND handle , UINT message , WPARAM wP
 
 void MjpegStream::paint( PAINTSTRUCT* ps ) {
     GLenum glError;
-    m_glWin->makeBufferCurrent();
+    m_glWin->makeContextCurrent();
     m_glWin->initGL( getSize().X , getSize().Y );
 
     int textureSize;
