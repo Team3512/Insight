@@ -10,8 +10,8 @@
 
 Drawable::Drawable( const Vector2i& position ,
         const Vector2i& size ,
-        COLORREF fillColor ,
-        COLORREF outlineColor ,
+        Colorf fillColor ,
+        Colorf outlineColor ,
         int outlineThickness )
 {
     m_boundingRect.left = position.X;
@@ -66,19 +66,19 @@ const Vector2i Drawable::getSize() {
         static_cast<short>(m_boundingRect.bottom - m_boundingRect.top) );
 }
 
-void Drawable::setFillColor( COLORREF color ) {
+void Drawable::setFillColor( Colorf color ) {
     m_fillColor = color;
 }
 
-COLORREF Drawable::getFillColor() {
+Colorf Drawable::getFillColor() {
     return m_fillColor;
 }
 
-void Drawable::setOutlineColor( COLORREF color ) {
+void Drawable::setOutlineColor( Colorf color ) {
     m_outlineColor = color;
 }
 
-COLORREF Drawable::getOutlineColor() {
+Colorf Drawable::getOutlineColor() {
     return m_outlineColor;
 }
 

@@ -16,7 +16,7 @@
 
 class Text : public Drawable {
 public:
-    Text( const Vector2i& position , HFONT font , std::wstring text , COLORREF fillColor , COLORREF outlineColor , bool netUpdate );
+    Text( const Vector2i& position , HFONT font , std::wstring text , Colorf fillColor , Colorf outlineColor );
 
     void setFont( HFONT font );
 
@@ -24,20 +24,11 @@ public:
 
     void setString( std::wstring text );
 
-    const std::wstring& getString();
+    const std::wstring& getString() const;
 
     void draw( HDC hdc );
 
 private:
-    // The following functions don't do anything
-    /* void setSize( const Vector& size );
-     * void setSize( short width , short height );
-
-     * const Vector& getSize();
-
-     * void setOutlineThickness( int thickness );
-     */
-
     HFONT m_font;
     std::wstring m_string;
 };

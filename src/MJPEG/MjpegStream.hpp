@@ -43,6 +43,7 @@
 
 #include "../WinGDI/Text.hpp"
 #include "../Vector.hpp"
+#include "../GLWindow.hpp"
 
 #include "mjpegrx.h"
 #include "mjpeg_thread.h"
@@ -123,10 +124,7 @@ private:
     HWND m_parentWin;
 
     HWND m_streamWin;
-
-    // Resources for OpenGL rendering
-    HGLRC m_threadRC;
-    HDC m_bufferDC;
+    GLWindow* m_glWin;
 
     // Holds pointer to button which toggles streaming
     HWND m_toggleButton;
@@ -215,10 +213,6 @@ private:
      * (Resizes them and recenters the text in the window)
      */
     void recreateGraphics( const Vector2i& windowSize );
-
-    // Initializes variables used for OpenGL rendering
-    void EnableOpenGL();
-    void DisableOpenGL();
 
     static void* updateFunc( void* obj );
 

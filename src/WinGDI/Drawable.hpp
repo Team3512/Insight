@@ -16,10 +16,11 @@
 #include <windows.h>
 
 #include "../Vector.hpp"
+#include "Color.hpp"
 
 class Drawable {
 public:
-    Drawable( const Vector2i& position , const Vector2i& size , COLORREF fillColor , COLORREF outlineColor , int outlineThickness );
+    Drawable( const Vector2i& position , const Vector2i& size , Colorf fillColor , Colorf outlineColor , int outlineThickness );
     virtual ~Drawable();
 
     // Draws the drawable to the currently stored device context
@@ -35,11 +36,11 @@ public:
 
     const Vector2i getSize();
 
-    virtual void setFillColor( COLORREF color );
-    COLORREF getFillColor();
+    virtual void setFillColor( Colorf color );
+    Colorf getFillColor();
 
-    virtual void setOutlineColor( COLORREF color );
-    COLORREF getOutlineColor();
+    virtual void setOutlineColor( Colorf color );
+    Colorf getOutlineColor();
 
     virtual void setOutlineThickness( int thickness );
     int getOutlineThickness();
@@ -50,8 +51,8 @@ protected:
 private:
     RECT m_boundingRect;
 
-    COLORREF m_fillColor;
-    COLORREF m_outlineColor;
+    Colorf m_fillColor;
+    Colorf m_outlineColor;
     int m_outlineThickness;
 };
 
