@@ -21,17 +21,20 @@
 
 std::map<HWND , MjpegStream*> MjpegStream::m_map;
 
-void BMPtoPXL( HDC dc , HBITMAP bmp , int width , int height , uint8_t* pxlData ) {
+void BMPtoPXL( HDC dc , HBITMAP bmp , uint8_t* pxlData ) {
+    BITMAP tempBmp;
+    GetObject( bmp , sizeof(BITMAP) , &tempBmp );
+
     BITMAPINFOHEADER bmi = {0};
     bmi.biSize = sizeof(BITMAPINFOHEADER);
     bmi.biPlanes = 1;
     bmi.biBitCount = 32;
-    bmi.biWidth = width;
-    bmi.biHeight = -height;
+    bmi.biWidth = tempBmp.bmWidth;
+    bmi.biHeight = -tempBmp.bmHeight;
     bmi.biCompression = BI_RGB;
     bmi.biSizeImage = 0;// 3 * ScreenX * ScreenY; for PNG or JPEG
 
-    GetDIBits( dc , bmp , 0 , height , pxlData , (BITMAPINFO*)&bmi , DIB_RGB_COLORS );
+    GetDIBits( dc , bmp , 0 , tempBmp.bmHeight , pxlData , (BITMAPINFO*)&bmi , DIB_RGB_COLORS );
 }
 
 // Convert a string to lower case
@@ -543,10 +546,10 @@ void MjpegStream::recreateGraphics( const Vector2i& windowSize ) {
     /* =================================================== */
 
     /* ===== Store bits from graphics in another buffer ===== */
-    BMPtoPXL( connectDC , connectBmp , windowSize.X , windowSize.Y , m_connectPxl );
-    BMPtoPXL( disconnectDC , disconnectBmp , windowSize.X , windowSize.Y , m_disconnectPxl );
-    BMPtoPXL( waitDC , waitBmp , windowSize.X , windowSize.Y , m_waitPxl );
-    BMPtoPXL( backgroundDC , backgroundBmp , windowSize.X , windowSize.Y , m_backgroundPxl );
+    BMPtoPXL( connectDC , connectBmp , m_connectPxl );
+    BMPtoPXL( disconnectDC , disconnectBmp , m_disconnectPxl );
+    BMPtoPXL( waitDC , waitBmp , m_waitPxl );
+    BMPtoPXL( backgroundDC , backgroundBmp , m_backgroundPxl );
     /* ====================================================== */
     mjpeg_mutex_unlock( &m_imageMutex );
 

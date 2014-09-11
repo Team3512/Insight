@@ -50,7 +50,7 @@
 
 #include "WindowCallbacks.hpp"
 
-void BMPtoPXL( HDC dc , HBITMAP bmp , int width , int height , uint8_t* pxlData );
+void BMPtoPXL( HDC dc , HBITMAP bmp , uint8_t* pxlData );
 
 #define WM_MJPEGSTREAM_START     (WM_APP + 0x0001)
 #define WM_MJPEGSTREAM_STOP      (WM_APP + 0x0002)
