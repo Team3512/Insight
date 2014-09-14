@@ -13,7 +13,7 @@
 #endif
 
 void mjpeg_sleep(unsigned int milliseconds) {
-#ifdef WIN32
+#ifdef _WIN32
     Sleep(milliseconds);
 #else
     unsigned long long usecs = milliseconds / 1000;
