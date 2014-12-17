@@ -42,6 +42,7 @@
 #include <map>
 #include <cstdint>
 #include <functional>
+#include <mutex>
 
 #include "MjpegClient.hpp"
 #include "../WinGDI/Text.hpp"
@@ -49,7 +50,6 @@
 #include "../GLWindow.hpp"
 
 #include "mjpeg_thread.h"
-#include "mjpeg_mutex.h"
 
 #include "WindowCallbacks.hpp"
 
@@ -127,7 +127,7 @@ private:
     unsigned int m_imgHeight;
     unsigned int m_textureWidth;
     unsigned int m_textureHeight;
-    mjpeg_mutex_t m_imageMutex;
+    std::mutex m_imageMutex;
 
     /* Set to true when a new image is received from the MJPEG server
      * Set back to false upon the first call to getCurrentImage()
@@ -147,7 +147,7 @@ private:
     unsigned int m_frameRate;
 
     // Locks window so only one thread can access or draw to it at a time
-    mjpeg_mutex_t m_windowMutex;
+    std::mutex m_windowMutex;
 
     /* If false:
      *     Lets update thread run

@@ -29,13 +29,12 @@
 
 #include <string>
 #include <atomic>
+#include <mutex>
 #include <cstdint>
 
 #include "../Vector.hpp"
 
 #include "mjpegrx.h"
-#include "mjpeg_thread.h"
-#include "mjpeg_mutex.h"
 
 class MjpegClient {
 public:
@@ -86,7 +85,7 @@ private:
     uint8_t* m_pxlBuf;
     unsigned int m_imgWidth;
     unsigned int m_imgHeight;
-    mjpeg_mutex_t m_imageMutex;
+    std::mutex m_imageMutex;
 
     /* Stores copy of image for use by external programs. It only updates when
      * getCurrentImage() is called.
@@ -94,7 +93,7 @@ private:
     uint8_t* m_extBuf;
     unsigned int m_extWidth;
     unsigned int m_extHeight;
-    mjpeg_mutex_t m_extMutex;
+    std::mutex m_extMutex;
 
     /* Set to true when a new image is received from the MJPEG server
      * Set back to false upon the first call to getCurrentImage()

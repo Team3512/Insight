@@ -7,7 +7,6 @@
 
 #include "../Util.hpp"
 #include "MjpegClient.hpp"
-#include "mjpeg_sleep.h"
 
 #include "stb_image.h"
 #include "stb_image_write.h"
@@ -44,11 +43,6 @@ MjpegClient::MjpegClient( const std::string& hostName , unsigned short port ,
 
         m_stopReceive( true )
 {
-    // Initialize mutexes
-    mjpeg_mutex_init( &m_imageMutex );
-    mjpeg_mutex_init( &m_extMutex );
-
-
     // Set up the callback description structure
     std::memset( &m_callbacks , 0 , sizeof(struct mjpeg_callbacks_t) );
     m_callbacks.readcallback = readCallback;
@@ -61,10 +55,6 @@ MjpegClient::~MjpegClient() {
 
     delete[] m_pxlBuf;
     delete[] m_extBuf;
-
-    // Destroy mutexes
-    mjpeg_mutex_destroy( &m_imageMutex );
-    mjpeg_mutex_destroy( &m_extMutex );
 }
 
 void MjpegClient::start() {
@@ -95,7 +85,7 @@ bool MjpegClient::isStreaming() const {
 }
 
 void MjpegClient::saveCurrentImage( const std::string& fileName ) {
-    mjpeg_mutex_lock( &m_imageMutex );
+    m_imageMutex.lock();
 
     // Deduce the image type from its extension
     if ( fileName.size() > 3 ) {
@@ -119,12 +109,12 @@ void MjpegClient::saveCurrentImage( const std::string& fileName ) {
         }
     }
 
-    mjpeg_mutex_unlock( &m_imageMutex );
+    m_imageMutex.unlock();
 }
 
 uint8_t* MjpegClient::getCurrentImage() {
-    mjpeg_mutex_lock( &m_imageMutex );
-    mjpeg_mutex_lock( &m_extMutex );
+    m_imageMutex.lock();
+    m_extMutex.lock();
 
     if ( m_pxlBuf != NULL ) {
         // If buffer is wrong size, reallocate it
@@ -148,18 +138,18 @@ uint8_t* MjpegClient::getCurrentImage() {
         m_newImageAvailable = false;
     }
 
-    mjpeg_mutex_unlock( &m_extMutex );
-    mjpeg_mutex_unlock( &m_imageMutex );
+    m_extMutex.unlock();
+    m_imageMutex.unlock();
 
     return m_extBuf;
 }
 
 Vector2i MjpegClient::getCurrentSize() {
-    mjpeg_mutex_lock( &m_extMutex );
+    m_extMutex.lock();
 
     Vector2i temp( m_extWidth , m_extHeight );
 
-    mjpeg_mutex_unlock( &m_extMutex );
+    m_extMutex.unlock();
 
     return temp;
 }
@@ -185,7 +175,7 @@ void MjpegClient::readCallback( char* buf , int bufsize , void* optarg ) {
     uint8_t* ptr = stbi_load_from_memory((unsigned char*)buf, bufsize, &width, &height, &channels, STBI_rgb_alpha);
 
     if ( ptr && width && height ) {
-        mjpeg_mutex_lock( &streamPtr->m_imageMutex );
+        streamPtr->m_imageMutex.lock();
 
         // Free old buffer and store new one created by stbi_load_from_memory()
         delete[] streamPtr->m_pxlBuf;
@@ -195,7 +185,7 @@ void MjpegClient::readCallback( char* buf , int bufsize , void* optarg ) {
         streamPtr->m_imgWidth = width;
         streamPtr->m_imgHeight = height;
 
-        mjpeg_mutex_unlock( &streamPtr->m_imageMutex );
+        streamPtr->m_imageMutex.unlock();
 
         if ( !streamPtr->m_newImageAvailable ) {
             streamPtr->m_newImageAvailable = true;

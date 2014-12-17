@@ -153,10 +153,6 @@ MjpegStream::MjpegStream( const std::string& hostName ,
         MAKELPARAM( FALSE , 0 ) );
     /* =============================================== */
 
-    // Initialize mutexes
-    mjpeg_mutex_init( &m_imageMutex );
-    mjpeg_mutex_init( &m_windowMutex );
-
     // Create the textures that can be displayed in the stream window
     recreateGraphics( Vector2i( width , height ) );
 
@@ -191,10 +187,6 @@ MjpegStream::~MjpegStream() {
     delete[] m_waitPxl;
     delete[] m_backgroundPxl;
 
-    // Destroy mutexes
-    mjpeg_mutex_destroy( &m_imageMutex );
-    mjpeg_mutex_destroy( &m_windowMutex );
-
     delete m_glWin;
 
     DestroyWindow( m_streamWin );
@@ -207,15 +199,15 @@ MjpegStream::~MjpegStream() {
 Vector2i MjpegStream::getPosition() {
     RECT windowPos;
 
-    mjpeg_mutex_lock( &m_windowMutex );
+    m_windowMutex.lock();
     GetWindowRect( m_streamWin , &windowPos );
-    mjpeg_mutex_unlock( &m_windowMutex );
+    m_windowMutex.unlock();
 
     return Vector2i( windowPos.left , windowPos.top );
 }
 
 void MjpegStream::setPosition( const Vector2i& position ) {
-    mjpeg_mutex_lock( &m_windowMutex );
+    m_windowMutex.lock();
 
     // Set position of stream window
     SetWindowPos( m_streamWin , NULL , position.X , position.Y , getSize().X , getSize().Y , SWP_NOZORDER );
@@ -223,23 +215,23 @@ void MjpegStream::setPosition( const Vector2i& position ) {
     // Set position of stream button below it
     SetWindowPos( m_toggleButton , NULL , position.X , position.Y + 240 + 5 , 100 , 24 , SWP_NOZORDER );
 
-    mjpeg_mutex_unlock( &m_windowMutex );
+    m_windowMutex.unlock();
 }
 
 Vector2i MjpegStream::getSize() {
     RECT windowPos;
 
-    mjpeg_mutex_lock( &m_windowMutex );
+    m_windowMutex.lock();
     GetClientRect( m_streamWin , &windowPos );
-    mjpeg_mutex_unlock( &m_windowMutex );
+    m_windowMutex.unlock();
 
     return Vector2i( windowPos.right , windowPos.bottom );
 }
 
 void MjpegStream::setSize( const Vector2i& size ) {
-    mjpeg_mutex_lock( &m_windowMutex );
+    m_windowMutex.lock();
     SetWindowPos( m_streamWin , NULL , getPosition().X , getPosition().Y , size.X , size.Y , SWP_NOZORDER );
-    mjpeg_mutex_unlock( &m_windowMutex );
+    m_windowMutex.unlock();
 
     recreateGraphics( size );
 }
@@ -275,9 +267,9 @@ void MjpegStream::setFPS( unsigned int fps ) {
 }
 
 void MjpegStream::repaint() {
-    mjpeg_mutex_lock( &m_windowMutex );
+    m_windowMutex.lock();
     InvalidateRect( m_streamWin , NULL , FALSE );
-    mjpeg_mutex_unlock( &m_windowMutex );
+    m_windowMutex.unlock();
 }
 
 void MjpegStream::done( void* optarg ) {
@@ -390,7 +382,7 @@ void MjpegStream::recreateGraphics( const Vector2i& windowSize ) {
     SetBkMode( waitDC , oldBkMode );
     /* ============================================== */
 
-    mjpeg_mutex_lock( &m_imageMutex );
+    m_imageMutex.lock();
     /* ===== Allocate buffers for pixels of graphics ===== */
     delete[] m_connectPxl;
     m_connectPxl = new uint8_t[windowSize.X * windowSize.Y * 4];
@@ -411,7 +403,7 @@ void MjpegStream::recreateGraphics( const Vector2i& windowSize ) {
     BMPtoPXL( waitDC , waitBmp , m_waitPxl );
     BMPtoPXL( backgroundDC , backgroundBmp , m_backgroundPxl );
     /* ====================================================== */
-    mjpeg_mutex_unlock( &m_imageMutex );
+    m_imageMutex.unlock();
 
     // Put old bitmaps back in DCs before deleting them
     SelectObject( connectDC , oldConnectBmp );
@@ -522,7 +514,7 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
     if ( isStreaming() ) {
         // Check for new image
         if ( newImageAvailable() ) {
-            mjpeg_mutex_lock( &m_imageMutex );
+            m_imageMutex.lock();
 
             m_img = getCurrentImage();
 
@@ -530,7 +522,7 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
             m_imgWidth = size.X;
             m_imgHeight = size.Y;
 
-            mjpeg_mutex_unlock( &m_imageMutex );
+            m_imageMutex.unlock();
 
             if ( m_firstImage ) {
                 m_firstImage = false;
@@ -542,12 +534,12 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
 
         // If no image has been received yet
         if ( m_firstImage ) {
-            mjpeg_mutex_lock( &m_imageMutex );
+            m_imageMutex.lock();
 
             glTexSubImage2D( GL_TEXTURE_2D , 0 , 0 , 0 , getSize().X ,
                     getSize().Y , GL_RGBA , GL_UNSIGNED_BYTE , m_connectPxl );
 
-            mjpeg_mutex_unlock( &m_imageMutex );
+            m_imageMutex.unlock();
 
             wratio = (float)getSize().X / (float)m_textureWidth;
             hratio = (float)getSize().Y / (float)m_textureHeight;
@@ -556,12 +548,12 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
         // If it's been too long since we received our last image
         else if ( std::chrono::system_clock::now() - m_imageAge > std::chrono::milliseconds(1000) ) {
             // Display "Waiting..." over the last image received
-            mjpeg_mutex_lock( &m_imageMutex );
+            m_imageMutex.lock();
 
             glTexSubImage2D( GL_TEXTURE_2D , 0 , 0 , 0 , getSize().X ,
                     getSize().Y , GL_RGBA , GL_UNSIGNED_BYTE , m_waitPxl );
 
-            mjpeg_mutex_unlock( &m_imageMutex );
+            m_imageMutex.unlock();
 
             wratio = (float)getSize().X / (float)m_textureWidth;
             hratio = (float)getSize().Y / (float)m_textureHeight;
@@ -569,12 +561,12 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
 
         // Else display the image last received
         else {
-            mjpeg_mutex_lock( &m_imageMutex );
+            m_imageMutex.lock();
 
             glTexSubImage2D( GL_TEXTURE_2D , 0 , 0 , 0 , m_imgWidth ,
                     m_imgHeight, GL_RGBA , GL_UNSIGNED_BYTE , m_img );
 
-            mjpeg_mutex_unlock( &m_imageMutex );
+            m_imageMutex.unlock();
 
             wratio = (float)m_imgWidth / (float)m_textureWidth;
             hratio = (float)m_imgHeight / (float)m_textureHeight;
@@ -583,12 +575,12 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
 
     // Else we aren't connected to the host; display disconnect graphic
     else {
-        mjpeg_mutex_lock( &m_imageMutex );
+        m_imageMutex.lock();
 
         glTexSubImage2D( GL_TEXTURE_2D , 0 , 0 , 0 , getSize().X , getSize().Y ,
                 GL_RGBA , GL_UNSIGNED_BYTE , m_disconnectPxl );
 
-        mjpeg_mutex_unlock( &m_imageMutex );
+        m_imageMutex.unlock();
 
         wratio = (float)getSize().X / (float)m_textureWidth;
         hratio = (float)getSize().Y / (float)m_textureHeight;
@@ -597,10 +589,10 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
     // Position the GL texture in the Win32 window
     glBegin( GL_TRIANGLE_FAN );
     glColor4f( 1.f , 1.f , 1.f , 1.f );
-    glTexCoord2f( 0 , 0 ); glVertex3f( 0 , 0 , 0 );
-    glTexCoord2f( wratio , 0 ); glVertex3f( getSize().X , 0 , 0 );
-    glTexCoord2f( wratio , hratio ); glVertex3f( getSize().X , getSize().Y , 0 );
-    glTexCoord2f( 0 , hratio ); glVertex3f( 0 , getSize().Y , 0 );
+    glTexCoord2f( 0 , 0 ); glVertex2f( 0 , 0 );
+    glTexCoord2f( wratio , 0 ); glVertex2f( getSize().X , 0 );
+    glTexCoord2f( wratio , hratio ); glVertex2f( getSize().X , getSize().Y );
+    glTexCoord2f( 0 , hratio ); glVertex2f( 0 , getSize().Y );
     glEnd();
 
     // Check for OpenGL errors
