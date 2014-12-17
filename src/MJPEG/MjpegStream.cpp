@@ -420,16 +420,16 @@ void MjpegStream::recreateGraphics( const Vector2i& windowSize ) {
     DeleteObject( backgroundBmp );
 }
 
-void MjpegStream::updateFunc( void* obj ) {
+void MjpegStream::updateFunc() {
     std::chrono::duration<double> lastTime( 0.0 );
     std::chrono::duration<double> currentTime( 0.0 );
 
-    while ( static_cast<MjpegStream*>(obj)->isStreaming() ) {
-        currentTime = std::chrono::system_clock::now() - static_cast<MjpegStream*>(obj)->m_imageAge;
+    while ( isStreaming() ) {
+        currentTime = std::chrono::system_clock::now() - m_imageAge;
 
         // Make "Waiting..." graphic show up
         if ( currentTime > std::chrono::milliseconds(1000) && lastTime <= std::chrono::milliseconds(1000) ) {
-            static_cast<MjpegStream*>(obj)->repaint();
+            repaint();
         }
 
         lastTime = currentTime;

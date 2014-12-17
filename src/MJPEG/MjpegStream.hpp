@@ -175,7 +175,8 @@ private:
      */
     void recreateGraphics( const Vector2i& windowSize );
 
-    static void updateFunc( void* obj );
+    // Function is used by m_updateThread
+    void updateFunc();
 
     static std::map<HWND , MjpegStream*> m_map;
     static LRESULT CALLBACK WindowProc( HWND handle , UINT message , WPARAM wParam , LPARAM lParam );

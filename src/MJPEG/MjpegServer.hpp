@@ -42,7 +42,7 @@ private:
     unsigned short m_port;
 
     std::thread* m_serverThread;
-    static void serverFunc( void* obj );
+    void serverFunc();
     std::atomic<bool> m_isRunning;
 
     struct jpeg_compress_struct m_cinfo;
