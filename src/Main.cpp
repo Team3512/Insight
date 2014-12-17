@@ -16,7 +16,6 @@
 #include <atomic>
 #include <functional>
 #include <chrono>
-#include <mutex>
 
 #include "MJPEG/MjpegStream.hpp"
 #include "MJPEG/MjpegServer.hpp"
@@ -172,8 +171,6 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
         processor.enableDebugging( true );
     }
 
-    std::mutex imageMutex;
-
     gNewImageFunc = [&]{
         // Get new image to process
         imgBuffer = gStreamWinPtr->getCurrentImage();
@@ -203,9 +200,7 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             processor.setImage( tempImg , imgWidth , imgHeight );
             processor.processImage();
 
-            imageMutex.lock();
             gServer->serveImage( tempImg , imgWidth , imgHeight );
-            imageMutex.unlock();
 
             // Send status on target search to robot
             data[8] = processor.foundTarget();

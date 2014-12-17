@@ -129,10 +129,6 @@ void MjpegServer::stop() {
 }
 
 void MjpegServer::serveImage( uint8_t* image , unsigned int width , unsigned int height ) {
-    static std::atomic<int> funcCallCount( 0 );
-    funcCallCount++;
-    std::cout << "func=" << funcCallCount << "\n";
-
     /* Free output buffer for JPEG compression because libjpeg leaks
      * memory from jpeg_mem_dest() if it's not NULL (see libjpeg's
      * jdatadst.c line 242 for the function)
@@ -167,7 +163,6 @@ void MjpegServer::serveImage( uint8_t* image , unsigned int width , unsigned int
      * send it.
      */
     if ( m_clientSockets.size() == 0 ) {
-        funcCallCount--;
         return;
     }
 
@@ -211,8 +206,6 @@ void MjpegServer::serveImage( uint8_t* image , unsigned int width , unsigned int
             }
         }
     }
-
-    funcCallCount--;
 }
 
 void* MjpegServer::serverFunc( void* obj ) {
@@ -222,16 +215,15 @@ void* MjpegServer::serverFunc( void* obj ) {
     unsigned int recvSize = 0;
 
     while ( server.m_isRunning ) {
-        // Set up the timeout
-        timeval time;
-        time.tv_sec  = 0;
-        time.tv_usec = 1;
-
         // Initialize the set that will contain the sockets that are ready
         server.m_clientSelector.socketsReady = server.m_clientSelector.allSockets;
 
         // Wait until one of the sockets is ready for reading, or timeout is reached
-        int count = select(server.m_clientSelector.maxSocket + 1, &server.m_clientSelector.socketsReady, NULL, NULL, &time);
+        int count = select(server.m_clientSelector.maxSocket + 1, &server.m_clientSelector.socketsReady, NULL, NULL, NULL);
+
+        if ( !server.m_isRunning ) {
+            return NULL;
+        }
 
         if ( count > 0 ) {
             // If listener is ready
@@ -260,63 +252,68 @@ void* MjpegServer::serverFunc( void* obj ) {
                     }
                 }
             }
-            else {
-                // Check if sockets are requesting data stream
-                for ( auto i = server.m_clientSockets.begin() ;
-                        i != server.m_clientSockets.end() ; i++ ) {
-                    // If current client is ready
-                    if ( FD_ISSET(*i, &server.m_clientSelector.socketsReady) != 0 ) {
-                        // Receive a chunk of bytes
-                        recvSize = recv(*i, packet, 256, 0);
 
-                        if ( recvSize > 0 ) {
-                            /* Parse request to determine the right MJPEG stream to send them
-                             * It should be "GET %s HTTP/1.0\r\n\r\n"
-                             */
-                            char* tok = std::strtok( packet , " " );
-                            if ( std::strncmp( tok , "GET" , 3 ) == 0 ) {
-                                // Get request path
-                                tok = std::strtok( NULL , " " );
+            // Check if sockets are requesting data stream
+            for ( auto i = server.m_clientSockets.begin() ; i != server.m_clientSockets.end() ; i++ ) {
+                // If current client is ready
+                if ( FD_ISSET(*i, &server.m_clientSelector.socketsReady) != 0 ) {
+                    // Receive a chunk of bytes
+                    recvSize = recv(*i, packet, 255, 0);
+                    packet[recvSize] = '\0';
 
-                                // TODO Finish parsing
+                    if ( recvSize > 0 ) {
+                        /* Parse request to determine the right MJPEG stream to send them
+                         * It should be "GET %s HTTP/1.0\r\n\r\n"
+                         */
+                        char* tok = std::strtok( packet , " " );
+                        if ( std::strncmp( tok , "GET" , 3 ) == 0 ) {
+                            // Get request path
+                            tok = std::strtok( NULL , " " );
 
-                                std::string ack = "HTTP/1.0 200 OK\r\n"
-                                        "Cache-Control: no-cache\r\n"
-                                        "Connection: close\r\n"
-                                        "Content-Type: multipart/x-mixed-replace; boundary=--myboundary\r\n\r\n";
+                            // TODO Finish parsing
 
-                                // Loop until every byte has been sent
-                                int sent = 0;
-                                for ( unsigned int pos = 0 ; pos < ack.length() ; pos += sent ) {
-                                    // Send a chunk of data
-                                    sent = send(*i, ack.c_str() + pos, ack.length() - pos, 0);
+                            std::string ack = "HTTP/1.0 200 OK\r\n"
+                                    "Cache-Control: no-cache\r\n"
+                                    "Connection: close\r\n"
+                                    "Content-Type: multipart/x-mixed-replace; boundary=--myboundary\r\n\r\n";
 
-                                    // Check for errors
-                                    if ( sent < 0 ) {
-                                        break; // Failed to send
-                                    }
+                            // Loop until every byte has been sent
+                            int sent = 0;
+                            for ( unsigned int pos = 0 ; pos < ack.length() ; pos += sent ) {
+                                // Send a chunk of data
+                                sent = send(*i, ack.c_str() + pos, ack.length() - pos, 0);
+
+                                // Check for errors
+                                if ( sent < 0 ) {
+                                    // Close dead socket and remove it from the selector
+                                    mjpeg_sck_close(*i);
+                                    FD_CLR(*i, &server.m_clientSelector.allSockets);
+                                    FD_CLR(*i, &server.m_clientSelector.socketsReady);
+
+                                    // Remove socket from the list of clients
+                                    i = server.m_clientSockets.erase( i );
+
+                                    break; // Failed to send
                                 }
                             }
                         }
+                    }
 
-                        // If socket disconnected or malfunctioned, remove it
-                        else {
-                            // Close dead socket and remove it from the selector
-                            mjpeg_sck_close(*i);
-                            FD_CLR(*i, &server.m_clientSelector.allSockets);
-                            FD_CLR(*i, &server.m_clientSelector.socketsReady);
+                    // If socket disconnected or malfunctioned, remove it
+                    else {
+                        // Close dead socket and remove it from the selector
+                        mjpeg_sck_close(*i);
+                        FD_CLR(*i, &server.m_clientSelector.allSockets);
+                        FD_CLR(*i, &server.m_clientSelector.socketsReady);
 
-                            // Remove socket from the list of clients
-                            i = server.m_clientSockets.erase( i );
+                        // Remove socket from the list of clients
+                        i = server.m_clientSockets.erase( i );
 
-                            continue;
-                        }
+                        continue;
                     }
                 }
             }
         }
-
-        mjpeg_sleep( 100 );
     }
 
     return NULL;

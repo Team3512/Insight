@@ -294,7 +294,7 @@ void MjpegStream::read( char* buf , int bufsize , void* optarg ) {
         if ( m_newImageCallback != nullptr ) {
             m_newImageCallback();
         }
-        streamPtr->m_displayTime = std::chrono::system_clock::now();
+        streamPtr->m_imageAge = std::chrono::system_clock::now();
     }
 }
 
@@ -561,12 +561,6 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
             glTexSubImage2D( GL_TEXTURE_2D , 0 , 0 , 0 , getSize().X ,
                     getSize().Y , GL_RGBA , GL_UNSIGNED_BYTE , m_waitPxl );
 
-            // Send message to parent window about the new image
-            repaint();
-            if ( m_newImageCallback != nullptr ) {
-                m_newImageCallback();
-            }
-
             mjpeg_mutex_unlock( &m_imageMutex );
 
             wratio = (float)getSize().X / (float)m_textureWidth;
@@ -617,6 +611,8 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
 
     // Display OpenGL drawing
     m_glWin->swapBuffers();
+
+    m_displayTime = std::chrono::system_clock::now();
 
     char buttonText[13];
     GetWindowText( m_toggleButton , buttonText , 13 );
