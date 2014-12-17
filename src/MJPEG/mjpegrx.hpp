@@ -4,7 +4,7 @@
 #define _MJPEGRX_H
 
 #include "mjpeg_thread.h"
-#include "mjpeg_mutex.h"
+#include <atomic>
 
 struct keyvalue_t {
     char *key;
@@ -25,8 +25,7 @@ struct mjpeg_inst_t {
 
     struct mjpeg_callbacks_t callbacks;
 
-    volatile int threadrunning;
-    mjpeg_mutex_t mutex;
+    std::atomic<bool> threadrunning;
     mjpeg_thread_t thread;
     int cancelfdr;
     int cancelfdw;

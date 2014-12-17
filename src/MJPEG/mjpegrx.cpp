@@ -4,19 +4,14 @@
 
 #include <sys/types.h>
 
-#include <assert.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <algorithm>
 
 #include "mjpeg_sck.h"
-#include "mjpeg_mutex.h"
 
-/* Returns the larger of a or b */
-#define mjpeg_max(a, b) ((a > b) ? a : b)
-
-char * strtok_r_n(char *str, char *sep, char **last, char *used);
+char * strtok_r_n(char *str, const char *sep, char **last, char *used);
 
 #ifdef _WIN32
 void
@@ -92,7 +87,7 @@ int
 mjpeg_sck_recv(int sockfd, void *buf, size_t len, int cancelfd)
 {
     int error;
-    int nread;
+    size_t nread;
     fd_set readfds;
     fd_set exceptfds;
 
@@ -109,7 +104,7 @@ mjpeg_sck_recv(int sockfd, void *buf, size_t len, int cancelfd)
             FD_SET(cancelfd, &exceptfds);
         }
 
-        error = select(mjpeg_max(sockfd, cancelfd)+1, &readfds, NULL, &exceptfds, NULL);
+        error = select(std::max(sockfd, cancelfd)+1, &readfds, NULL, &exceptfds, NULL);
         if(error == -1) {
             return -1;
         }
@@ -215,7 +210,7 @@ mjpeg_sck_connect(char *host, int port, int cancelfd)
     FD_ZERO(&exceptfds);
     FD_SET(sd, &exceptfds);
     FD_SET(cancelfd, &exceptfds);
-    error = select(mjpeg_max(sd, cancelfd)+1, &readfds, &writefds, &exceptfds, NULL);
+    error = select(std::max(sd, cancelfd)+1, &readfds, &writefds, &exceptfds, NULL);
     if(error == -1) {
         mjpeg_sck_close(sd);
         return -1;
@@ -269,10 +264,10 @@ mjpeg_sck_connect(char *host, int port, int cancelfd)
 }
 
 char *
-strchrs(char *s, char *c)
+strchrs(char *s, const char *c)
 {
     char *t;
-    char *ct;
+    const char *ct;
 
     for(t = s; *t != '\0'; t++){
         for(ct = c; *ct != '\0'; ct++){
@@ -288,7 +283,7 @@ strchrs(char *s, char *c)
    the token is returned. This allows the caller to determine which separator
    character preceded the returned token. */
 char *
-strtok_r_n(char *str, char *sep, char **last, char *used)
+strtok_r_n(char *str, const char *sep, char **last, char *used)
 {
     char *strsep;
     char *ret;
@@ -400,7 +395,7 @@ mjpeg_freelist(struct keyvalue_t *list){
 /* Return the data in the specified list that corresponds
    to the specified key. */
 char *
-mjpeg_getvalue(struct keyvalue_t *list, char *key)
+mjpeg_getvalue(struct keyvalue_t *list, const char *key)
 {
     struct keyvalue_t *c;
     for(c = list; c != NULL; c = c->next){
@@ -464,12 +459,8 @@ mjpeg_launchthread(
         sizeof(struct mjpeg_callbacks_t)
     );
 
-    mjpeg_mutex_init(&inst->mutex);
-
     /* Mark the thread as running. */
-    mjpeg_mutex_lock(&inst->mutex);
-    inst->threadrunning = 1;
-    mjpeg_mutex_unlock(&inst->mutex);
+    inst->threadrunning = true;
 
     /* Spawn the thread. */
     error = mjpeg_thread_create(&inst->thread, mjpeg_threadmain, inst);
@@ -488,7 +479,7 @@ void
 mjpeg_stopthread(struct mjpeg_inst_t *inst)
 {
     /* Signal the thread to exit. */
-    inst->threadrunning = 0;
+    inst->threadrunning = false;
 
     /* Cancel any currently blocking operations. */
     /* write(inst->cancelfdw, "U", 1); */
@@ -500,7 +491,6 @@ mjpeg_stopthread(struct mjpeg_inst_t *inst)
     /* Free the mjpeg_inst_t and associated memory. */
     free(inst->host);
     free(inst->reqpath);
-    mjpeg_mutex_destroy(&inst->mutex);
     free(inst);
 
     return;
@@ -545,8 +535,8 @@ mjpeg_threadmain(void *optarg)
     send(sd, tmp, strlen(tmp), 0);
     printf("%s", tmp);
 
-    int threadrunning = 1;
-    while(threadrunning > 0){
+    std::atomic<bool> threadrunning( true );
+    while(threadrunning){
         /* Read and parse incoming HTTP response headers. */
         if(mjpeg_rxheaders(&headerbuf, &headerbufsize, sd, inst->cancelfdr) == -1) {
             fprintf(stderr, "mjpegrx: recv(2) failed\n");
@@ -587,9 +577,7 @@ mjpeg_threadmain(void *optarg)
         }
         free(buf);
 
-        mjpeg_mutex_lock(&inst->mutex);
-        threadrunning = inst->threadrunning;
-        mjpeg_mutex_unlock(&inst->mutex);
+        threadrunning.store( inst->threadrunning.load() );
     }
 
     /* The loop has exited. We should now clean up and exit the thread. */

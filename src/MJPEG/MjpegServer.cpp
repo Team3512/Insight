@@ -8,7 +8,6 @@
 #include <cstdlib>
 #include <cstring>
 #include "MjpegServer.hpp"
-#include "mjpeg_sleep.h"
 
 MjpegServer::MjpegServer( unsigned short port ) :
         m_listenSock( INVALID_SOCKET ) ,
