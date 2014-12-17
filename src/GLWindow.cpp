@@ -97,8 +97,8 @@ void GLWindow::initGL( int x , int y ) {
 
     // Check for OpenGL errors
     glError = glGetError();
-    if( glError != GL_NO_ERROR ) {
-        std::cerr << "GLWindow.cpp OpenGL failure: " << gluErrorString( glError ) << "\n";
+    if ( glError != GL_NO_ERROR ) {
+        std::cerr << __FILE__ << " OpenGL failure: " << gluErrorString( glError ) << "\n";
     }
     /* ============================= */
 }

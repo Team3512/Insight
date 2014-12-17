@@ -16,6 +16,7 @@
 #include <atomic>
 #include <functional>
 #include <chrono>
+#include <mutex>
 
 #include "MJPEG/MjpegStream.hpp"
 #include "MJPEG/MjpegServer.hpp"
@@ -99,23 +100,6 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             Instance ,
             NULL );
 
-    /* If this isn't allocated on the heap, it can't be destroyed soon enough.
-     * If it were allocated on the stack, it would be destroyed when it leaves
-     * WinMain's scope, which is after its parent window is destroyed. This
-     * causes the cleanup in this object's destructor to not complete
-     * successfully.
-     */
-    gStreamWinPtr = new MjpegStream( gSettings.getString( "streamHost" ) ,
-            gSettings.getInt( "streamPort" ) ,
-            gSettings.getString( "streamRequestPath" ) ,
-            mainWindow ,
-            0 ,
-            0 ,
-            320 ,
-            240 ,
-            Instance,
-            &streamCallback );
-
     gServer = new MjpegServer( gSettings.getInt( "streamServerPort" ) );
 
     /* ===== Robot Data Sending Variables ===== */
@@ -188,6 +172,8 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
         processor.enableDebugging( true );
     }
 
+    std::mutex imageMutex;
+
     gNewImageFunc = [&]{
         // Get new image to process
         imgBuffer = gStreamWinPtr->getCurrentImage();
@@ -217,7 +203,9 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
             processor.setImage( tempImg , imgWidth , imgHeight );
             processor.processImage();
 
+            imageMutex.lock();
             gServer->serveImage( tempImg , imgWidth , imgHeight );
+            imageMutex.unlock();
 
             // Send status on target search to robot
             data[8] = processor.foundTarget();
@@ -283,6 +271,24 @@ INT WINAPI WinMain( HINSTANCE Instance , HINSTANCE , LPSTR , INT ) {
         }
     };
 
+    /* If this isn't allocated on the heap, it can't be destroyed soon enough.
+     * If it were allocated on the stack, it would be destroyed when it leaves
+     * WinMain's scope, which is after its parent window is destroyed. This
+     * causes the cleanup in this object's destructor to not complete
+     * successfully.
+     */
+    gStreamWinPtr = new MjpegStream( gSettings.getString( "streamHost" ) ,
+            gSettings.getInt( "streamPort" ) ,
+            gSettings.getString( "streamRequestPath" ) ,
+            mainWindow ,
+            0 ,
+            0 ,
+            320 ,
+            240 ,
+            Instance ,
+            &streamCallback ,
+            gNewImageFunc );
+
     // Make sure the main window is shown before continuing
     ShowWindow( mainWindow , SW_SHOW );
 
@@ -344,11 +350,11 @@ LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lP
                          if ( gServer != NULL ) {
                              gServer->stop();
                          }
-                         gStreamWinPtr->stopStream();
+                         gStreamWinPtr->stop();
                      }
                      else {
                          // Start streaming
-                         gStreamWinPtr->startStream();
+                         gStreamWinPtr->start();
                          if ( gServer != NULL ) {
                              gServer->start();
                          }
@@ -361,7 +367,7 @@ LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lP
                 if ( gStreamWinPtr != NULL ) {
                     if ( !gStreamWinPtr->isStreaming() ) {
                         // Start streaming
-                        gStreamWinPtr->startStream();
+                        gStreamWinPtr->start();
                         if ( gServer != NULL ) {
                             gServer->start();
                         }
@@ -377,7 +383,7 @@ LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lP
                         if ( gServer != NULL ) {
                             gServer->stop();
                         }
-                        gStreamWinPtr->stopStream();
+                        gStreamWinPtr->stop();
                     }
                 }
 
@@ -466,27 +472,6 @@ LRESULT CALLBACK OnEvent( HWND handle , UINT message , WPARAM wParam , LPARAM lP
 
     case WM_DESTROY: {
         PostQuitMessage(0);
-
-        break;
-    }
-
-    case WM_MJPEGSTREAM_START: {
-        gStreamWinPtr->repaint();
-
-        break;
-    }
-
-    case WM_MJPEGSTREAM_STOP: {
-        gStreamWinPtr->repaint();
-
-        break;
-    }
-
-    case WM_MJPEGSTREAM_NEWIMAGE: {
-        gStreamWinPtr->repaint();
-
-        // Processes new images
-        gNewImageFunc();
 
         break;
     }

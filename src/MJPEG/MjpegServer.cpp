@@ -39,6 +39,9 @@ MjpegServer::MjpegServer( unsigned short port ) :
     // Use the library's routine to set default compression parameters
     jpeg_set_defaults( &m_cinfo );
 
+    // Set any non-default parameters
+    jpeg_set_quality( &m_cinfo , 100 , TRUE /* limit to baseline-JPEG values */);
+
     m_row_pointer = NULL;
 }
 
@@ -117,8 +120,8 @@ void MjpegServer::stop() {
         mjpeg_sck_close(m_listenSock);
 
         // Close and disconnect client sockets
-        for ( std::list<mjpeg_socket_t>::iterator i = m_clientSockets.begin() ; i != m_clientSockets.end() ; i++ ) {
-            mjpeg_sck_close(*i);
+        for ( auto i : m_clientSockets ) {
+            mjpeg_sck_close(i);
         }
 
         m_clientSockets.clear();
@@ -126,6 +129,10 @@ void MjpegServer::stop() {
 }
 
 void MjpegServer::serveImage( uint8_t* image , unsigned int width , unsigned int height ) {
+    static std::atomic<int> funcCallCount( 0 );
+    funcCallCount++;
+    std::cout << "func=" << funcCallCount << "\n";
+
     /* Free output buffer for JPEG compression because libjpeg leaks
      * memory from jpeg_mem_dest() if it's not NULL (see libjpeg's
      * jdatadst.c line 242 for the function)
@@ -139,9 +146,6 @@ void MjpegServer::serveImage( uint8_t* image , unsigned int width , unsigned int
     /* ===== Convert RGB image to JPEG ===== */
     m_cinfo.image_width = width;
     m_cinfo.image_height = height;
-
-    // Set any non-default parameters
-    jpeg_set_quality( &m_cinfo , 100 , TRUE /* limit to baseline-JPEG values */);
 
     // TRUE ensures that we will write a complete interchange-JPEG file
     jpeg_start_compress( &m_cinfo , TRUE );
@@ -159,24 +163,33 @@ void MjpegServer::serveImage( uint8_t* image , unsigned int width , unsigned int
     jpeg_finish_compress( &m_cinfo );
     /* ===================================== */
 
+    /* Don't bother making the MJPEG frame if there are no clients to which to
+     * send it.
+     */
+    if ( m_clientSockets.size() == 0 ) {
+        funcCallCount--;
+        return;
+    }
+
+    /* ===== Prepare MJPEG frame ===== */
+    std::string imgFrame = "--myboundary\r\n"
+            "Content-Type: image/jpeg\r\n"
+            "Content-Length: ";
+
+    std::stringstream ss;
+    ss << m_serveLen;
+
+    imgFrame += ss.str(); // Add image size
+    imgFrame += "\r\n\r\n";
+
+    char buffer[imgFrame.length() + m_serveLen + 2];
+    std::memcpy( buffer , imgFrame.c_str() , imgFrame.length() );
+    std::memcpy( buffer + imgFrame.length() , m_serveImg , m_serveLen );
+    std::memcpy( buffer + imgFrame.length() + m_serveLen , "\r\n" , 2 );
+    /* =============================== */
+
     // Send JPEG to all clients
-    for ( std::list<mjpeg_socket_t>::iterator i = m_clientSockets.begin() ; i != m_clientSockets.end() ; i++ ) {
-        std::string imgFrame = "--myboundary\r\n";
-        imgFrame += "Content-Type: image/jpeg\r\n";
-        imgFrame += "Content-Length: ";
-
-        std::stringstream ss;
-        ss << m_serveLen;
-
-        imgFrame += ss.str(); // Add image size
-        imgFrame += "\r\n\r\n";
-
-        bool didSend = true;
-        char buffer[imgFrame.length() + m_serveLen + 2];
-        std::memcpy( buffer , imgFrame.c_str() , imgFrame.length() );
-        std::memcpy( buffer + imgFrame.length() , m_serveImg , m_serveLen );
-        std::memcpy( buffer + imgFrame.length() + m_serveLen , "\r\n" , 2 );
-
+    for ( auto i = m_clientSockets.begin() ; i != m_clientSockets.end() ; i++ ) {
         // Loop until every byte has been sent
         int sent = 0;
         int sizeToSend = imgFrame.length() + m_serveLen + 2;
@@ -186,51 +199,47 @@ void MjpegServer::serveImage( uint8_t* image , unsigned int width , unsigned int
 
             // Check for errors
             if (sent < 0) {
-                didSend = false;
+                // Close dead socket and remove it from the selector
+                mjpeg_sck_close(*i);
+                FD_CLR(*i, &m_clientSelector.allSockets);
+                FD_CLR(*i, &m_clientSelector.socketsReady);
+
+                // Remove socket from the list of clients
+                i = m_clientSockets.erase( i );
+
                 break; // Failed to send
             }
         }
-
-        if ( !didSend ) {
-            // Close dead socket and remove it from the selector
-            mjpeg_sck_close(*i);
-            FD_CLR(*i, &m_clientSelector.allSockets);
-            FD_CLR(*i, &m_clientSelector.socketsReady);
-
-            // Remove socket from the list of clients
-            m_clientSockets.erase( i );
-
-            break; // Exit the loop since we lost the iterator
-        }
     }
+
+    funcCallCount--;
 }
 
 void* MjpegServer::serverFunc( void* obj ) {
-    MjpegServer* objPtr = static_cast<MjpegServer*>( obj );
+    MjpegServer& server = *static_cast<MjpegServer*>( obj );
 
     char packet[256];
     unsigned int recvSize = 0;
 
-    while ( objPtr->m_isRunning ) {
+    while ( server.m_isRunning ) {
         // Set up the timeout
         timeval time;
         time.tv_sec  = 0;
         time.tv_usec = 1;
 
         // Initialize the set that will contain the sockets that are ready
-        objPtr->m_clientSelector.socketsReady = objPtr->m_clientSelector.allSockets;
+        server.m_clientSelector.socketsReady = server.m_clientSelector.allSockets;
 
         // Wait until one of the sockets is ready for reading, or timeout is reached
-        int count = select(objPtr->m_clientSelector.maxSocket + 1, &objPtr->m_clientSelector.socketsReady, NULL, NULL, &time);
+        int count = select(server.m_clientSelector.maxSocket + 1, &server.m_clientSelector.socketsReady, NULL, NULL, &time);
 
-        // Call wrapper for select so 'isReady' call works
         if ( count > 0 ) {
             // If listener is ready
-            if ( FD_ISSET(objPtr->m_listenSock, &objPtr->m_clientSelector.socketsReady) != 0 ) {
+            if ( FD_ISSET(server.m_listenSock, &server.m_clientSelector.socketsReady) != 0 ) {
                 // Accept a new connection
                 sockaddr_in acceptAddr;
                 socklen_t length = sizeof(acceptAddr);
-                mjpeg_socket_t newClient = accept(objPtr->m_listenSock, reinterpret_cast<sockaddr*>(&acceptAddr), &length);
+                mjpeg_socket_t newClient = accept(server.m_listenSock, reinterpret_cast<sockaddr*>(&acceptAddr), &length);
 
                 // Initialize new socket and add it to the selector
                 if ( mjpeg_sck_valid(newClient) ) {
@@ -244,19 +253,19 @@ void* MjpegServer::serverFunc( void* obj ) {
                     }
 
                     // Add socket to selector
-                    objPtr->m_clientSockets.push_front( newClient );
-                    FD_SET(newClient, &objPtr->m_clientSelector.allSockets);
-                    if ( newClient > objPtr->m_clientSelector.maxSocket) {
-                        objPtr->m_clientSelector.maxSocket = newClient;
+                    server.m_clientSockets.push_front( newClient );
+                    FD_SET(newClient, &server.m_clientSelector.allSockets);
+                    if ( newClient > server.m_clientSelector.maxSocket) {
+                        server.m_clientSelector.maxSocket = newClient;
                     }
                 }
             }
             else {
                 // Check if sockets are requesting data stream
-                std::list<mjpeg_socket_t>::iterator i = objPtr->m_clientSockets.begin();
-                while ( i != objPtr->m_clientSockets.end() ) {
+                for ( auto i = server.m_clientSockets.begin() ;
+                        i != server.m_clientSockets.end() ; i++ ) {
                     // If current client is ready
-                    if ( FD_ISSET(*i, &objPtr->m_clientSelector.socketsReady) != 0 ) {
+                    if ( FD_ISSET(*i, &server.m_clientSelector.socketsReady) != 0 ) {
                         // Receive a chunk of bytes
                         recvSize = recv(*i, packet, 256, 0);
 
@@ -294,17 +303,15 @@ void* MjpegServer::serverFunc( void* obj ) {
                         else {
                             // Close dead socket and remove it from the selector
                             mjpeg_sck_close(*i);
-                            FD_CLR(*i, &objPtr->m_clientSelector.allSockets);
-                            FD_CLR(*i, &objPtr->m_clientSelector.socketsReady);
+                            FD_CLR(*i, &server.m_clientSelector.allSockets);
+                            FD_CLR(*i, &server.m_clientSelector.socketsReady);
 
                             // Remove socket from the list of clients
-                            i = objPtr->m_clientSockets.erase( i );
+                            i = server.m_clientSockets.erase( i );
 
                             continue;
                         }
                     }
-
-                    i++;
                 }
             }
         }

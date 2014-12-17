@@ -37,14 +37,6 @@ void BMPtoPXL( HDC dc , HBITMAP bmp , uint8_t* pxlData ) {
     GetDIBits( dc , bmp , 0 , tempBmp.bmHeight , pxlData , (BITMAPINFO*)&bmi , DIB_RGB_COLORS );
 }
 
-// Convert a string to lower case
-std::string toLower( std::string str ) {
-    for ( std::string::iterator i = str.begin() ; i != str.end() ; ++i ) {
-        *i = static_cast<char>(std::tolower(*i));
-    }
-    return str;
-}
-
 class StreamClassInit {
 public:
     StreamClassInit();
@@ -85,12 +77,13 @@ MjpegStream::MjpegStream( const std::string& hostName ,
         int yPosition ,
         int width ,
         int height ,
-        HINSTANCE appInstance,
-        WindowCallbacks* windowCallbacks
+        HINSTANCE appInstance ,
+        WindowCallbacks* windowCallbacks ,
+        std::function<void(void)> newImageCallback ,
+        std::function<void(void)> startCallback ,
+        std::function<void(void)> stopCallback
         ) :
-        m_hostName( hostName ) ,
-        m_port( port ) ,
-        m_requestPath( requestPath ) ,
+        MjpegClient( hostName , port , requestPath ) ,
 
         m_connectMsg( Vector2i( 0 , 0 ) , UIFont::getInstance().segoeUI18() ,
                 L"Connecting..." , Colorf( 0 , 0 , 0 ) , Colorf( 255 , 255 , 255 ) ) ,
@@ -103,26 +96,21 @@ MjpegStream::MjpegStream( const std::string& hostName ,
         m_waitPxl( NULL ) ,
         m_backgroundPxl( NULL ) ,
 
-        m_pxlBuf( NULL ) ,
+        m_img( NULL ) ,
         m_imgWidth( 0 ) ,
         m_imgHeight( 0 ) ,
         m_textureWidth( 0 ) ,
         m_textureHeight( 0 ) ,
 
-        m_extBuf( NULL ) ,
-        m_extWidth( 0 ) ,
-        m_extHeight( 0 ) ,
-
-        m_newImageAvailable( false ) ,
-
         m_firstImage( true ) ,
-
-        m_streamInst( NULL ) ,
 
         m_frameRate( 15 ) ,
 
-        m_stopReceive( true ) ,
-        m_stopUpdate( true )
+        m_stopUpdate( true ) ,
+
+        m_newImageCallback( newImageCallback ) ,
+        m_startCallback( startCallback ) ,
+        m_stopCallback( stopCallback )
 {
     // Initialize the WindowCallbacks pointer
     m_windowCallbacks = windowCallbacks;
@@ -167,17 +155,10 @@ MjpegStream::MjpegStream( const std::string& hostName ,
 
     // Initialize mutexes
     mjpeg_mutex_init( &m_imageMutex );
-    mjpeg_mutex_init( &m_extMutex );
     mjpeg_mutex_init( &m_windowMutex );
 
     // Create the textures that can be displayed in the stream window
     recreateGraphics( Vector2i( width , height ) );
-
-    // Set up the callback description structure
-    ZeroMemory( &m_callbacks , sizeof(struct mjpeg_callbacks_t) );
-    m_callbacks.readcallback = readCallback;
-    m_callbacks.donecallback = doneCallback;
-    m_callbacks.optarg = this;
 
     // Add window to global map
     m_map.insert( m_map.begin() ,
@@ -200,7 +181,7 @@ MjpegStream::MjpegStream( const std::string& hostName ,
 }
 
 MjpegStream::~MjpegStream() {
-    stopStream();
+    stop();
 
     m_stopUpdate = true;
     mjpeg_thread_join( &m_updateThread , NULL );
@@ -210,12 +191,8 @@ MjpegStream::~MjpegStream() {
     delete[] m_waitPxl;
     delete[] m_backgroundPxl;
 
-    delete[] m_pxlBuf;
-    delete[] m_extBuf;
-
     // Destroy mutexes
     mjpeg_mutex_destroy( &m_imageMutex );
-    mjpeg_mutex_destroy( &m_extMutex );
     mjpeg_mutex_destroy( &m_windowMutex );
 
     delete m_glWin;
@@ -267,41 +244,30 @@ void MjpegStream::setSize( const Vector2i& size ) {
     recreateGraphics( size );
 }
 
-void MjpegStream::startStream() {
-    if ( m_stopReceive == true ) { // if stream is closed, reopen it
-        m_stopReceive = false;
-        m_firstImage = true;
+void MjpegStream::start() {
+    if ( !isStreaming() ) {
+        MjpegClient::start();
+        if ( isStreaming() ) {
+            m_firstImage = true;
+            m_imageAge = std::chrono::system_clock::now();
 
-        m_imageAge = std::chrono::system_clock::now();
-
-        // Launch the MJPEG receiving/processing thread
-        m_streamInst = mjpeg_launchthread( const_cast<char*>( m_hostName.c_str() ) , m_port , const_cast<char*>( m_requestPath.c_str() ) , &m_callbacks );
-        if ( m_streamInst == NULL ) {
-            m_stopReceive = true;
-        }
-        else {
-            // Send message to parent window about the stream opening
-            PostMessage( m_parentWin , WM_MJPEGSTREAM_START , 0 , 0 );
+            repaint();
+            if ( m_startCallback != nullptr ) {
+                m_startCallback();
+            }
         }
     }
 }
 
-void MjpegStream::stopStream() {
-    if ( m_stopReceive == false ) { // if stream is open, close it
-        m_stopReceive = true;
-
-        // Close the receive thread
-        if ( m_streamInst != NULL ) {
-            mjpeg_stopthread( m_streamInst );
+void MjpegStream::stop() {
+    // If stream is open, close it
+    if ( isStreaming() ) {
+        MjpegClient::stop();
+        repaint();
+        if ( m_stopCallback != nullptr ) {
+            m_stopCallback();
         }
-
-        // Send message to parent window about the stream closing
-        PostMessage( m_parentWin , WM_MJPEGSTREAM_STOP , 0 , 0 );
     }
-}
-
-bool MjpegStream::isStreaming() {
-    return !m_stopReceive;
 }
 
 void MjpegStream::setFPS( unsigned int fps ) {
@@ -314,127 +280,21 @@ void MjpegStream::repaint() {
     mjpeg_mutex_unlock( &m_windowMutex );
 }
 
-void MjpegStream::saveCurrentImage( const std::string& fileName ) {
-    mjpeg_mutex_lock( &m_imageMutex );
-
-    // Deduce the image type from its extension
-    if ( fileName.size() > 3 ) {
-        // Extract the extension
-        std::string extension = fileName.substr(fileName.size() - 3);
-
-        if ( toLower(extension) == "bmp" ) {
-            // BMP format
-            stbi_write_bmp( fileName.c_str(), m_imgWidth, m_imgHeight, 4, m_pxlBuf );
-        }
-        else if ( toLower(extension) == "tga" ) {
-            // TGA format
-            stbi_write_tga( fileName.c_str(), m_imgWidth, m_imgHeight, 4, m_pxlBuf );
-        }
-        else if( toLower(extension) == "png" ) {
-            // PNG format
-            stbi_write_png( fileName.c_str(), m_imgWidth, m_imgHeight, 4, m_pxlBuf, 0 );
-        }
-        else {
-            std::cout << "MjpegStream: failed to save image to '" << fileName << "'\n";
-        }
-    }
-
-    mjpeg_mutex_unlock( &m_imageMutex );
+void MjpegStream::done( void* optarg ) {
+    static_cast<MjpegStream*>(optarg)->repaint();
 }
 
-uint8_t* MjpegStream::getCurrentImage() {
-    mjpeg_mutex_lock( &m_imageMutex );
-    mjpeg_mutex_lock( &m_extMutex );
-
-    if ( m_pxlBuf != NULL ) {
-        // If buffer is wrong size, reallocate it
-        if ( m_imgWidth != m_extWidth || m_imgHeight != m_extHeight ) {
-            if ( m_extBuf != NULL ) {
-                delete[] m_extBuf;
-            }
-
-            // Allocate new buffer to fit latest image
-            m_extBuf = new uint8_t[m_imgWidth * m_imgHeight * 4];
-            m_extWidth = m_imgWidth;
-            m_extHeight = m_imgHeight;
-        }
-
-        std::memcpy( m_extBuf , m_pxlBuf , m_extWidth * m_extHeight * 4 );
-
-        /* Since the image just got copied, it's no longer new. This is checked
-         * in the if statement "m_pxlBuf != NULL" because it's impossible for
-         * this to be set to true when no image has been received yet.
-         */
-        m_newImageAvailable = false;
-    }
-
-    mjpeg_mutex_unlock( &m_extMutex );
-    mjpeg_mutex_unlock( &m_imageMutex );
-
-    return m_extBuf;
-}
-
-Vector2i MjpegStream::getCurrentSize() {
-    mjpeg_mutex_lock( &m_extMutex );
-
-    Vector2i temp( m_extWidth , m_extHeight );
-
-    mjpeg_mutex_unlock( &m_extMutex );
-
-    return temp;
-}
-
-bool MjpegStream::newImageAvailable() {
-    return m_newImageAvailable;
-}
-
-void MjpegStream::doneCallback( void* optobj ) {
-    static_cast<MjpegStream*>(optobj)->m_stopReceive = true;
-    static_cast<MjpegStream*>(optobj)->m_streamInst = NULL;
-    static_cast<MjpegStream*>(optobj)->repaint();
-}
-
-void MjpegStream::readCallback( char* buf , int bufsize , void* optobj ) {
+void MjpegStream::read( char* buf , int bufsize , void* optarg ) {
     // Create pointer to stream to make it easier to access the instance later
-    MjpegStream* streamPtr = static_cast<MjpegStream*>( optobj );
+    MjpegStream* streamPtr = static_cast<MjpegStream*>( optarg );
 
-    // Load the image received (converts from JPEG to pixel array)
-    int width, height, channels;
-    uint8_t* ptr = stbi_load_from_memory((unsigned char*)buf, bufsize, &width, &height, &channels, STBI_rgb_alpha);
-
-    if ( ptr && width && height ) {
-        mjpeg_mutex_lock( &streamPtr->m_imageMutex );
-
-        // Free old buffer and store new one created by stbi_load_from_memory()
-        delete[] streamPtr->m_pxlBuf;
-
-        streamPtr->m_pxlBuf = ptr;
-
-        streamPtr->m_imgWidth = width;
-        streamPtr->m_imgHeight = height;
-
-        mjpeg_mutex_unlock( &streamPtr->m_imageMutex );
-
-        // If that was the first image streamed
-        if ( streamPtr->m_firstImage ) {
-            streamPtr->m_firstImage = false;
+    // Send message to parent window about the new image
+    if ( std::chrono::system_clock::now() - streamPtr->m_displayTime > std::chrono::duration<double>(1.0 / streamPtr->m_frameRate) ) {
+        repaint();
+        if ( m_newImageCallback != nullptr ) {
+            m_newImageCallback();
         }
-
-        if ( !streamPtr->m_newImageAvailable ) {
-            streamPtr->m_newImageAvailable = true;
-        }
-
-        // Reset the image age timer
-        streamPtr->m_imageAge = std::chrono::system_clock::now();
-
-        // Send message to parent window about the new image
-        if ( std::chrono::system_clock::now() - streamPtr->m_displayTime > std::chrono::duration<double>(1.0 / streamPtr->m_frameRate) ) {
-            PostMessage( streamPtr->m_parentWin , WM_MJPEGSTREAM_NEWIMAGE , 0 , 0 );
-            streamPtr->m_displayTime = std::chrono::system_clock::now();
-        }
-    }
-    else {
-        std::cout << "MjpegStream: image failed to load: " << stbi_failure_reason() << "\n";
+        streamPtr->m_displayTime = std::chrono::system_clock::now();
     }
 }
 
@@ -574,7 +434,7 @@ void* MjpegStream::updateFunc( void* obj ) {
     std::chrono::duration<double> lastTime( 0.0 );
     std::chrono::duration<double> currentTime( 0.0 );
 
-    while ( !static_cast<MjpegStream*>(obj)->m_stopUpdate ) {
+    while ( static_cast<MjpegStream*>(obj)->isStreaming() ) {
         currentTime = std::chrono::system_clock::now() - static_cast<MjpegStream*>(obj)->m_imageAge;
 
         // Make "Waiting..." graphic show up
@@ -660,6 +520,26 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
 
     // If streaming is enabled
     if ( isStreaming() ) {
+        // Check for new image
+        if ( newImageAvailable() ) {
+            mjpeg_mutex_lock( &m_imageMutex );
+
+            m_img = getCurrentImage();
+
+            Vector2i size = getCurrentSize();
+            m_imgWidth = size.X;
+            m_imgHeight = size.Y;
+
+            mjpeg_mutex_unlock( &m_imageMutex );
+
+            if ( m_firstImage ) {
+                m_firstImage = false;
+            }
+
+            // Reset "Waiting..." timeout
+            m_imageAge = std::chrono::system_clock::now();
+        }
+
         // If no image has been received yet
         if ( m_firstImage ) {
             mjpeg_mutex_lock( &m_imageMutex );
@@ -682,7 +562,10 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
                     getSize().Y , GL_RGBA , GL_UNSIGNED_BYTE , m_waitPxl );
 
             // Send message to parent window about the new image
-            PostMessage( m_parentWin , WM_MJPEGSTREAM_NEWIMAGE , 0 , 0 );
+            repaint();
+            if ( m_newImageCallback != nullptr ) {
+                m_newImageCallback();
+            }
 
             mjpeg_mutex_unlock( &m_imageMutex );
 
@@ -695,7 +578,7 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
             mjpeg_mutex_lock( &m_imageMutex );
 
             glTexSubImage2D( GL_TEXTURE_2D , 0 , 0 , 0 , m_imgWidth ,
-                    m_imgHeight, GL_RGBA , GL_UNSIGNED_BYTE , m_pxlBuf );
+                    m_imgHeight, GL_RGBA , GL_UNSIGNED_BYTE , m_img );
 
             mjpeg_mutex_unlock( &m_imageMutex );
 
@@ -739,13 +622,13 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
     GetWindowText( m_toggleButton , buttonText , 13 );
 
     // If running and button displays "Start"
-    if ( !m_stopReceive && std::strcmp( buttonText , "Start Stream" ) == 0 ) {
+    if ( isStreaming() && std::strcmp( buttonText , "Start Stream" ) == 0 ) {
         // Change text displayed on button (LParam is button HWND)
         SendMessage( m_toggleButton , WM_SETTEXT , 0 , reinterpret_cast<LPARAM>("Stop Stream") );
     }
 
     // If not running and button displays "Stop"
-    else if ( m_stopReceive && std::strcmp( buttonText , "Stop Stream" ) == 0 ) {
+    else if ( !isStreaming() && std::strcmp( buttonText , "Stop Stream" ) == 0 ) {
         // Change text displayed on button (LParam is button HWND)
         SendMessage( m_toggleButton , WM_SETTEXT , 0 , reinterpret_cast<LPARAM>("Start Stream") );
     }

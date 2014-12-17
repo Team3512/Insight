@@ -36,40 +36,42 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
+#include <string>
 #include <atomic>
 #include <chrono>
 #include <map>
 #include <cstdint>
+#include <functional>
 
+#include "MjpegClient.hpp"
 #include "../WinGDI/Text.hpp"
 #include "../Vector.hpp"
 #include "../GLWindow.hpp"
 
-#include "mjpegrx.h"
 #include "mjpeg_thread.h"
+#include "mjpeg_mutex.h"
 
 #include "WindowCallbacks.hpp"
 
 void BMPtoPXL( HDC dc , HBITMAP bmp , uint8_t* pxlData );
 
-#define WM_MJPEGSTREAM_START     (WM_APP + 0x0001)
-#define WM_MJPEGSTREAM_STOP      (WM_APP + 0x0002)
-#define WM_MJPEGSTREAM_NEWIMAGE  (WM_APP + 0x0003)
-
 class StreamClassInit;
 
-class MjpegStream {
+class MjpegStream : public MjpegClient {
 public:
     MjpegStream( const std::string& hostName ,
             unsigned short port ,
-            const std::string& reqPath,
+            const std::string& requestPath,
             HWND parentWin ,
             int xPosition ,
             int yPosition ,
             int width ,
             int height ,
             HINSTANCE appInstance,
-            WindowCallbacks* windowCallbacks
+            WindowCallbacks* windowCallbacks ,
+            std::function<void(void)> newImageCallback = nullptr ,
+            std::function<void(void)> startCallback = nullptr ,
+            std::function<void(void)> stopCallback = nullptr
             );
     virtual ~MjpegStream();
 
@@ -80,13 +82,10 @@ public:
     void setSize( const Vector2i& size );
 
     // Request MJPEG stream and begin displaying it
-    void startStream();
+    void start();
 
     // Stop receiving MJPEG stream
-    void stopStream();
-
-    // Returns true if streaming is on
-    bool isStreaming();
+    void stop();
 
     // Set max frame rate of images displaying in window
     void setFPS( unsigned int fps );
@@ -94,33 +93,11 @@ public:
     // Displays the stream or a message if the stream isn't working
     void repaint();
 
-    // Saves most recently received image to a file
-    void saveCurrentImage( const std::string& fileName );
-
-    /* Copies the most recently received image into a secondary internal buffer
-     * and returns it to the user. After a call to this function, the new size
-     * should be retrieved since it may have changed. Do NOT access the buffer
-     * pointer returned while this function is executing.
-     */
-    uint8_t* getCurrentImage();
-
-    // Returns size image currently in secondary buffer
-    Vector2i getCurrentSize();
-
-    /* Returns state of boolean 'm_newImageAvailable'. One could use this
-     * instead of handling the WM_MJPEGSTREAM_NEWIMAGE message.
-     */
-    bool newImageAvailable();
-
 protected:
-    static void doneCallback( void* optarg );
-    static void readCallback( char* buf , int bufsize , void* optarg );
+    void done( void* optarg );
+    void read( char* buf , int bufsize , void* optarg );
 
 private:
-    std::string m_hostName;
-    unsigned short m_port;
-    std::string m_requestPath;
-
     HWND m_parentWin;
 
     HWND m_streamWin;
@@ -145,20 +122,12 @@ private:
     uint8_t* m_backgroundPxl;
 
     // Stores image before displaying it on the screen
-    uint8_t* m_pxlBuf;
+    uint8_t* m_img;
     unsigned int m_imgWidth;
     unsigned int m_imgHeight;
     unsigned int m_textureWidth;
     unsigned int m_textureHeight;
     mjpeg_mutex_t m_imageMutex;
-
-    /* Stores copy of image for use by external programs. It only updates when
-     * getCurrentImage() is called.
-     */
-    uint8_t* m_extBuf;
-    unsigned int m_extWidth;
-    unsigned int m_extHeight;
-    mjpeg_mutex_t m_extMutex;
 
     /* Set to true when a new image is received from the MJPEG server
      * Set back to false upon the first call to getCurrentImage()
@@ -169,10 +138,6 @@ private:
      * (when the stream first starts)
      */
     std::atomic<bool> m_firstImage;
-
-    // Used for streaming MJPEG frames from host
-    struct mjpeg_callbacks_t m_callbacks;
-    struct mjpeg_inst_t* m_streamInst;
 
     // Determines when a video frame is old
     std::chrono::time_point<std::chrono::system_clock> m_imageAge;
@@ -185,13 +150,6 @@ private:
     mjpeg_mutex_t m_windowMutex;
 
     /* If false:
-     *     Lets receive thread run
-     * If true:
-     *     Closes receive thread
-     */
-    std::atomic<bool> m_stopReceive;
-
-    /* If false:
      *     Lets update thread run
      * If true:
      *     Closes update thread
@@ -199,6 +157,10 @@ private:
     std::atomic<bool> m_stopUpdate;
 
     WindowCallbacks* m_windowCallbacks;
+
+    std::function<void(void)> m_newImageCallback;
+    std::function<void(void)> m_startCallback;
+    std::function<void(void)> m_stopCallback;
 
     /* Mouse position state variables */
     int m_lx;
