@@ -34,7 +34,7 @@
 
 #include "../Vector.hpp"
 
-#include "mjpegrx.h"
+#include "mjpegrx.hpp"
 
 class MjpegClient {
 public:
@@ -64,8 +64,6 @@ public:
     // Returns size image currently in secondary buffer
     Vector2i getCurrentSize();
 
-    bool newImageAvailable() const;
-
 protected:
     static void doneCallback( void* optarg );
     static void readCallback( char* buf , int bufsize , void* optarg );
@@ -94,11 +92,6 @@ private:
     unsigned int m_extWidth;
     unsigned int m_extHeight;
     std::mutex m_extMutex;
-
-    /* Set to true when a new image is received from the MJPEG server
-     * Set back to false upon the first call to getCurrentImage()
-     */
-    std::atomic<bool> m_newImageAvailable;
 
     // Used for streaming MJPEG frames from host
     struct mjpeg_callbacks_t m_callbacks;

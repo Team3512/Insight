@@ -37,8 +37,6 @@ MjpegClient::MjpegClient( const std::string& hostName , unsigned short port ,
         m_extWidth( 0 ) ,
         m_extHeight( 0 ) ,
 
-        m_newImageAvailable( false ) ,
-
         m_streamInst( NULL ) ,
 
         m_stopReceive( true )
@@ -130,12 +128,6 @@ uint8_t* MjpegClient::getCurrentImage() {
         }
 
         std::memcpy( m_extBuf , m_pxlBuf , m_extWidth * m_extHeight * 4 );
-
-        /* Since the image just got copied, it's no longer new. This is checked
-         * in the if statement "m_pxlBuf != NULL" because it's impossible for
-         * this to be set to true when no image has been received yet.
-         */
-        m_newImageAvailable = false;
     }
 
     m_extMutex.unlock();
@@ -152,10 +144,6 @@ Vector2i MjpegClient::getCurrentSize() {
     m_extMutex.unlock();
 
     return temp;
-}
-
-bool MjpegClient::newImageAvailable() const {
-    return m_newImageAvailable;
 }
 
 void MjpegClient::doneCallback( void* optarg ) {
@@ -186,10 +174,6 @@ void MjpegClient::readCallback( char* buf , int bufsize , void* optarg ) {
         streamPtr->m_imgHeight = height;
 
         streamPtr->m_imageMutex.unlock();
-
-        if ( !streamPtr->m_newImageAvailable ) {
-            streamPtr->m_newImageAvailable = true;
-        }
 
         // Call virtually overridden function
         streamPtr->read( buf , bufsize , optarg );

@@ -284,8 +284,23 @@ void MjpegStream::read( char* buf , int bufsize , void* optarg ) {
         if ( m_newImageCallback != nullptr ) {
             m_newImageCallback();
         }
-        streamPtr->m_imageAge = std::chrono::system_clock::now();
+
+        m_imageMutex.lock();
+
+        m_img = getCurrentImage();
+
+        Vector2i size = getCurrentSize();
+        m_imgWidth = size.X;
+        m_imgHeight = size.Y;
+
+        m_imageMutex.unlock();
+
+        if ( m_firstImage ) {
+            m_firstImage = false;
+        }
     }
+
+    m_imageAge = std::chrono::system_clock::now();
 }
 
 void MjpegStream::recreateGraphics( const Vector2i& windowSize ) {
@@ -508,26 +523,6 @@ void MjpegStream::paint( PAINTSTRUCT* ps ) {
 
     // If streaming is enabled
     if ( isStreaming() ) {
-        // Check for new image
-        if ( newImageAvailable() ) {
-            m_imageMutex.lock();
-
-            m_img = getCurrentImage();
-
-            Vector2i size = getCurrentSize();
-            m_imgWidth = size.X;
-            m_imgHeight = size.Y;
-
-            m_imageMutex.unlock();
-
-            if ( m_firstImage ) {
-                m_firstImage = false;
-            }
-
-            // Reset "Waiting..." timeout
-            m_imageAge = std::chrono::system_clock::now();
-        }
-
         // If no image has been received yet
         if ( m_firstImage ) {
             m_imageMutex.lock();

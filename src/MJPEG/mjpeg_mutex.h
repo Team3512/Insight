@@ -1,6 +1,10 @@
 #ifndef _MJPEG_MUTEX_H
 #define _MJPEG_MUTEX_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef _WIN32
 
 #define WIN32_LEAN_AND_MEAN
@@ -27,5 +31,9 @@ void mjpeg_mutex_destroy( mjpeg_mutex_t* mutex );
 void mjpeg_mutex_lock( mjpeg_mutex_t* mutex );
 
 void mjpeg_mutex_unlock( mjpeg_mutex_t* mutex );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _MJPEG_MUTEX_H */

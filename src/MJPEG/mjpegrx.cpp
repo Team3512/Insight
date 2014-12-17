@@ -1,5 +1,7 @@
 /* mjpeg HTTP stream decoder */
 
+#include "mjpegrx.hpp"
+
 #include <sys/types.h>
 
 #include <assert.h>
@@ -8,7 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "mjpegrx.h"
 #include "mjpeg_sck.h"
 #include "mjpeg_mutex.h"
 
@@ -46,7 +47,7 @@ mjpeg_rxbyte(char **buf, int *bufpos, int *bufsize, int sd, int cancelfd){
 
     if(*bufpos == (*bufsize)-1){
         *bufsize += 1024;
-        *buf = realloc(*buf, *bufsize);
+        *buf = (char*)realloc(*buf, *bufsize);
     }
 
     return 0;
@@ -62,7 +63,7 @@ mjpeg_rxheaders(char **buf_out, int *bufsize_out, int sd, int cancelfd){
 
     bufpos = 0;
     allocsize = 1024;
-    buf = malloc(allocsize);
+    buf = (char*)malloc(allocsize);
 
     while(1){
         if(mjpeg_rxbyte(&buf, &bufpos, &allocsize, sd, cancelfd) != 0){
@@ -126,7 +127,7 @@ mjpeg_sck_recv(int sockfd, void *buf, size_t len, int cancelfd)
         }
 
         /* Otherwise, read some more. */
-        error = recv(sockfd, buf+nread, len-nread, 0);
+        error = recv(sockfd, (char*)buf+nread, len-nread, 0);
         if(error < 1) {
             return -1;
         }
@@ -246,7 +247,7 @@ mjpeg_sck_connect(char *host, int port, int cancelfd)
 
     /* Check that connecting was successful. */
     error_code_len = sizeof(error_code);
-    error = getsockopt(sd, SOL_SOCKET, SO_ERROR, (void *) &error_code, (socklen_t *) &error_code_len);
+    error = getsockopt(sd, SOL_SOCKET, SO_ERROR, (char *) &error_code, (socklen_t *) &error_code_len);
     if(error == -1) {
       mjpeg_sck_close(sd);
       return -1;
@@ -344,11 +345,11 @@ mjpeg_process_header(char *header)
 
         /* create a linked list element */
         if(list == NULL){
-            list = malloc(sizeof(struct keyvalue_t));
+            list = (keyvalue_t*)malloc(sizeof(struct keyvalue_t));
             start = list;
         }
         else{
-            list->next = malloc(sizeof(struct keyvalue_t));
+            list->next = (keyvalue_t*)malloc(sizeof(struct keyvalue_t));
             list = list->next;
         }
         list->next = NULL;
@@ -439,7 +440,7 @@ mjpeg_launchthread(
     struct mjpeg_inst_t *inst;
 
     /* Allocate an instance object for this instance. */
-    inst = malloc(sizeof(struct mjpeg_inst_t));
+    inst = (mjpeg_inst_t*)malloc(sizeof(struct mjpeg_inst_t));
 
     /* Fill the object's fields. */
     inst->host = strdup(host);
@@ -509,7 +510,7 @@ mjpeg_stopthread(struct mjpeg_inst_t *inst)
 void *
 mjpeg_threadmain(void *optarg)
 {
-    struct mjpeg_inst_t* inst = optarg;
+    struct mjpeg_inst_t* inst = (mjpeg_inst_t*)optarg;
 
     int sd;
 
@@ -570,7 +571,7 @@ mjpeg_threadmain(void *optarg)
         mjpeg_freelist(headerlist);
 
         /* Read the JPEG image data. */
-        buf = malloc(datasize);
+        buf = (char*)malloc(datasize);
         bytesread = mjpeg_sck_recv(sd, buf, datasize, inst->cancelfdr);
         if(bytesread != datasize){
             free(buf);
