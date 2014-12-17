@@ -101,16 +101,15 @@ void MjpegServer::start() {
         }
 
         m_isRunning = true;
-        if ( mjpeg_thread_create( &m_serverThread , &MjpegServer::serverFunc , this ) == -1 ) {
-            m_isRunning = false;
-        }
+        m_serverThread = new std::thread( MjpegServer::serverFunc , this );
     }
 }
 
 void MjpegServer::stop() {
     if ( m_isRunning ) {
         m_isRunning = false;
-        mjpeg_thread_join( &m_serverThread , NULL );
+        m_serverThread->join();
+        delete m_serverThread;
 
         // Clear selector
         FD_ZERO(&m_clientSelector.allSockets);
@@ -208,7 +207,7 @@ void MjpegServer::serveImage( uint8_t* image , unsigned int width , unsigned int
     }
 }
 
-void* MjpegServer::serverFunc( void* obj ) {
+void MjpegServer::serverFunc( void* obj ) {
     MjpegServer& server = *static_cast<MjpegServer*>( obj );
 
     char packet[256];
@@ -222,7 +221,7 @@ void* MjpegServer::serverFunc( void* obj ) {
         int count = select(server.m_clientSelector.maxSocket + 1, &server.m_clientSelector.socketsReady, NULL, NULL, NULL);
 
         if ( !server.m_isRunning ) {
-            return NULL;
+            return;
         }
 
         if ( count > 0 ) {
@@ -315,8 +314,6 @@ void* MjpegServer::serverFunc( void* obj ) {
             }
         }
     }
-
-    return NULL;
 }
 
 #ifdef _WIN32

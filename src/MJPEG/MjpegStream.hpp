@@ -42,14 +42,13 @@
 #include <map>
 #include <cstdint>
 #include <functional>
+#include <thread>
 #include <mutex>
 
 #include "MjpegClient.hpp"
 #include "../WinGDI/Text.hpp"
 #include "../Vector.hpp"
 #include "../GLWindow.hpp"
-
-#include "mjpeg_thread.h"
 
 #include "WindowCallbacks.hpp"
 
@@ -169,14 +168,14 @@ private:
     int m_cy;
 
     // Makes sure "Waiting..." graphic is drawn after timeout
-    mjpeg_thread_t m_updateThread;
+    std::thread* m_updateThread;
 
     /* Recreates the graphics that display messages in the stream window
      * (Resizes them and recenters the text in the window)
      */
     void recreateGraphics( const Vector2i& windowSize );
 
-    static void* updateFunc( void* obj );
+    static void updateFunc( void* obj );
 
     static std::map<HWND , MjpegStream*> m_map;
     static LRESULT CALLBACK WindowProc( HWND handle , UINT message , WPARAM wParam , LPARAM lParam );

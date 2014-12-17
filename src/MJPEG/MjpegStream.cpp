@@ -9,7 +9,6 @@
 #include "../Util.hpp"
 #include "../Resource.h"
 #include "MjpegStream.hpp"
-#include "mjpeg_sleep.h"
 
 #include "stb_image.h"
 #include "stb_image_write.h"
@@ -171,16 +170,15 @@ MjpegStream::MjpegStream( const std::string& hostName ,
     m_imgHeight = getSize().Y;
 
     m_stopUpdate = false;
-    if ( mjpeg_thread_create( &m_updateThread , &MjpegStream::updateFunc , this ) == -1 ) {
-        m_stopUpdate = true;
-    }
+    m_updateThread = new std::thread( MjpegStream::updateFunc , this );
 }
 
 MjpegStream::~MjpegStream() {
     stop();
 
     m_stopUpdate = true;
-    mjpeg_thread_join( &m_updateThread , NULL );
+    m_updateThread->join();
+    delete m_updateThread;
 
     delete[] m_connectPxl;
     delete[] m_disconnectPxl;
@@ -422,7 +420,7 @@ void MjpegStream::recreateGraphics( const Vector2i& windowSize ) {
     DeleteObject( backgroundBmp );
 }
 
-void* MjpegStream::updateFunc( void* obj ) {
+void MjpegStream::updateFunc( void* obj ) {
     std::chrono::duration<double> lastTime( 0.0 );
     std::chrono::duration<double> currentTime( 0.0 );
 
@@ -436,10 +434,8 @@ void* MjpegStream::updateFunc( void* obj ) {
 
         lastTime = currentTime;
 
-        mjpeg_sleep( 50 );
+        std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
     }
-
-    mjpeg_thread_exit(NULL);
 }
 
 LRESULT CALLBACK MjpegStream::WindowProc( HWND handle , UINT message , WPARAM wParam , LPARAM lParam ) {

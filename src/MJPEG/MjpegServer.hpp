@@ -7,12 +7,12 @@
 #ifndef MJPEG_SERVER_HPP
 #define MJPEG_SERVER_HPP
 
-#include "mjpeg_thread.h"
 #include "mjpeg_sck.h"
 
 #include <iostream>
 #include <atomic>
 #include <list>
+#include <thread>
 #include <cstdint>
 
 #include <jpeglib.h>
@@ -41,8 +41,8 @@ private:
     mjpeg_socket_t m_listenSock;
     unsigned short m_port;
 
-    mjpeg_thread_t m_serverThread;
-    static void* serverFunc( void* obj );
+    std::thread* m_serverThread;
+    static void serverFunc( void* obj );
     std::atomic<bool> m_isRunning;
 
     struct jpeg_compress_struct m_cinfo;
