@@ -60,7 +60,14 @@ void MjpegServer::start() {
 
             // Disable the Nagle algorithm (ie. removes buffering of TCP packets)
             int yes = 1;
-            if (setsockopt(m_listenSock, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char*>(&yes), sizeof(yes)) == -1) {
+            if ( setsockopt(m_listenSock, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char*>(&yes), sizeof(yes)) == -1 ) {
+                mjpeg_sck_close(m_listenSock);
+                std::cout << "MjpegServer: failed to remove TCP buffering\n";
+                return; // Failed to remove buffering
+            }
+
+            // Allow reconnecting to the same port after server restart
+            if ( setsockopt(m_listenSock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&yes), sizeof(yes)) == -1 ) {
                 mjpeg_sck_close(m_listenSock);
                 std::cout << "MjpegServer: failed to remove TCP buffering\n";
                 return; // Failed to remove buffering
@@ -78,14 +85,14 @@ void MjpegServer::start() {
         address.sin_family      = AF_INET;
         address.sin_port        = htons(m_port);
 
-        if (bind(m_listenSock, reinterpret_cast<sockaddr*>(&address), sizeof(address)) == -1) {
+        if ( bind(m_listenSock, reinterpret_cast<sockaddr*>(&address), sizeof(address)) == -1 ) {
             mjpeg_sck_close(m_listenSock);
             std::cout << "MjpegServer: failed to bind socket to port\n";
             return; // Failed to bind socket to port
         }
 
         // Listen to the bound port
-        if (listen(m_listenSock, 0) == -1) {
+        if ( listen(m_listenSock, 0) == -1 ) {
             mjpeg_sck_close(m_listenSock);
             std::cout << "MjpegServer: failed to listen to port " << m_port << "\n";
             return; // Failed to listen to port
@@ -104,6 +111,10 @@ void MjpegServer::start() {
         }
         m_cancelfdr = pipefd[0];
         m_cancelfdw = pipefd[1];
+
+        // Zero selector before populating it
+        m_clientSelector.zero( mjpeg_sck_selector::read |
+                mjpeg_sck_selector::write | mjpeg_sck_selector::except );
 
         // Add reading end of socketpair to selector
         m_clientSelector.addSocket( m_cancelfdr , mjpeg_sck_selector::read | mjpeg_sck_selector::except );
@@ -230,21 +241,19 @@ void MjpegServer::serverFunc() {
         if ( count > 0 ) {
             // If listener is ready to be read from
             if ( m_clientSelector.isReady( m_listenSock , mjpeg_sck_selector::read ) ) {
-                std::cout << "new client\n";
-
                 // Accept a new connection
                 sockaddr_in acceptAddr;
                 socklen_t length = sizeof(acceptAddr);
-                mjpeg_socket_t newClient = accept(m_listenSock, reinterpret_cast<sockaddr*>(&acceptAddr), &length);
+                mjpeg_socket_t newClient = accept( m_listenSock , reinterpret_cast<sockaddr*>(&acceptAddr) , &length );
 
                 // Initialize new socket and add it to the selector
                 if ( mjpeg_sck_valid(newClient) ) {
-                    mjpeg_sck_setnonblocking(newClient, 0);
+                    mjpeg_sck_setnonblocking( newClient , 0 );
 
                     // Disable the Nagle algorithm (ie. removes buffering of TCP packets)
                     int yes = 1;
-                    if (setsockopt(newClient, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char*>(&yes), sizeof(yes)) == -1) {
-                        mjpeg_sck_close(newClient);
+                    if ( setsockopt(newClient, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char*>(&yes), sizeof(yes)) == -1 ) {
+                        mjpeg_sck_close( newClient );
                         break; // Failed remove buffering
                     }
 
