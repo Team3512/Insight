@@ -11,6 +11,7 @@
 #include <windowsx.h>
 #include <commctrl.h>
 
+#include <iostream>
 #include <cstdint>
 #include <cstring>
 #include <atomic>

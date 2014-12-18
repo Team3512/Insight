@@ -19,8 +19,6 @@
 #include <list>
 #include <cstring>
 
-#include "mjpeg_sck.hpp"
-
 // Convert a string to lower case
 std::string toLower( std::string str ) {
     for ( auto i : str ) {
@@ -48,7 +46,7 @@ MjpegClient::MjpegClient( const std::string& hostName , unsigned short port ,
         m_stopReceive( true ) ,
         m_cancelfdr( 0 ) ,
         m_cancelfdw( 0 ) ,
-        m_sd( -1 )
+        m_sd( INVALID_SOCKET )
 {
 
 }
@@ -62,7 +60,7 @@ MjpegClient::~MjpegClient() {
 
 void MjpegClient::start() {
     if ( m_stopReceive == true ) { // if stream is closed, reopen it
-        int pipefd[2];
+        mjpeg_socket_t pipefd[2];
 
         /* Create a pipe that, when written to, causes any operation in the
          * mjpegrx thread currently blocking to be cancelled.
@@ -172,7 +170,7 @@ void MjpegClient::doneCallback() {
 void MjpegClient::readCallback( char* buf , int bufsize ) {
     // Load the image received (converts from JPEG to pixel array)
     int width, height, channels;
-    uint8_t* ptr = stbi_load_from_memory((unsigned char*)buf, bufsize, &width, &height, &channels, STBI_rgb_alpha);
+    uint8_t* ptr = stbi_load_from_memory(reinterpret_cast<unsigned char*>(buf), bufsize, &width, &height, &channels, STBI_rgb_alpha);
 
     if ( ptr && width && height ) {
         m_imageMutex.lock();
@@ -212,7 +210,7 @@ int mjpeg_rxbyte( char** buf , int* bufpos , int* bufsize , int sd , int cancelf
 
     if(*bufpos == (*bufsize)-1){
         *bufsize += 1024;
-        *buf = (char*)realloc(*buf, *bufsize);
+        *buf = static_cast<char*>( realloc(*buf, *bufsize) );
     }
 
     return 0;
@@ -429,17 +427,8 @@ char* mjpeg_getvalue( std::list<std::pair<char*,char*>>& list , const char* key 
     return NULL;
 }
 
-int mjpeg_pipe( int sv[2] ) {
-#ifdef _WIN32
-    return dumb_socketpair( reinterpret_cast<SOCKET*>(sv) , 0 );
-#else
-    // return pipe(sv);
-    return socketpair( AF_LOCAL , SOCK_STREAM , 0 , sv );
-#endif
-}
-
 void MjpegClient::recvFunc() {
-    int sd;
+    mjpeg_socket_t sd;
 
     char* asciisize;
     int datasize;
@@ -454,7 +443,7 @@ void MjpegClient::recvFunc() {
 
     /* Connect to the remote host. */
     sd = mjpeg_sck_connect( m_hostName.c_str() , m_port , m_cancelfdr );
-    if ( sd == -1 ) {
+    if ( !mjpeg_sck_valid( sd ) ) {
         std::cerr << "mjpegrx: Connection failed\n";
         // call the thread finished callback
         doneCallback();

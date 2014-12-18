@@ -32,6 +32,7 @@
 #include <thread>
 #include <mutex>
 #include <cstdint>
+#include "mjpeg_sck.hpp"
 
 #include "../Vector.hpp"
 
@@ -104,9 +105,9 @@ private:
      */
     std::atomic<bool> m_stopReceive;
 
-    int m_cancelfdr;
-    int m_cancelfdw;
-    int m_sd;
+    mjpeg_socket_t m_cancelfdr;
+    mjpeg_socket_t m_cancelfdw;
+    mjpeg_socket_t m_sd;
 };
 
 /* mjpeg_sck_recv() blocks until either len bytes of data have
@@ -115,9 +116,5 @@ private:
    reading, the number of bytes received is returned. On error,
    -1 is returned, and errno is set appropriately. */
 int mjpeg_sck_recv( int sockfd , void* buf , size_t len , int cancelfd );
-
-/* A platform independent wrapper function which acts like
-   the call socketpair(AF_INET, SOCK_STREAM, 0, sv) . */
-int mjpeg_pipe( int sv[2] );
 
 #endif // MJPEG_CLIENT_HPP

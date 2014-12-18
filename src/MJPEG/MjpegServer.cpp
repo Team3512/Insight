@@ -4,6 +4,7 @@
 //Author: FRC Team 3512, Spartatroniks
 //=============================================================================
 
+#include <iostream>
 #include <sstream>
 #include <cstdlib>
 #include <cstring>
@@ -12,6 +13,8 @@
 MjpegServer::MjpegServer( unsigned short port ) :
         m_listenSock( INVALID_SOCKET ) ,
         m_port( port ) ,
+        m_cancelfdr( 0 ) ,
+        m_cancelfdw( 0 ) ,
         m_isRunning( false ) {
     m_serverThread = nullptr;
 
@@ -94,6 +97,18 @@ void MjpegServer::start() {
         }
 
         std::cout << "Started listening on " << m_port << "\n";
+
+        mjpeg_socket_t pipefd[2];
+
+        /* Create a pipe that, when written to, causes any operation in the
+         * mjpegrx thread currently blocking to be cancelled.
+         */
+        if ( mjpeg_pipe( pipefd ) != 0 ) {
+            mjpeg_sck_close(m_listenSock);
+            return;
+        }
+        m_cancelfdr = pipefd[0];
+        m_cancelfdw = pipefd[1];
 
         // Add listening socket to selector
         FD_SET(m_listenSock, &m_clientSelector.allSockets);

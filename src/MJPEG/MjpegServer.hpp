@@ -7,7 +7,6 @@
 #ifndef MJPEG_SERVER_HPP
 #define MJPEG_SERVER_HPP
 
-#include <iostream>
 #include <atomic>
 #include <list>
 #include <thread>
@@ -39,6 +38,9 @@ private:
 
     mjpeg_socket_t m_listenSock;
     unsigned short m_port;
+
+    mjpeg_socket_t m_cancelfdr;
+    mjpeg_socket_t m_cancelfdw;
 
     std::thread* m_serverThread;
     void serverFunc();
