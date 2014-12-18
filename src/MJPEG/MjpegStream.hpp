@@ -93,8 +93,8 @@ public:
     void repaint();
 
 protected:
-    void done( void* optarg );
-    void read( char* buf , int bufsize , void* optarg );
+    void done();
+    void read( char* buf , int bufsize );
 
 private:
     HWND m_parentWin;

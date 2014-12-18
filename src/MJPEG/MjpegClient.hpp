@@ -29,12 +29,11 @@
 
 #include <string>
 #include <atomic>
+#include <thread>
 #include <mutex>
 #include <cstdint>
 
 #include "../Vector.hpp"
-
-#include "mjpegrx.hpp"
 
 class MjpegClient {
 public:
@@ -65,14 +64,17 @@ public:
     Vector2i getCurrentSize();
 
 protected:
-    static void doneCallback( void* optarg );
-    static void readCallback( char* buf , int bufsize , void* optarg );
+    void doneCallback();
+    void readCallback( char* buf , int bufsize );
 
     // Called at the end of doneCallback()
-    virtual void done( void* optarg ) = 0;
+    virtual void done() = 0;
 
     // Called if the new image loaded successfully in readCallback()
-    virtual void read( char* buf , int bufsize , void* optarg ) = 0;
+    virtual void read( char* buf , int bufsize ) = 0;
+
+    // Used by m_recvThread
+    void recvFunc();
 
 private:
     std::string m_hostName;
@@ -93,9 +95,7 @@ private:
     unsigned int m_extHeight;
     std::mutex m_extMutex;
 
-    // Used for streaming MJPEG frames from host
-    struct mjpeg_callbacks_t m_callbacks;
-    struct mjpeg_inst_t* m_streamInst;
+    std::thread* m_recvThread;
 
     /* If false:
      *     Lets receive thread run
@@ -103,6 +103,21 @@ private:
      *     Closes receive thread
      */
     std::atomic<bool> m_stopReceive;
+
+    int m_cancelfdr;
+    int m_cancelfdw;
+    int m_sd;
 };
+
+/* mjpeg_sck_recv() blocks until either len bytes of data have
+   been read into buf, or cancelfd becomes ready for reading.
+   If either len bytes are read, or cancelfd becomes ready for
+   reading, the number of bytes received is returned. On error,
+   -1 is returned, and errno is set appropriately. */
+int mjpeg_sck_recv( int sockfd , void* buf , size_t len , int cancelfd );
+
+/* A platform independent wrapper function which acts like
+   the call socketpair(AF_INET, SOCK_STREAM, 0, sv) . */
+int mjpeg_pipe( int sv[2] );
 
 #endif // MJPEG_CLIENT_HPP

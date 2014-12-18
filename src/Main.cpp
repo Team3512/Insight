@@ -20,7 +20,7 @@
 #include "MJPEG/MjpegStream.hpp"
 #include "MJPEG/MjpegServer.hpp"
 #include "MJPEG/WindowCallbacks.hpp"
-#include "MJPEG/mjpeg_sck.h"
+#include "MJPEG/mjpeg_sck.hpp"
 #include "Settings.hpp"
 #include "Resource.h"
 

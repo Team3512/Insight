@@ -270,16 +270,13 @@ void MjpegStream::repaint() {
     m_windowMutex.unlock();
 }
 
-void MjpegStream::done( void* optarg ) {
-    static_cast<MjpegStream*>(optarg)->repaint();
+void MjpegStream::done() {
+    repaint();
 }
 
-void MjpegStream::read( char* buf , int bufsize , void* optarg ) {
-    // Create pointer to stream to make it easier to access the instance later
-    MjpegStream* streamPtr = static_cast<MjpegStream*>( optarg );
-
+void MjpegStream::read( char* buf , int bufsize ) {
     // Send message to parent window about the new image
-    if ( std::chrono::system_clock::now() - streamPtr->m_displayTime > std::chrono::duration<double>(1.0 / streamPtr->m_frameRate) ) {
+    if ( std::chrono::system_clock::now() - m_displayTime > std::chrono::duration<double>(1.0 / m_frameRate) ) {
         repaint();
         if ( m_newImageCallback != nullptr ) {
             m_newImageCallback();

@@ -7,8 +7,6 @@
 #ifndef MJPEG_SERVER_HPP
 #define MJPEG_SERVER_HPP
 
-#include "mjpeg_sck.h"
-
 #include <iostream>
 #include <atomic>
 #include <list>
@@ -16,6 +14,7 @@
 #include <cstdint>
 
 #include <jpeglib.h>
+#include "mjpeg_sck.hpp"
 
 struct selector_t {
     fd_set allSockets; // set containing all the sockets handles

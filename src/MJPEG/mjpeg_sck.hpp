@@ -1,9 +1,5 @@
-#ifndef _MJPEG_SCK_H
-#define _MJPEG_SCK_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef _MJPEG_SCK_HPP
+#define _MJPEG_SCK_HPP
 
 #ifdef _WIN32
 
@@ -51,10 +47,15 @@ int mjpeg_sck_setnonblocking(mjpeg_socket_t sd, int enable);
 /* Returns platform independent error condition */
 mjpeg_sck_status mjpeg_sck_geterror();
 
+/* mjpeg_sck_connect() attempts to connect to the specified
+   remote host on the specified port. The function blocks
+   until either cancelfd becomes ready for reading, or the
+   connection succeeds or times out.
+   If the connection succeeds, the new socket descriptor
+   is returned. On error, -1 isreturned, and errno is
+   set appropriately. */
+int mjpeg_sck_connect(const char *host, int port, int cancelfd);
+
 int mjpeg_sck_close(mjpeg_socket_t sd);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _MJPEG_SCK_H */
+#endif /* _MJPEG_SCK_HPP */
