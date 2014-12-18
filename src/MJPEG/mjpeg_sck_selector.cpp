@@ -10,9 +10,9 @@ mjpeg_sck_selector::mjpeg_sck_selector() {
     zero( select_type::read | select_type::write | select_type::except );
     m_maxSocket = 0;
 
-    m_in_readfds = m_readfds;
-    m_in_writefds = m_writefds;
-    m_in_exceptfds = m_exceptfds;
+    m_readfds = m_in_readfds;
+    m_writefds = m_in_writefds;
+    m_exceptfds = m_in_exceptfds;
 }
 
 mjpeg_sck_selector::~mjpeg_sck_selector() {
