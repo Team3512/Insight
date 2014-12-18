@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <system_error>
 #include <algorithm>
 
 #include "mjpeg_sck.h"
@@ -422,8 +423,7 @@ mjpeg_pipe(int sv[2])
    begins streaming of the specified MJPEG stream.
    On success, a pointer to an mjpeg_inst_t structure is returned.
    On error, NULL is returned.*/
-struct mjpeg_inst_t *
-mjpeg_launchthread(
+mjpeg_inst_t::mjpeg_inst_t(
         char *host,
         int port,
         char *reqpath,
@@ -432,76 +432,61 @@ mjpeg_launchthread(
 {
     int error;
     int pipefd[2];
-    struct mjpeg_inst_t *inst;
-
-    /* Allocate an instance object for this instance. */
-    inst = (mjpeg_inst_t*)malloc(sizeof(struct mjpeg_inst_t));
 
     /* Fill the object's fields. */
-    inst->host = strdup(host);
-    inst->port = port;
-    inst->reqpath = strdup(reqpath);
+    m_host = strdup(host);
+    m_port = port;
+    m_reqpath = strdup(reqpath);
 
     /* Create a pipe that, when written to, causes any operation
        in the mjpegrx thread currently blocking to be cancelled. */
     error = mjpeg_pipe(pipefd);
     if(error != 0) {
-      return NULL;
+      std::error_code ec( error , std::system_category() );
+      throw std::system_error( ec , "System error: failed to create pipe" );
     }
-    inst->cancelfdr = pipefd[0];
-    inst->cancelfdw = pipefd[1];
+    m_cancelfdr = pipefd[0];
+    m_cancelfdw = pipefd[1];
+    m_sd = -1;
 
     /* Copy the mjpeg_callbacks_t structure into it's corresponding
        field in the mjpeg_inst_t structure. */
     memcpy(
-        &inst->callbacks,
+        &m_callbacks,
         callbacks,
         sizeof(struct mjpeg_callbacks_t)
     );
 
     /* Mark the thread as running. */
-    inst->threadrunning = true;
+    m_threadrunning = true;
 
     /* Spawn the thread. */
-    error = mjpeg_thread_create(&inst->thread, mjpeg_threadmain, inst);
-    if(error != 0) {
-        free(inst->host);
-        free(inst->reqpath);
-        free(inst);
-        return NULL;
-    }
-
-    return inst;
+    m_thread = new std::thread( mjpeg_threadmain , this );
 }
 
 /* Stop the specified mjpegrx instance. */
-void
-mjpeg_stopthread(struct mjpeg_inst_t *inst)
+mjpeg_inst_t::~mjpeg_inst_t()
 {
     /* Signal the thread to exit. */
-    inst->threadrunning = false;
+    m_threadrunning = false;
 
     /* Cancel any currently blocking operations. */
-    /* write(inst->cancelfdw, "U", 1); */
-    send(inst->cancelfdw, "U", 1, 0);
+    /* write(m_cancelfdw, "U", 1); */
+    send(m_cancelfdw, "U", 1, 0);
 
     /* Wait for the thread to exit. */
-    mjpeg_thread_join(&inst->thread, NULL);
+    m_thread->join();
+    delete m_thread;
 
     /* Free the mjpeg_inst_t and associated memory. */
-    free(inst->host);
-    free(inst->reqpath);
-    free(inst);
-
-    return;
+    free(m_host);
+    free(m_reqpath);
 }
 
 /* The thread's main function. */
-void *
-mjpeg_threadmain(void *optarg)
+void
+mjpeg_inst_t::mjpeg_threadmain()
 {
-    struct mjpeg_inst_t* inst = (mjpeg_inst_t*)optarg;
-
     int sd;
 
     char *asciisize;
@@ -516,29 +501,28 @@ mjpeg_threadmain(void *optarg)
     int bytesread;
 
     /* Connect to the remote host. */
-    sd = mjpeg_sck_connect(inst->host, inst->port, inst->cancelfdr);
+    sd = mjpeg_sck_connect(m_host, m_port, m_cancelfdr);
     if(sd == -1){
         fprintf(stderr, "mjpegrx: Connection failed\n");
         /* call the thread finished callback */
-        if(inst->callbacks.donecallback != NULL){
-            inst->callbacks.donecallback(
-                inst->callbacks.optarg);
+        if(m_callbacks.donecallback != NULL){
+            m_callbacks.donecallback(
+                m_callbacks.optarg);
         }
 
-        mjpeg_thread_exit(NULL);
-        return NULL;
+        return;
     }
-    inst->sd = sd;
+    m_sd = sd;
 
     /* Send the HTTP request. */
-    snprintf(tmp, 255, "GET %s HTTP/1.0\r\n\r\n", inst->reqpath);
+    snprintf(tmp, 255, "GET %s HTTP/1.0\r\n\r\n", m_reqpath);
     send(sd, tmp, strlen(tmp), 0);
     printf("%s", tmp);
 
     std::atomic<bool> threadrunning( true );
     while(threadrunning){
         /* Read and parse incoming HTTP response headers. */
-        if(mjpeg_rxheaders(&headerbuf, &headerbufsize, sd, inst->cancelfdr) == -1) {
+        if(mjpeg_rxheaders(&headerbuf, &headerbufsize, sd, m_cancelfdr) == -1) {
             fprintf(stderr, "mjpegrx: recv(2) failed\n");
             break;
         }
@@ -562,33 +546,30 @@ mjpeg_threadmain(void *optarg)
 
         /* Read the JPEG image data. */
         buf = (char*)malloc(datasize);
-        bytesread = mjpeg_sck_recv(sd, buf, datasize, inst->cancelfdr);
+        bytesread = mjpeg_sck_recv(sd, buf, datasize, m_cancelfdr);
         if(bytesread != datasize){
             free(buf);
             fprintf(stderr, "mjpegrx: recv(2) failed\n");
             break;
         }
 
-        if(inst->callbacks.readcallback != NULL){
-            inst->callbacks.readcallback(
+        if(m_callbacks.readcallback != NULL){
+            m_callbacks.readcallback(
                 buf,
                 datasize,
-                inst->callbacks.optarg);
+                m_callbacks.optarg);
         }
         free(buf);
 
-        threadrunning.store( inst->threadrunning.load() );
+        threadrunning.store( m_threadrunning.load() );
     }
 
     /* The loop has exited. We should now clean up and exit the thread. */
     mjpeg_sck_close(sd);
 
     /* Call the user's donecallback() function. */
-    if(inst->callbacks.donecallback != NULL){
-        inst->callbacks.donecallback(inst->callbacks.optarg);
+    if(m_callbacks.donecallback != NULL){
+        m_callbacks.donecallback(m_callbacks.optarg);
     }
-
-    mjpeg_thread_exit(NULL);
-    return NULL;
 }
 

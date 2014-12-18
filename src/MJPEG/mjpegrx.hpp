@@ -3,7 +3,7 @@
 #ifndef _MJPEGRX_H
 #define _MJPEGRX_H
 
-#include "mjpeg_thread.h"
+#include <thread>
 #include <atomic>
 
 struct keyvalue_t {
@@ -19,29 +19,29 @@ struct mjpeg_callbacks_t {
 };
 
 struct mjpeg_inst_t {
-    char *host;
-    char *reqpath;
-    int port;
+    char *m_host;
+    char *m_reqpath;
+    int m_port;
 
-    struct mjpeg_callbacks_t callbacks;
+    struct mjpeg_callbacks_t m_callbacks;
 
-    std::atomic<bool> threadrunning;
-    mjpeg_thread_t thread;
-    int cancelfdr;
-    int cancelfdw;
-    int sd;
+    std::atomic<bool> m_threadrunning;
+    std::thread* m_thread;
+    int m_cancelfdr;
+    int m_cancelfdw;
+    int m_sd;
+
+    mjpeg_inst_t(
+            char *host,
+            int port,
+            char *reqpath,
+            struct mjpeg_callbacks_t *callbacks
+            );
+    ~mjpeg_inst_t();
+
+    void mjpeg_threadmain();
 };
 
-struct mjpeg_inst_t *
-mjpeg_launchthread(
-        char *host,
-        int port,
-        char *reqpath,
-        struct mjpeg_callbacks_t *callbacks
-        );
-
 int mjpeg_sck_recv(int sockfd, void *buf, size_t len, int cancelfd);
-void mjpeg_stopthread(struct mjpeg_inst_t *inst);
-void * mjpeg_threadmain(void *optarg);
 
 #endif /* _MJPEGRX_H */

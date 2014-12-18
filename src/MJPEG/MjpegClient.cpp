@@ -60,10 +60,7 @@ void MjpegClient::start() {
         m_stopReceive = false;
 
         // Launch the MJPEG receiving/processing thread
-        m_streamInst = mjpeg_launchthread( const_cast<char*>( m_hostName.c_str() ) , m_port , const_cast<char*>( m_requestPath.c_str() ) , &m_callbacks );
-        if ( m_streamInst == NULL ) {
-            m_stopReceive = true;
-        }
+        m_streamInst = new mjpeg_inst_t( const_cast<char*>( m_hostName.c_str() ) , m_port , const_cast<char*>( m_requestPath.c_str() ) , &m_callbacks );
     }
 }
 
@@ -73,7 +70,7 @@ void MjpegClient::stop() {
 
         // Close the receive thread
         if ( m_streamInst != NULL ) {
-            mjpeg_stopthread( m_streamInst );
+            delete m_streamInst;
         }
     }
 }
@@ -181,12 +178,4 @@ void MjpegClient::readCallback( char* buf , int bufsize , void* optarg ) {
     else {
         std::cout << "MjpegClient: image failed to load: " << stbi_failure_reason() << "\n";
     }
-}
-
-void MjpegClient::done( void* optarg ) {
-
-}
-
-void MjpegClient::read( char* buf , int bufsize , void* optarg ) {
-
 }

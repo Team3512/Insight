@@ -69,10 +69,10 @@ protected:
     static void readCallback( char* buf , int bufsize , void* optarg );
 
     // Called at the end of doneCallback()
-    virtual void done( void* optarg );
+    virtual void done( void* optarg ) = 0;
 
     // Called if the new image loaded successfully in readCallback()
-    virtual void read( char* buf , int bufsize , void* optarg );
+    virtual void read( char* buf , int bufsize , void* optarg ) = 0;
 
 private:
     std::string m_hostName;
