@@ -17,7 +17,9 @@
 
 struct selector_t {
     fd_set allSockets; // set containing all the sockets handles
-    fd_set socketsReady; // set containing handles of the sockets that are ready
+    fd_set readfds; // set containing sockets to be checked for being ready to read
+    fd_set writefds; // set containing sockets to be checked for being ready to write
+    fd_set exceptfds; // set containing sockets to be checked for error conditions pending
     mjpeg_socket_t maxSocket; // maximum socket handle
 };
 

@@ -20,7 +20,9 @@ MjpegServer::MjpegServer( unsigned short port ) :
 
     // Clear selector
     FD_ZERO(&m_clientSelector.allSockets);
-    FD_ZERO(&m_clientSelector.socketsReady);
+    FD_ZERO(&m_clientSelector.readfds);
+    FD_ZERO(&m_clientSelector.writefds);
+    FD_ZERO(&m_clientSelector.exceptfds);
     m_clientSelector.maxSocket = 0;
 
     m_serveImg = NULL;
@@ -58,10 +60,10 @@ MjpegServer::~MjpegServer() {
 
 void MjpegServer::start() {
     if ( !m_isRunning ) {
-        m_listenSock = socket(AF_INET, SOCK_STREAM, 0);
+        m_listenSock = socket( AF_INET , SOCK_STREAM , 0 );
 
         if ( mjpeg_sck_valid(m_listenSock) ) {
-            mjpeg_sck_setnonblocking(m_listenSock, 0);
+            mjpeg_sck_setnonblocking( m_listenSock , 0 );
 
             // Disable the Nagle algorithm (ie. removes buffering of TCP packets)
             int yes = 1;
@@ -110,9 +112,15 @@ void MjpegServer::start() {
         m_cancelfdr = pipefd[0];
         m_cancelfdw = pipefd[1];
 
+        // Add reading end of socketpair to selector
+        FD_SET(m_cancelfdr, &m_clientSelector.allSockets);
+        if ( m_cancelfdr > m_clientSelector.maxSocket ) {
+            m_clientSelector.maxSocket = m_cancelfdr;
+        }
+
         // Add listening socket to selector
         FD_SET(m_listenSock, &m_clientSelector.allSockets);
-        if ( m_listenSock > m_clientSelector.maxSocket) {
+        if ( m_listenSock > m_clientSelector.maxSocket ) {
             m_clientSelector.maxSocket = m_listenSock;
         }
 
@@ -124,15 +132,16 @@ void MjpegServer::start() {
 void MjpegServer::stop() {
     if ( m_isRunning ) {
         m_isRunning = false;
+
+        // Cancel any currently blocking operations
+        send( m_cancelfdw , "U" , 1 , 0 );
+
         m_serverThread->join();
         delete m_serverThread;
 
-        // Clear selector
-        FD_ZERO(&m_clientSelector.allSockets);
-        FD_ZERO(&m_clientSelector.socketsReady);
-        m_clientSelector.maxSocket = 0;
-
-        mjpeg_sck_close(m_listenSock);
+        mjpeg_sck_close( m_cancelfdr );
+        mjpeg_sck_close( m_cancelfdw );
+        mjpeg_sck_close( m_listenSock );
 
         // Close and disconnect client sockets
         for ( auto i : m_clientSockets ) {
@@ -212,7 +221,8 @@ void MjpegServer::serveImage( uint8_t* image , unsigned int width , unsigned int
                 // Close dead socket and remove it from the selector
                 mjpeg_sck_close(*i);
                 FD_CLR(*i, &m_clientSelector.allSockets);
-                FD_CLR(*i, &m_clientSelector.socketsReady);
+                FD_CLR(*i, &m_clientSelector.readfds);
+                FD_CLR(*i, &m_clientSelector.exceptfds);
 
                 // Remove socket from the list of clients
                 i = m_clientSockets.erase( i );
@@ -229,18 +239,22 @@ void MjpegServer::serverFunc() {
 
     while ( m_isRunning ) {
         // Initialize the set that will contain the sockets that are ready
-        m_clientSelector.socketsReady = m_clientSelector.allSockets;
+        m_clientSelector.readfds = m_clientSelector.allSockets;
+        m_clientSelector.exceptfds = m_clientSelector.allSockets;
 
         // Wait until one of the sockets is ready for reading, or timeout is reached
-        int count = select(m_clientSelector.maxSocket + 1, &m_clientSelector.socketsReady, NULL, NULL, NULL);
+        int count = select( m_clientSelector.maxSocket + 1 ,
+                &m_clientSelector.readfds ,
+                NULL ,
+                &m_clientSelector.exceptfds , NULL);
 
         if ( !m_isRunning ) {
             return;
         }
 
         if ( count > 0 ) {
-            // If listener is ready
-            if ( FD_ISSET(m_listenSock, &m_clientSelector.socketsReady) != 0 ) {
+            // If listener is ready to be read from
+            if ( FD_ISSET(m_listenSock, &m_clientSelector.readfds) ) {
                 // Accept a new connection
                 sockaddr_in acceptAddr;
                 socklen_t length = sizeof(acceptAddr);
@@ -266,10 +280,19 @@ void MjpegServer::serverFunc() {
                 }
             }
 
+            /* If an exception occurred with the cancel socket or it is ready
+             * to be read, return.
+             */
+            if ( m_cancelfdr && (FD_ISSET( m_cancelfdr ,
+                    &m_clientSelector.exceptfds ) || FD_ISSET( m_cancelfdr ,
+                            &m_clientSelector.readfds )) ) {
+                return;
+            }
+
             // Check if sockets are requesting data stream
             for ( auto i = m_clientSockets.begin() ; i != m_clientSockets.end() ; i++ ) {
-                // If current client is ready
-                if ( FD_ISSET(*i, &m_clientSelector.socketsReady) != 0 ) {
+                // If current client is ready to be read from
+                if ( FD_ISSET( *i , &m_clientSelector.readfds ) ) {
                     // Receive a chunk of bytes
                     recvSize = recv(*i, packet, 255, 0);
                     packet[recvSize] = '\0';
@@ -301,7 +324,8 @@ void MjpegServer::serverFunc() {
                                     // Close dead socket and remove it from the selector
                                     mjpeg_sck_close(*i);
                                     FD_CLR(*i, &m_clientSelector.allSockets);
-                                    FD_CLR(*i, &m_clientSelector.socketsReady);
+                                    FD_CLR(*i, &m_clientSelector.readfds);
+                                    FD_CLR(*i, &m_clientSelector.exceptfds);
 
                                     // Remove socket from the list of clients
                                     i = m_clientSockets.erase( i );
@@ -317,13 +341,27 @@ void MjpegServer::serverFunc() {
                         // Close dead socket and remove it from the selector
                         mjpeg_sck_close(*i);
                         FD_CLR(*i, &m_clientSelector.allSockets);
-                        FD_CLR(*i, &m_clientSelector.socketsReady);
+                        FD_CLR(*i, &m_clientSelector.readfds);
+                        FD_CLR(*i, &m_clientSelector.exceptfds);
 
                         // Remove socket from the list of clients
                         i = m_clientSockets.erase( i );
 
                         continue;
                     }
+                }
+
+                if ( FD_ISSET( *i , &m_clientSelector.exceptfds ) ) {
+                    // Close dead socket and remove it from the selector
+                    mjpeg_sck_close(*i);
+                    FD_CLR(*i, &m_clientSelector.allSockets);
+                    FD_CLR(*i, &m_clientSelector.readfds);
+                    FD_CLR(*i, &m_clientSelector.exceptfds);
+
+                    // Remove socket from the list of clients
+                    i = m_clientSockets.erase( i );
+
+                    continue;
                 }
             }
         }

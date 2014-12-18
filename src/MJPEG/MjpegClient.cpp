@@ -22,7 +22,7 @@
 // Convert a string to lower case
 std::string toLower( std::string str ) {
     for ( auto i : str ) {
-        i = static_cast<char>(std::tolower(i));
+        i = std::tolower(i);
     }
     return str;
 }
@@ -82,13 +82,15 @@ void MjpegClient::stop() {
     if ( m_stopReceive == false ) { // if stream is open, close it
         m_stopReceive = true;
 
-        /* Cancel any currently blocking operations. */
-        /* write(m_cancelfdw, "U", 1); */
-        send(m_cancelfdw, "U", 1, 0);
+        // Cancel any currently blocking operations
+        send( m_cancelfdw , "U" , 1 , 0 );
 
         // Close the receive thread
         m_recvThread->join();
         delete m_recvThread;
+
+        mjpeg_sck_close( m_cancelfdr );
+        mjpeg_sck_close( m_cancelfdw );
     }
 }
 
@@ -251,6 +253,14 @@ int mjpeg_sck_recv( int sockfd , void* buf , size_t len , int cancelfd ) {
     fd_set readfds;
     fd_set exceptfds;
 
+    // Set the sockets into the fd_set s
+    FD_SET( sockfd , &readfds );
+    FD_SET( sockfd , &exceptfds );
+    if( cancelfd ) {
+        FD_SET( cancelfd , &readfds );
+        FD_SET( cancelfd , &exceptfds );
+    }
+
     nread = 0;
     while ( nread < len ) {
         FD_ZERO( &readfds );
@@ -269,7 +279,7 @@ int mjpeg_sck_recv( int sockfd , void* buf , size_t len , int cancelfd ) {
             return -1;
         }
 
-        /* If an exception occurred with either one, return error. */
+        // If an exception occurred with either one, return error.
         if ( ( cancelfd && FD_ISSET(cancelfd, &exceptfds)) ||
                 FD_ISSET(sockfd, &exceptfds) ) {
             return -1;
