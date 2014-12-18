@@ -13,15 +13,7 @@
 #include <cstdint>
 
 #include <jpeglib.h>
-#include "mjpeg_sck.hpp"
-
-struct selector_t {
-    fd_set allSockets; // set containing all the sockets handles
-    fd_set readfds; // set containing sockets to be checked for being ready to read
-    fd_set writefds; // set containing sockets to be checked for being ready to write
-    fd_set exceptfds; // set containing sockets to be checked for error conditions pending
-    mjpeg_socket_t maxSocket; // maximum socket handle
-};
+#include "mjpeg_sck_selector.hpp"
 
 class MjpegServer {
 public:
@@ -35,7 +27,7 @@ public:
     void serveImage( uint8_t* image , unsigned int width , unsigned int height );
 
 private:
-    struct selector_t m_clientSelector;
+    mjpeg_sck_selector m_clientSelector;
     std::list<mjpeg_socket_t> m_clientSockets;
 
     mjpeg_socket_t m_listenSock;

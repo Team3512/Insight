@@ -244,3 +244,18 @@ mjpeg_socket_t mjpeg_pipe( mjpeg_socket_t sv[2] ) {
     return socketpair( AF_LOCAL , SOCK_STREAM , 0 , sv );
 #endif
 }
+
+#ifdef _WIN32
+struct SocketInitializer {
+    SocketInitializer() {
+        WSADATA init;
+        WSAStartup(MAKEWORD(2, 2), &init);
+    }
+
+    ~SocketInitializer() {
+        WSACleanup();
+    }
+};
+
+SocketInitializer globalInitializer;
+#endif

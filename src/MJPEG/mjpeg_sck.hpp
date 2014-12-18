@@ -1,5 +1,5 @@
-#ifndef _MJPEG_SCK_HPP
-#define _MJPEG_SCK_HPP
+#ifndef MJPEG_SCK_HPP
+#define MJPEG_SCK_HPP
 
 #ifdef _WIN32
 
@@ -62,4 +62,4 @@ int mjpeg_sck_close( mjpeg_socket_t sd );
    the call socketpair(AF_INET, SOCK_STREAM, 0, sv) . */
 mjpeg_socket_t mjpeg_pipe( mjpeg_socket_t sv[2] );
 
-#endif /* _MJPEG_SCK_HPP */
+#endif // MJPEG_SCK_HPP
