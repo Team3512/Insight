@@ -34,8 +34,6 @@
 #include <cstdint>
 #include "mjpeg_sck.hpp"
 
-#include "../Vector.hpp"
-
 class MjpegClient {
 public:
     MjpegClient( const std::string& hostName , unsigned short port ,
@@ -61,8 +59,9 @@ public:
      */
     uint8_t* getCurrentImage();
 
-    // Returns size image currently in secondary buffer
-    Vector2i getCurrentSize();
+    // Returns size of image currently in secondary buffer
+    unsigned int getCurrentWidth();
+    unsigned int getCurrentHeight();
 
 protected:
     void doneCallback();

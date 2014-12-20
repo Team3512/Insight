@@ -41,7 +41,6 @@ class QMouseEvent;
 #include <mutex>
 
 #include "MjpegClient.hpp"
-#include "../Vector.hpp"
 
 #include "WindowCallbacks.hpp"
 
@@ -63,8 +62,6 @@ public:
     virtual ~MjpegStream();
 
     QSize sizeHint() const;
-
-    Vector2i getSize();
 
     // Request MJPEG stream and begin displaying it
     void start();
@@ -141,7 +138,7 @@ private:
     /* Recreates the graphics that display messages in the stream window
      * (Resizes them and recenters the text in the window)
      */
-    void recreateGraphics( const Vector2i& windowSize );
+    void recreateGraphics( int width , int height );
 
     // Function is used by m_updateThread
     void updateFunc();

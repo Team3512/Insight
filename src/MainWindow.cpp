@@ -149,8 +149,8 @@ void MainWindow::handleSlider( int value ) {
 void MainWindow::newImageFunc() {
     // Get new image to process
     imgBuffer = client->getCurrentImage();
-    imgWidth = client->getCurrentSize().X;
-    imgHeight = client->getCurrentSize().Y;
+    imgWidth = client->getCurrentWidth();
+    imgHeight = client->getCurrentHeight();
 
     if ( imgBuffer != NULL && imgWidth > 0 && imgHeight > 0 ) {
         if ( tempImg == NULL ) {

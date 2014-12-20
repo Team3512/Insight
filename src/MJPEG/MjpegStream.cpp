@@ -5,12 +5,12 @@
 //Author: FRC Team 3512, Spartatroniks
 //=============================================================================
 
-#include "../WinGDI/UIFont.hpp"
 #include "../Util.hpp"
 #include "MjpegStream.hpp"
 
 #include <QMouseEvent>
 #include <QImage>
+#include <QFont>
 
 #include "stb_image.h"
 #include "stb_image_write.h"
@@ -84,10 +84,6 @@ QSize MjpegStream::sizeHint() const {
     return QSize( 320 , 240 );
 }
 
-Vector2i MjpegStream::getSize() {
-    return Vector2i( width() , height() );
-}
-
 void MjpegStream::start() {
     if ( !isStreaming() ) {
         MjpegClient::start();
@@ -134,9 +130,8 @@ void MjpegStream::read( char* buf , int bufsize ) {
 
         m_img = getCurrentImage();
 
-        Vector2i size = getCurrentSize();
-        m_imgWidth = size.X;
-        m_imgHeight = size.Y;
+        m_imgWidth = getCurrentWidth();
+        m_imgHeight = getCurrentHeight();
 
         m_imageMutex.unlock();
 
@@ -211,13 +206,13 @@ void MjpegStream::paintGL() {
         if ( m_firstImage ) {
             m_imageMutex.lock();
 
-            glTexSubImage2D( GL_TEXTURE_2D , 0 , 0 , 0 , getSize().X ,
-                    getSize().Y , GL_RGBA , GL_UNSIGNED_BYTE , m_connectPxl );
+            glTexSubImage2D( GL_TEXTURE_2D , 0 , 0 , 0 , width() ,
+                    height() , GL_RGBA , GL_UNSIGNED_BYTE , m_connectPxl );
 
             m_imageMutex.unlock();
 
-            wratio = (float)getSize().X / (float)m_textureWidth;
-            hratio = (float)getSize().Y / (float)m_textureHeight;
+            wratio = (float)width() / (float)m_textureWidth;
+            hratio = (float)height() / (float)m_textureHeight;
         }
 
         // If it's been too long since we received our last image
@@ -225,13 +220,13 @@ void MjpegStream::paintGL() {
             // Display "Waiting..." over the last image received
             m_imageMutex.lock();
 
-            glTexSubImage2D( GL_TEXTURE_2D , 0 , 0 , 0 , getSize().X ,
-                    getSize().Y , GL_RGBA , GL_UNSIGNED_BYTE , m_waitPxl );
+            glTexSubImage2D( GL_TEXTURE_2D , 0 , 0 , 0 , width() ,
+                    height() , GL_RGBA , GL_UNSIGNED_BYTE , m_waitPxl );
 
             m_imageMutex.unlock();
 
-            wratio = (float)getSize().X / (float)m_textureWidth;
-            hratio = (float)getSize().Y / (float)m_textureHeight;
+            wratio = (float)width() / (float)m_textureWidth;
+            hratio = (float)height() / (float)m_textureHeight;
         }
 
         // Else display the image last received
@@ -252,22 +247,22 @@ void MjpegStream::paintGL() {
     else {
         m_imageMutex.lock();
 
-        glTexSubImage2D( GL_TEXTURE_2D , 0 , 0 , 0 , getSize().X , getSize().Y ,
+        glTexSubImage2D( GL_TEXTURE_2D , 0 , 0 , 0 , width() , height() ,
                 GL_RGBA , GL_UNSIGNED_BYTE , m_disconnectPxl );
 
         m_imageMutex.unlock();
 
-        wratio = (float)getSize().X / (float)m_textureWidth;
-        hratio = (float)getSize().Y / (float)m_textureHeight;
+        wratio = (float)width() / (float)m_textureWidth;
+        hratio = (float)height() / (float)m_textureHeight;
     }
 
     // Position the GL texture in the Win32 window
     glBegin( GL_TRIANGLE_FAN );
     glColor4f( 1.f , 1.f , 1.f , 1.f );
     glTexCoord2f( 0 , 0 ); glVertex2f( 0 , 0 );
-    glTexCoord2f( wratio , 0 ); glVertex2f( getSize().X , 0 );
-    glTexCoord2f( wratio , hratio ); glVertex2f( getSize().X , getSize().Y );
-    glTexCoord2f( 0 , hratio ); glVertex2f( 0 , getSize().Y );
+    glTexCoord2f( wratio , 0 ); glVertex2f( width() , 0 );
+    glTexCoord2f( wratio , hratio ); glVertex2f( width() , height() );
+    glTexCoord2f( 0 , hratio ); glVertex2f( 0 , height() );
     glEnd();
 
     // Check for OpenGL errors
@@ -295,83 +290,76 @@ void MjpegStream::resizeGL( int x , int y ) {
     }
 
     // Create the textures that can be displayed in the stream window
-    recreateGraphics( Vector2i( x , y ) );
+    recreateGraphics( x , y );
 }
 
-void MjpegStream::recreateGraphics( const Vector2i& windowSize ) {
+void MjpegStream::recreateGraphics( int width , int height ) {
     // Create intermediate buffers for graphics
-    QImage connectBuf( windowSize.X , windowSize.Y , QImage::Format_RGBA8888 );
-    QImage disconnectBuf( windowSize.X , windowSize.Y , QImage::Format_RGBA8888 );
-    QImage waitBuf( windowSize.X , windowSize.Y , QImage::Format_RGBA8888 );
+    QImage connectBuf( width , height , QImage::Format_RGBA8888 );
+    QImage disconnectBuf( width , height , QImage::Format_RGBA8888 );
+    QImage waitBuf( width , height , QImage::Format_RGBA8888 );
 
     QPainter p;
 
     /* ===== Fill graphics with a background color ===== */
-    QPen white( QColor( 255 , 255 , 255 , 255 ) );
-    white.setWidth( 1 );
-
-    QPen gray( QColor( 128 , 128 , 128 , 255 ) );
-    gray.setWidth( 1 );
-
-    QPen black( QColor( 0 , 0 , 0 , 255 ) );
-    black.setWidth( 1 );
-
     p.begin( &connectBuf );
-    p.setPen( white );
-    p.drawRect( 0 , 0 , windowSize.X , windowSize.Y );
+    p.fillRect( 0 , 0 , width , height , Qt::white );
     p.end();
 
     p.begin( &disconnectBuf );
-    p.setPen( white );
-    p.drawRect( 0 , 0 , windowSize.X , windowSize.Y );
+    p.fillRect( 0 , 0 , width , height , Qt::white );
     p.end();
 
     p.begin( &waitBuf );
     // Need a special background color since they will be transparent
-    p.setPen( black );
-    p.drawRect( 0 , 0 , windowSize.X , windowSize.Y );
+    p.fillRect( 0 , 0 , width , height , Qt::black );
     p.end();
 
     p.begin( &waitBuf );
     // Add transparent rectangle
-    p.setPen( gray );
-    p.drawRect( windowSize.X / 3 , windowSize.Y / 3 , windowSize.X / 3 , windowSize.Y / 3 );
+    p.fillRect( width / 3 , height / 3 , width / 3 ,
+            height / 3 , Qt::darkGray );
     p.end();
 
     p.begin( &waitBuf );
     // Create background with transparency
-    p.setPen( white );
-    p.drawRect( 0 , 0 , windowSize.X , windowSize.Y );
+    p.fillRect( 0 , 0 , width , height , Qt::white );
     p.end();
     /* ================================================= */
 
     /* ===== Fill buffers with messages ===== */
+    QFont font( "Segoe UI" , 14 , QFont::Normal );
+    font.setStyleHint( QFont::SansSerif );
+
     p.begin( &connectBuf );
-    p.setFont( UIFont::getInstance().segoeUI18() );
-    p.drawText( 0 , windowSize.Y / 2 - 9 , windowSize.X , 18 , Qt::AlignCenter , tr("Connecting...") );
+    p.setFont( font );
+    p.drawText( 0 , height / 2 - 16 , width , 32 , Qt::AlignCenter ,
+            tr("Connecting...") );
     p.end();
 
     p.begin( &disconnectBuf );
-    p.setFont( UIFont::getInstance().segoeUI18() );
-    p.drawText( 0 , windowSize.Y / 2 - 9 , windowSize.X , 18 , Qt::AlignCenter , tr("Disconnected") );
+    p.setFont( font );
+    p.drawText( 0 , height / 2 - 16 , width , 32 , Qt::AlignCenter ,
+            tr("Disconnected") );
     p.end();
 
     p.begin( &waitBuf );
-    p.setFont( UIFont::getInstance().segoeUI18() );
-    p.drawText( 0 , windowSize.Y / 2 - 9 , windowSize.X , 18 , Qt::AlignCenter , tr("Waiting...") );
+    p.setFont( font );
+    p.drawText( 0 , height / 2 - 16 , width , 32 , Qt::AlignCenter ,
+            tr("Waiting...") );
     p.end();
     /* ====================================== */
 
     m_imageMutex.lock();
     /* ===== Allocate buffers for pixels of graphics ===== */
     delete[] m_connectPxl;
-    m_connectPxl = new uint8_t[windowSize.X * windowSize.Y * 4];
+    m_connectPxl = new uint8_t[width * height * 4];
 
     delete[] m_disconnectPxl;
-    m_disconnectPxl = new uint8_t[windowSize.X * windowSize.Y * 4];
+    m_disconnectPxl = new uint8_t[width * height * 4];
 
     delete[] m_waitPxl;
-    m_waitPxl = new uint8_t[windowSize.X * windowSize.Y * 4];
+    m_waitPxl = new uint8_t[width * height * 4];
     /* =================================================== */
 
     /* ===== Store bits from graphics in another buffer ===== */

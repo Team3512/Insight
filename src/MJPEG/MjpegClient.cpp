@@ -152,10 +152,20 @@ uint8_t* MjpegClient::getCurrentImage() {
     return m_extBuf;
 }
 
-Vector2i MjpegClient::getCurrentSize() {
+unsigned int MjpegClient::getCurrentWidth() {
     m_extMutex.lock();
 
-    Vector2i temp( m_extWidth , m_extHeight );
+    unsigned int temp( m_extWidth );
+
+    m_extMutex.unlock();
+
+    return temp;
+}
+
+unsigned int MjpegClient::getCurrentHeight() {
+    m_extMutex.lock();
+
+    unsigned int temp( m_extHeight );
 
     m_extMutex.unlock();
 
