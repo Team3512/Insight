@@ -84,41 +84,11 @@ QSize MjpegStream::sizeHint() const {
     return QSize( 320 , 240 );
 }
 
-void MjpegStream::start() {
-    if ( !isStreaming() ) {
-        MjpegClient::start();
-        if ( isStreaming() ) {
-            m_firstImage = true;
-            m_imageAge = std::chrono::system_clock::now();
-
-            redraw();
-            if ( m_startCallback != nullptr ) {
-                m_startCallback();
-            }
-        }
-    }
-}
-
-void MjpegStream::stop() {
-    // If stream is open, close it
-    if ( isStreaming() ) {
-        MjpegClient::stop();
-        redraw();
-        if ( m_stopCallback != nullptr ) {
-            m_stopCallback();
-        }
-    }
-}
-
 void MjpegStream::setFPS( unsigned int fps ) {
     m_frameRate = fps;
 }
 
-void MjpegStream::done() {
-    redraw();
-}
-
-void MjpegStream::read( char* buf , int bufsize ) {
+void MjpegStream::newImageCallback( char* buf , int bufsize ) {
     // Send message to parent window about the new image
     if ( std::chrono::system_clock::now() - m_displayTime > std::chrono::duration<double>(1.0 / m_frameRate) ) {
         redraw();
@@ -141,6 +111,30 @@ void MjpegStream::read( char* buf , int bufsize ) {
     }
 
     m_imageAge = std::chrono::system_clock::now();
+
+    redraw();
+    if ( m_newImageCallback != nullptr ) {
+        m_newImageCallback();
+    }
+}
+
+void MjpegStream::startCallback() {
+    if ( isStreaming() ) {
+        m_firstImage = true;
+        m_imageAge = std::chrono::system_clock::now();
+
+        redraw();
+        if ( m_startCallback != nullptr ) {
+            m_startCallback();
+        }
+    }
+}
+
+void MjpegStream::stopCallback() {
+    redraw();
+    if ( m_stopCallback != nullptr ) {
+        m_stopCallback();
+    }
 }
 
 void MjpegStream::mousePressEvent( QMouseEvent* event ) {
@@ -175,21 +169,17 @@ void MjpegStream::intializeGL() {
 void MjpegStream::paintGL() {
     std::cout << "[" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) << "] "
               << "paint\n";
-    int textureSize;
-
     /* If our image won't fit in the texture, make a bigger one whose width and
      * height are a power of two.
      */
-    if( m_imgWidth > m_textureWidth || m_imgHeight > m_textureHeight ) {
-        textureSize = npot( std::max( m_imgWidth , m_imgHeight ) );
-
-        uint8_t* tmpBuf = new uint8_t[textureSize * textureSize * 3];
-        glTexImage2D( GL_TEXTURE_2D , 0 , 3 , textureSize , textureSize , 0 ,
-                GL_RGB , GL_UNSIGNED_BYTE , tmpBuf );
+    if ( m_imgWidth * m_imgHeight > m_textureWidth * m_textureHeight ) {
+        uint8_t* tmpBuf = new uint8_t[m_imgWidth * m_imgHeight * 4];
+        glTexImage2D( GL_TEXTURE_2D , 0 , 3 , m_imgWidth , m_imgHeight , 0 ,
+                GL_RGBA , GL_UNSIGNED_BYTE , tmpBuf );
         delete[] tmpBuf;
 
-        m_textureWidth = textureSize;
-        m_textureHeight = textureSize;
+        m_textureWidth = m_imgWidth;
+        m_textureHeight = m_imgHeight;
     }
 
     /* Represents the amount of the texture to display. These are ratios

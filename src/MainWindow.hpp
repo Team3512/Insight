@@ -26,11 +26,11 @@ public:
     virtual ~MainWindow();
 
 private slots:
-    void startServer();
-    void stopServer();
+    void startMJPEG();
+    void stopMJPEG();
     void about();
 
-    void handleButton();
+    void toggleButton();
     void handleSlider( int value );
     void newImageFunc();
 
@@ -47,8 +47,8 @@ private:
 
     QMenu* serverMenu;
     QMenu* helpMenu;
-    QAction* startServerAct;
-    QAction* stopServerAct;
+    QAction* startMJPEGAct;
+    QAction* stopMJPEGAct;
     QAction* aboutAct;
 
     MjpegServer* server;

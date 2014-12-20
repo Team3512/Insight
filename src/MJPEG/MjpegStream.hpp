@@ -63,18 +63,13 @@ public:
 
     QSize sizeHint() const;
 
-    // Request MJPEG stream and begin displaying it
-    void start();
-
-    // Stop receiving MJPEG stream
-    void stop();
-
     // Set max frame rate of images displaying in window
     void setFPS( unsigned int fps );
 
 protected:
-    void done();
-    void read( char* buf , int bufsize );
+    void newImageCallback( char* buf , int bufsize );
+    void startCallback();
+    void stopCallback();
 
     void mousePressEvent( QMouseEvent* event );
     void intializeGL();

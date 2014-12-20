@@ -59,7 +59,7 @@ MjpegClient::~MjpegClient() {
 }
 
 void MjpegClient::start() {
-    if ( m_stopReceive == true ) { // if stream is closed, reopen it
+    if ( !isStreaming() ) { // if stream is closed, reopen it
         mjpeg_socket_t pipefd[2];
 
         /* Create a pipe that, when written to, causes any operation in the
@@ -79,7 +79,7 @@ void MjpegClient::start() {
 }
 
 void MjpegClient::stop() {
-    if ( m_stopReceive == false ) { // if stream is open, close it
+    if ( isStreaming() ) { // if stream is open, close it
         m_stopReceive = true;
 
         // Cancel any currently blocking operations
@@ -170,39 +170,6 @@ unsigned int MjpegClient::getCurrentHeight() {
     m_extMutex.unlock();
 
     return temp;
-}
-
-void MjpegClient::doneCallback() {
-    m_stopReceive = true;
-
-    // Call virtually overridden function
-    done();
-}
-
-void MjpegClient::readCallback( char* buf , int bufsize ) {
-    // Load the image received (converts from JPEG to pixel array)
-    int width, height, channels;
-    uint8_t* ptr = stbi_load_from_memory(reinterpret_cast<unsigned char*>(buf), bufsize, &width, &height, &channels, STBI_rgb_alpha);
-
-    if ( ptr && width && height ) {
-        m_imageMutex.lock();
-
-        // Free old buffer and store new one created by stbi_load_from_memory()
-        delete[] m_pxlBuf;
-
-        m_pxlBuf = ptr;
-
-        m_imgWidth = width;
-        m_imgHeight = height;
-
-        m_imageMutex.unlock();
-
-        // Call virtually overridden function
-        read( buf , bufsize );
-    }
-    else {
-        std::cout << "MjpegClient: image failed to load: " << stbi_failure_reason() << "\n";
-    }
 }
 
 char* strtok_r_n( char* str , const char* sep , char** last , char* used );
@@ -440,6 +407,8 @@ char* mjpeg_getvalue( std::list<std::pair<char*,char*>>& list , const char* key 
 }
 
 void MjpegClient::recvFunc() {
+    startCallback();
+
     mjpeg_socket_t sd;
 
     char* asciisize;
@@ -457,8 +426,8 @@ void MjpegClient::recvFunc() {
     sd = mjpeg_sck_connect( m_hostName.c_str() , m_port , m_cancelfdr );
     if ( !mjpeg_sck_valid( sd ) ) {
         std::cerr << "mjpegrx: Connection failed\n";
-        // call the thread finished callback
-        doneCallback();
+        m_stopReceive = true;
+        stopCallback();
 
         return;
     }
@@ -505,13 +474,34 @@ void MjpegClient::recvFunc() {
             break;
         }
 
-        readCallback( buf , datasize );
+        // Load the image received (converts from JPEG to pixel array)
+        int width, height, channels;
+        uint8_t* ptr = stbi_load_from_memory(reinterpret_cast<unsigned char*>(buf), datasize, &width, &height, &channels, STBI_rgb_alpha);
+
+        if ( ptr && width && height ) {
+            m_imageMutex.lock();
+
+            // Free old buffer and store new one created by stbi_load_from_memory()
+            delete[] m_pxlBuf;
+
+            m_pxlBuf = ptr;
+
+            m_imgWidth = width;
+            m_imgHeight = height;
+
+            m_imageMutex.unlock();
+
+            newImageCallback( buf , datasize );
+        }
+        else {
+            std::cout << "MjpegClient: image failed to load: " << stbi_failure_reason() << "\n";
+        }
+
         free( buf );
     }
 
     // The loop has exited. We should now clean up and exit the thread.
     mjpeg_sck_close( sd );
 
-    // Call the user's donecallback() function.
-    doneCallback();
+    stopCallback();
 }

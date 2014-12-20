@@ -64,17 +64,14 @@ public:
     unsigned int getCurrentHeight();
 
 protected:
-    void doneCallback();
-    void readCallback( char* buf , int bufsize );
+    // Called if the new image loaded successfully
+    virtual void newImageCallback( char* buf , int bufsize ) = 0;
 
-    // Called at the end of doneCallback()
-    virtual void done() = 0;
+    // Called when client thread starts
+    virtual void startCallback() = 0;
 
-    // Called if the new image loaded successfully in readCallback()
-    virtual void read( char* buf , int bufsize ) = 0;
-
-    // Used by m_recvThread
-    void recvFunc();
+    // Called when client thread stops
+    virtual void stopCallback() = 0;
 
 private:
     std::string m_hostName;
@@ -107,6 +104,9 @@ private:
     mjpeg_socket_t m_cancelfdr;
     mjpeg_socket_t m_cancelfdw;
     mjpeg_socket_t m_sd;
+
+    // Used by m_recvThread
+    void recvFunc();
 };
 
 /* mjpeg_sck_recv() blocks until either len bytes of data have

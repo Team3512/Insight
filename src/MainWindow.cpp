@@ -22,11 +22,13 @@ MainWindow::MainWindow() {
             320 ,
             240 ,
             &streamCallback ,
-            [this] { newImageFunc(); } );
+            [this] { newImageFunc(); } ,
+            [this] { button->setText( "Stop Stream" ); } ,
+            [this] { button->setText( "Start Stream" ); } );
 
     button = new QPushButton( "Start Stream" );
     button->setGeometry( QRect( QPoint( 5 , 5 ) , QSize( 100 , 28 ) ) );
-    connect( button , SIGNAL(released()) , this , SLOT(handleButton()) );
+    connect( button , SIGNAL(released()) , this , SLOT(toggleButton()) );
 
     slider = new QSlider( Qt::Horizontal );
     slider->setRange( 0 , 100 );
@@ -112,12 +114,12 @@ MainWindow::~MainWindow() {
     delete[] tempImg;
 }
 
-void MainWindow::startServer() {
+void MainWindow::startMJPEG() {
     client->start();
     server->start();
 }
 
-void MainWindow::stopServer() {
+void MainWindow::stopMJPEG() {
     server->stop();
     client->stop();
 }
@@ -130,14 +132,12 @@ void MainWindow::about() {
                "All Rights Reserved") );
 }
 
-void MainWindow::handleButton() {
+void MainWindow::toggleButton() {
     if ( client->isStreaming() ) {
-        stopServer();
-        button->setText( "Start Stream" );
+        stopMJPEG();
     }
     else {
-        startServer();
-        button->setText( "Stop Stream" );
+        startMJPEG();
     }
 }
 
@@ -242,11 +242,11 @@ void MainWindow::newImageFunc() {
 };
 
 void MainWindow::createActions() {
-    startServerAct = new QAction( tr("&Start") , this );
-    connect( startServerAct , SIGNAL(triggered()) , this , SLOT(startServer()) );
+    startMJPEGAct = new QAction( tr("&Start") , this );
+    connect( startMJPEGAct , SIGNAL(triggered()) , this , SLOT(startMJPEG()) );
 
-    stopServerAct = new QAction( tr("&Stop") , this );
-    connect( stopServerAct , SIGNAL(triggered()) , this , SLOT(stopServer()) );
+    stopMJPEGAct = new QAction( tr("&Stop") , this );
+    connect( stopMJPEGAct , SIGNAL(triggered()) , this , SLOT(stopMJPEG()) );
 
     aboutAct = new QAction( tr("&About Insight") , this );
     connect( aboutAct , SIGNAL(triggered()) , this , SLOT(about()) );
@@ -254,8 +254,8 @@ void MainWindow::createActions() {
 
 void MainWindow::createMenus() {
     serverMenu = menuBar()->addMenu( tr("&Server") );
-    serverMenu->addAction( startServerAct );
-    serverMenu->addAction( stopServerAct );
+    serverMenu->addAction( startMJPEGAct );
+    serverMenu->addAction( stopMJPEGAct );
 
     menuBar()->addSeparator();
 
