@@ -503,5 +503,6 @@ void MjpegClient::recvFunc() {
     // The loop has exited. We should now clean up and exit the thread.
     mjpeg_sck_close( sd );
 
+    m_stopReceive = true;
     stopCallback();
 }

@@ -27,8 +27,9 @@
  * respective parent window. If not, the application will crash.
  */
 
-#include <QGLWidget>
+#include <QOpenGLWidget>
 
+class QPaintEvent;
 class QMouseEvent;
 
 #include <string>
@@ -44,7 +45,7 @@ class QMouseEvent;
 
 #include "WindowCallbacks.hpp"
 
-class MjpegStream : public QGLWidget, public MjpegClient {
+class MjpegStream : public QOpenGLWidget, public MjpegClient {
     Q_OBJECT
 
 public:
@@ -55,9 +56,9 @@ public:
             int width ,
             int height ,
             WindowCallbacks* windowCallbacks ,
-            std::function<void(void)> newImageCallback = nullptr ,
-            std::function<void(void)> startCallback = nullptr ,
-            std::function<void(void)> stopCallback = nullptr
+            std::function<void(void)> newImageCbk = nullptr ,
+            std::function<void(void)> startCbk = nullptr ,
+            std::function<void(void)> stopCbk = nullptr
             );
     virtual ~MjpegStream();
 
@@ -72,19 +73,18 @@ protected:
     void stopCallback();
 
     void mousePressEvent( QMouseEvent* event );
-    void intializeGL();
     void paintGL();
-    void resizeGL( int x , int y ); // Arguments are buffer dimensions
+    void resizeGL( int w , int h ); // Arguments are buffer dimensions
 
 private:
     // Contains "Connecting" message
-    uint8_t* m_connectPxl;
+    QImage m_connectImg;
 
     // Contains "Disconnected" message
-    uint8_t* m_disconnectPxl;
+    QImage m_disconnectImg;
 
     // Contains "Waiting..." message
-    uint8_t* m_waitPxl;
+    QImage m_waitImg;
 
     // Stores image before displaying it on the screen
     uint8_t* m_img;
@@ -113,13 +113,6 @@ private:
 
     // Locks window so only one thread can access or draw to it at a time
     std::mutex m_windowMutex;
-
-    /* If false:
-     *     Lets update thread run
-     * If true:
-     *     Closes update thread
-     */
-    std::atomic<bool> m_stopUpdate;
 
     WindowCallbacks* m_windowCallbacks;
 
