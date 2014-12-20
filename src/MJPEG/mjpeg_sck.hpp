@@ -20,6 +20,7 @@ typedef u_int mjpeg_socket_t;
 #include <sys/select.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 
 typedef int mjpeg_socket_t;

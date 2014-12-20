@@ -25,8 +25,8 @@ Color<T>::~Color() {
 }
 
 template <class T>
-COLORREF Color<T>::win32() {
-    return RGB( R , G , B );
+QColor Color<T>::qt() {
+    return QColor( R , G , B );
 }
 
 template <class T>

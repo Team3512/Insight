@@ -74,7 +74,7 @@ void MjpegClient::start() {
         // Mark the thread as running
         m_stopReceive = false;
 
-        m_recvThread = new std::thread( MjpegClient::recvFunc , this );
+        m_recvThread = new std::thread( [this] { MjpegClient::recvFunc(); } );
     }
 }
 
@@ -252,14 +252,6 @@ int mjpeg_sck_recv( int sockfd , void* buf , size_t len , int cancelfd ) {
     size_t nread;
     fd_set readfds;
     fd_set exceptfds;
-
-    // Set the sockets into the fd_set s
-    FD_SET( sockfd , &readfds );
-    FD_SET( sockfd , &exceptfds );
-    if( cancelfd ) {
-        FD_SET( cancelfd , &readfds );
-        FD_SET( cancelfd , &exceptfds );
-    }
 
     nread = 0;
     while ( nread < len ) {

@@ -7,7 +7,7 @@
 #ifndef COLOR_HPP
 #define COLOR_HPP
 
-#include <wingdi.h>
+#include <QColor>
 
 template <class T>
 class Color {
@@ -17,8 +17,8 @@ public:
 
     virtual ~Color();
 
-    // Returns color in WinGDI format
-    COLORREF win32();
+    // Returns color in Qt format
+    QColor qt();
 
     // Normalizes color component to OpenGL's float color range [0..1]
     T glR();

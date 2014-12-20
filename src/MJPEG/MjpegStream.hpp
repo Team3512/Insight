@@ -27,14 +27,9 @@
  * respective parent window. If not, the application will crash.
  */
 
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0601
-#endif
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include <QGLWidget>
 
-#include <GL/gl.h>
-#include <GL/glu.h>
+class QMouseEvent;
 
 #include <string>
 #include <atomic>
@@ -46,27 +41,20 @@
 #include <mutex>
 
 #include "MjpegClient.hpp"
-#include "../WinGDI/Text.hpp"
 #include "../Vector.hpp"
-#include "../GLWindow.hpp"
 
 #include "WindowCallbacks.hpp"
 
-void BMPtoPXL( HDC dc , HBITMAP bmp , uint8_t* pxlData );
+class MjpegStream : public QGLWidget, public MjpegClient {
+    Q_OBJECT
 
-class StreamClassInit;
-
-class MjpegStream : public MjpegClient {
 public:
     MjpegStream( const std::string& hostName ,
             unsigned short port ,
             const std::string& requestPath,
-            HWND parentWin ,
-            int xPosition ,
-            int yPosition ,
+            QWidget* parentWin ,
             int width ,
             int height ,
-            HINSTANCE appInstance,
             WindowCallbacks* windowCallbacks ,
             std::function<void(void)> newImageCallback = nullptr ,
             std::function<void(void)> startCallback = nullptr ,
@@ -74,11 +62,9 @@ public:
             );
     virtual ~MjpegStream();
 
-    Vector2i getPosition();
-    void setPosition( const Vector2i& position );
+    QSize sizeHint() const;
 
     Vector2i getSize();
-    void setSize( const Vector2i& size );
 
     // Request MJPEG stream and begin displaying it
     void start();
@@ -89,36 +75,24 @@ public:
     // Set max frame rate of images displaying in window
     void setFPS( unsigned int fps );
 
-    // Displays the stream or a message if the stream isn't working
-    void repaint();
-
 protected:
     void done();
     void read( char* buf , int bufsize );
 
+    void mousePressEvent( QMouseEvent* event );
+    void intializeGL();
+    void paintGL();
+    void resizeGL( int x , int y ); // Arguments are buffer dimensions
+
 private:
-    HWND m_parentWin;
-
-    HWND m_streamWin;
-    GLWindow* m_glWin;
-
-    // Holds pointer to button which toggles streaming
-    HWND m_toggleButton;
-
     // Contains "Connecting" message
-    Text m_connectMsg;
     uint8_t* m_connectPxl;
 
     // Contains "Disconnected" message
-    Text m_disconnectMsg;
     uint8_t* m_disconnectPxl;
 
     // Contains "Waiting..." message
-    Text m_waitMsg;
     uint8_t* m_waitPxl;
-
-    // Contains background color
-    uint8_t* m_backgroundPxl;
 
     // Stores image before displaying it on the screen
     uint8_t* m_img;
@@ -161,12 +135,6 @@ private:
     std::function<void(void)> m_startCallback;
     std::function<void(void)> m_stopCallback;
 
-    /* Mouse position state variables */
-    int m_lx;
-    int m_ly;
-    int m_cx;
-    int m_cy;
-
     // Makes sure "Waiting..." graphic is drawn after timeout
     std::thread* m_updateThread;
 
@@ -178,11 +146,8 @@ private:
     // Function is used by m_updateThread
     void updateFunc();
 
-    static std::map<HWND , MjpegStream*> m_map;
-    static LRESULT CALLBACK WindowProc( HWND handle , UINT message , WPARAM wParam , LPARAM lParam );
-    void paint( PAINTSTRUCT* ps );
-
-    friend StreamClassInit;
+signals:
+    void redraw();
 };
 
 #endif // MJPEG_STREAM_HPP

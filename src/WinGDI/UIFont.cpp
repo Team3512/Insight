@@ -5,7 +5,6 @@
 //=============================================================================
 
 #include "UIFont.hpp"
-#include <wingdi.h>
 
 UIFont UIFont::m_instance;
 
@@ -13,48 +12,17 @@ UIFont& UIFont::getInstance() {
     return m_instance;
 }
 
-UIFont::UIFont() {
-    // Font size assumes 1:1 relationship between logical units and pixels
-    m_segoeUI14 = CreateFont( -14 ,
-            0 ,
-            0 ,
-            0 ,
-            550 ,
-            FALSE ,
-            FALSE ,
-            FALSE ,
-            ANSI_CHARSET ,
-            OUT_TT_ONLY_PRECIS ,
-            CLIP_DEFAULT_PRECIS ,
-            CLEARTYPE_QUALITY ,
-            FF_DONTCARE | DEFAULT_PITCH ,
-            "Segoe UI" );
+UIFont::UIFont() :
+    m_segoeUI14( "Segoe UI" , 14 , QFont::DemiBold ) ,
+    m_segoeUI18( "Segoe UI" , 18 , QFont::DemiBold )
+{
 
-    m_segoeUI18 = CreateFont( -18 ,
-            0 ,
-            0 ,
-            0 ,
-            550 ,
-            FALSE ,
-            FALSE ,
-            FALSE ,
-            ANSI_CHARSET ,
-            OUT_TT_ONLY_PRECIS ,
-            CLIP_DEFAULT_PRECIS ,
-            CLEARTYPE_QUALITY ,
-            FF_DONTCARE | DEFAULT_PITCH ,
-            "Segoe UI" );
 }
 
-UIFont::~UIFont() {
-    DeleteObject( m_segoeUI14 );
-    DeleteObject( m_segoeUI18 );
-}
-
-const HFONT UIFont::segoeUI14() {
+const QFont& UIFont::segoeUI14() {
     return m_segoeUI14;
 }
 
-const HFONT UIFont::segoeUI18() {
+const QFont& UIFont::segoeUI18() {
     return m_segoeUI18;
 }

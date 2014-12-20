@@ -1,6 +1,7 @@
 #include "mjpeg_sck.hpp"
 
 #include <algorithm>
+#include <cstring>
 
 #ifdef _WIN32
 void
@@ -207,7 +208,7 @@ mjpeg_socket_t mjpeg_sck_connect( const char* host , int port , mjpeg_socket_t c
     error_code_len = sizeof(error_code);
     error = getsockopt( sd , SOL_SOCKET , SO_ERROR ,
             reinterpret_cast<char*>(&error_code) ,
-            static_cast<socklen_t*>(&error_code_len) );
+            reinterpret_cast<socklen_t*>(&error_code_len) );
     if ( error == -1 ) {
         mjpeg_sck_close( sd );
         return -1;

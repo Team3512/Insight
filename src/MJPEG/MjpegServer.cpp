@@ -123,7 +123,7 @@ void MjpegServer::start() {
         m_clientSelector.addSocket( m_listenSock , mjpeg_sck_selector::read | mjpeg_sck_selector::except );
 
         m_isRunning = true;
-        m_serverThread = new std::thread( MjpegServer::serverFunc , this );
+        m_serverThread = new std::thread( [this] { MjpegServer::serverFunc(); } );
     }
 }
 

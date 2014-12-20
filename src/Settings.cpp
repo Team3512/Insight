@@ -60,7 +60,7 @@ const std::string Settings::getString( const std::string& key ) const {
     return index->second;
 }
 
-const float Settings::getFloat( const std::string& key ) const {
+float Settings::getFloat( const std::string& key ) const {
     std::map<std::string , std::string>::const_iterator index = m_values.find( key );
 
     // If the element wasn't found
@@ -73,7 +73,7 @@ const float Settings::getFloat( const std::string& key ) const {
     return atof( index->second.c_str() );
 }
 
-const int Settings::getInt( const std::string& key ) const {
+int Settings::getInt( const std::string& key ) const {
     std::map<std::string , std::string>::const_iterator index = m_values.find( key );
 
     // If the element wasn't found
