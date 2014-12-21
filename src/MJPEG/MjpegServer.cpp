@@ -41,6 +41,11 @@ MjpegServer::MjpegServer( unsigned short port ) :
     // Set any non-default parameters
     jpeg_set_quality( &m_cinfo , 100 , TRUE /* limit to baseline-JPEG values */);
 
+    /* Specify data destination (e.g. memory buffer). A new buffer will be
+     * allocated internally and stored in m_serveImg.
+     */
+    jpeg_mem_dest( &m_cinfo , &m_serveImg , &m_serveLen );
+
     m_row_pointer = NULL;
 }
 
@@ -151,15 +156,10 @@ void MjpegServer::stop() {
 }
 
 void MjpegServer::serveImage( uint8_t* image , unsigned int width , unsigned int height ) {
-    /* Free output buffer for JPEG compression because libjpeg leaks
-     * memory from jpeg_mem_dest() if it's not NULL (see libjpeg's
-     * jdatadst.c line 242 for the function)
-     */
-    std::free( m_serveImg );
-    m_serveImg = NULL;
-
-    // Specify data destination (e.g. memory buffer)
-    jpeg_mem_dest( &m_cinfo , &m_serveImg , &m_serveLen );
+    // Don't bother making the JPEG if there are no clients to which to send it
+    if ( m_clientSockets.size() == 0 ) {
+        return;
+    }
 
     /* ===== Convert RGB image to JPEG ===== */
     m_cinfo.image_width = width;
@@ -180,13 +180,6 @@ void MjpegServer::serveImage( uint8_t* image , unsigned int width , unsigned int
 
     jpeg_finish_compress( &m_cinfo );
     /* ===================================== */
-
-    /* Don't bother making the MJPEG frame if there are no clients to which to
-     * send it.
-     */
-    if ( m_clientSockets.size() == 0 ) {
-        return;
-    }
 
     /* ===== Prepare MJPEG frame ===== */
     std::string imgFrame = "--myboundary\r\n"
