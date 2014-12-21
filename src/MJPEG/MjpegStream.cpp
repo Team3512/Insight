@@ -228,10 +228,6 @@ void MjpegStream::recreateGraphics( int width , int height ) {
 
     m_imageMutex.lock();
     /* ===== Store bits from graphics in another buffer ===== */
-    connectBuf.save( "connectBuf.png" );
-    disconnectBuf.save( "disconnectBuf.png" );
-    waitBuf.save( "waitBuf.png" );
-
     m_connectImg = connectBuf;
     m_disconnectImg = disconnectBuf;
     m_waitImg = waitBuf;

@@ -92,7 +92,7 @@ void MjpegServer::start() {
         }
 
         // Listen to the bound port
-        if ( listen(m_listenSock, 0) == -1 ) {
+        if ( listen( m_listenSock , 0 ) == -1 ) {
             mjpeg_sck_close(m_listenSock);
             std::cout << "MjpegServer: failed to listen to port " << m_port << "\n";
             return; // Failed to listen to port
@@ -143,7 +143,7 @@ void MjpegServer::stop() {
 
         // Close and disconnect client sockets
         for ( auto i : m_clientSockets ) {
-            mjpeg_sck_close(i);
+            mjpeg_sck_close( i );
         }
 
         m_clientSockets.clear();

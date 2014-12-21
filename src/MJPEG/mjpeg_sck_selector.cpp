@@ -20,13 +20,13 @@ mjpeg_sck_selector::~mjpeg_sck_selector() {
 }
 
 void mjpeg_sck_selector::addSocket( mjpeg_socket_t sd , uint32_t types ) {
-    if ( types | select_type::read ) {
+    if ( types & select_type::read ) {
         FD_SET( sd , &m_in_readfds );
     }
-    if ( types | select_type::write ) {
+    if ( types & select_type::write ) {
         FD_SET( sd , &m_in_writefds );
     }
-    if ( types | select_type::except ) {
+    if ( types & select_type::except ) {
         FD_SET( sd , &m_in_exceptfds );
     }
 
@@ -36,13 +36,13 @@ void mjpeg_sck_selector::addSocket( mjpeg_socket_t sd , uint32_t types ) {
 }
 
 void mjpeg_sck_selector::removeSocket( mjpeg_socket_t sd , uint32_t types ) {
-    if ( types | select_type::read ) {
+    if ( types & select_type::read ) {
         FD_CLR( sd , &m_in_readfds );
     }
-    if ( types | select_type::write ) {
+    if ( types & select_type::write ) {
         FD_CLR( sd , &m_in_writefds );
     }
-    if ( types | select_type::except ) {
+    if ( types & select_type::except ) {
         FD_CLR( sd , &m_in_exceptfds );
     }
 }
@@ -78,13 +78,13 @@ bool mjpeg_sck_selector::isReady( mjpeg_socket_t sd , select_type type ) {
 }
 
 void mjpeg_sck_selector::zero( uint32_t types ) {
-    if ( types | select_type::read ) {
+    if ( types & select_type::read ) {
         FD_ZERO( &m_in_readfds );
     }
-    if ( types | select_type::write ) {
+    if ( types & select_type::write ) {
         FD_ZERO( &m_in_writefds );
     }
-    if ( types | select_type::except ) {
+    if ( types & select_type::except ) {
         FD_ZERO( &m_in_exceptfds );
     }
 }
