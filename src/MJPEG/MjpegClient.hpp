@@ -32,6 +32,7 @@
 #include <thread>
 #include <mutex>
 #include <cstdint>
+#include <jpeglib.h>
 #include "mjpeg_sck.hpp"
 
 class MjpegClient {
@@ -82,6 +83,7 @@ private:
     uint8_t* m_pxlBuf;
     unsigned int m_imgWidth;
     unsigned int m_imgHeight;
+    unsigned int m_imgChannels;
     std::mutex m_imageMutex;
 
     /* Stores copy of image for use by external programs. It only updates when
@@ -105,8 +107,17 @@ private:
     mjpeg_socket_t m_cancelfdw;
     mjpeg_socket_t m_sd;
 
+    struct jpeg_decompress_struct m_cinfo;
+    struct jpeg_error_mgr m_jerr;
+    JSAMPARRAY m_buffer; /* Output row buffer */
+
     // Used by m_recvThread
     void recvFunc();
+
+    /* buffer is input JPEG data; width, height, and channel amount are stored
+     * in member variables
+     */
+    uint8_t* jpeg_load_from_memory( uint8_t* buffer , int len );
 };
 
 /* mjpeg_sck_recv() blocks until either len bytes of data have

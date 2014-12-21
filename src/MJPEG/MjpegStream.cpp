@@ -13,9 +13,6 @@
 #include <QPainter>
 #include <QFont>
 
-#include "stb_image.h"
-#include "stb_image_write.h"
-
 #include <iostream>
 #include <cstring>
 
@@ -147,7 +144,7 @@ void MjpegStream::paintGL() {
         else {
             m_imageMutex.lock();
 
-            QImage tmp( m_img , m_imgWidth , m_imgHeight , QImage::Format_RGBA8888 );
+            QImage tmp( m_img , m_imgWidth , m_imgHeight , QImage::Format_RGB888 );
             painter.drawPixmap( 0 , 0 , QPixmap::fromImage( tmp ) );
 
             m_imageMutex.unlock();
@@ -171,9 +168,9 @@ void MjpegStream::resizeGL( int w , int h ) {
 
 void MjpegStream::recreateGraphics( int width , int height ) {
     // Create intermediate buffers for graphics
-    QImage connectBuf( width , height , QImage::Format_RGBA8888 );
-    QImage disconnectBuf( width , height , QImage::Format_RGBA8888 );
-    QImage waitBuf( width , height , QImage::Format_RGBA8888 );
+    QImage connectBuf( width , height , QImage::Format_RGB888 );
+    QImage disconnectBuf( width , height , QImage::Format_RGB888 );
+    QImage waitBuf( width , height , QImage::Format_RGB888 );
 
     QPainter p;
 

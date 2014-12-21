@@ -8,8 +8,8 @@
 #include "../Util.hpp"
 #include "MjpegClient.hpp"
 
-#include "stb_image.h"
-#include "stb_image_write.h"
+#include <QImage>
+#include <QString>
 
 #include <sys/types.h>
 
@@ -37,6 +37,7 @@ MjpegClient::MjpegClient( const std::string& hostName , unsigned short port ,
         m_pxlBuf( NULL ) ,
         m_imgWidth( 0 ) ,
         m_imgHeight( 0 ) ,
+        m_imgChannels( 0 ) ,
 
         m_extBuf( NULL ) ,
         m_extWidth( 0 ) ,
@@ -48,11 +49,17 @@ MjpegClient::MjpegClient( const std::string& hostName , unsigned short port ,
         m_cancelfdw( 0 ) ,
         m_sd( INVALID_SOCKET )
 {
+    m_cinfo.err = jpeg_std_error( &m_jerr );
+    m_cinfo.do_fancy_upsampling = 0;
+    m_cinfo.do_block_smoothing = 0;
 
+    jpeg_create_decompress( &m_cinfo );
 }
 
 MjpegClient::~MjpegClient() {
     stop();
+
+    jpeg_destroy_decompress( &m_cinfo );
 
     delete[] m_pxlBuf;
     delete[] m_extBuf;
@@ -101,26 +108,9 @@ bool MjpegClient::isStreaming() const {
 void MjpegClient::saveCurrentImage( const std::string& fileName ) {
     m_imageMutex.lock();
 
-    // Deduce the image type from its extension
-    if ( fileName.size() > 3 ) {
-        // Extract the extension
-        std::string extension = fileName.substr(fileName.size() - 3);
-
-        if ( toLower(extension) == "bmp" ) {
-            // BMP format
-            stbi_write_bmp( fileName.c_str(), m_imgWidth, m_imgHeight, 4, m_pxlBuf );
-        }
-        else if ( toLower(extension) == "tga" ) {
-            // TGA format
-            stbi_write_tga( fileName.c_str(), m_imgWidth, m_imgHeight, 4, m_pxlBuf );
-        }
-        else if( toLower(extension) == "png" ) {
-            // PNG format
-            stbi_write_png( fileName.c_str(), m_imgWidth, m_imgHeight, 4, m_pxlBuf, 0 );
-        }
-        else {
-            std::cout << "MjpegClient: failed to save image to '" << fileName << "'\n";
-        }
+    QImage tmp( m_pxlBuf , m_imgWidth , m_imgHeight , QImage::Format_RGB888 );
+    if ( !tmp.save( fileName.c_str() ) ) {
+        std::cout << "MjpegClient: failed to save image to '" << fileName << "'\n";
     }
 
     m_imageMutex.unlock();
@@ -138,12 +128,12 @@ uint8_t* MjpegClient::getCurrentImage() {
             }
 
             // Allocate new buffer to fit latest image
-            m_extBuf = new uint8_t[m_imgWidth * m_imgHeight * 4];
+            m_extBuf = new uint8_t[m_imgWidth * m_imgHeight * m_imgChannels];
             m_extWidth = m_imgWidth;
             m_extHeight = m_imgHeight;
         }
 
-        std::memcpy( m_extBuf , m_pxlBuf , m_extWidth * m_extHeight * 4 );
+        std::memcpy( m_extBuf , m_pxlBuf , m_extWidth * m_extHeight * m_imgChannels );
     }
 
     m_extMutex.unlock();
@@ -170,6 +160,38 @@ unsigned int MjpegClient::getCurrentHeight() {
     m_extMutex.unlock();
 
     return temp;
+}
+
+uint8_t* MjpegClient::jpeg_load_from_memory( uint8_t* buffer , int len ) {
+    jpeg_mem_src( &m_cinfo , buffer , len );
+
+    if ( jpeg_read_header( &m_cinfo , TRUE ) != JPEG_HEADER_OK ) {
+        return NULL;
+    }
+
+    jpeg_start_decompress( &m_cinfo );
+
+    int m_row_stride = m_cinfo.output_width * m_cinfo.output_components;
+
+    JSAMPARRAY samp = (*m_cinfo.mem->alloc_sarray)
+            ((j_common_ptr) &m_cinfo , JPOOL_IMAGE , m_row_stride , 1 );
+    uint8_t* imageBuf = new uint8_t[m_row_stride * m_cinfo.output_height];
+
+    m_imgWidth = m_cinfo.output_width;
+    m_imgHeight = m_cinfo.output_height;
+    m_imgChannels = m_cinfo.output_components;
+
+    for ( int outpos = 0 ; m_cinfo.output_scanline < m_cinfo.output_height ;
+            outpos += m_row_stride ) {
+        jpeg_read_scanlines( &m_cinfo , samp , 1 );
+
+        /* Assume put_scanline_someplace wants a pointer and sample count. */
+        std::memcpy( imageBuf + outpos , samp[0] , m_row_stride );
+    }
+
+    jpeg_finish_decompress( &m_cinfo );
+
+    return imageBuf;
 }
 
 char* strtok_r_n( char* str , const char* sep , char** last , char* used );
@@ -475,26 +497,22 @@ void MjpegClient::recvFunc() {
         }
 
         // Load the image received (converts from JPEG to pixel array)
-        int width, height, channels;
-        uint8_t* ptr = stbi_load_from_memory(reinterpret_cast<unsigned char*>(buf), datasize, &width, &height, &channels, STBI_rgb_alpha);
+        uint8_t* ptr = jpeg_load_from_memory( reinterpret_cast<unsigned char*>(buf) , datasize );
 
-        if ( ptr && width && height ) {
+        if ( ptr ) {
             m_imageMutex.lock();
 
-            // Free old buffer and store new one created by stbi_load_from_memory()
+            // Free old buffer and store new one created by jpeg_load_from_memory()
             delete[] m_pxlBuf;
 
             m_pxlBuf = ptr;
-
-            m_imgWidth = width;
-            m_imgHeight = height;
 
             m_imageMutex.unlock();
 
             newImageCallback( buf , datasize );
         }
         else {
-            std::cout << "MjpegClient: image failed to load: " << stbi_failure_reason() << "\n";
+            std::cout << "MjpegClient: image failed to load\n";
         }
 
         free( buf );
