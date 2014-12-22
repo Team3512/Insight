@@ -161,13 +161,13 @@ void MainWindow::newImageFunc() {
             tempImg = new uint8_t[imgWidth * imgHeight * 3];
         }
 
-        /* ===== Convert RGBA image to BGR for OpenCV ===== */
+        /* ===== Convert RGB image to BGR for OpenCV ===== */
         // Copy R, G, and B channels but ignore A channel
         for ( unsigned int posIn = 0, posOut = 0 ; posIn < imgWidth * imgHeight ; posIn++, posOut++ ) {
             // Copy bytes of pixel into corresponding channels
-            tempImg[3*posOut+0] = imgBuffer[4*posIn+2];
-            tempImg[3*posOut+1] = imgBuffer[4*posIn+1];
-            tempImg[3*posOut+2] = imgBuffer[4*posIn+0];
+            tempImg[3*posOut+0] = imgBuffer[3*posIn+2];
+            tempImg[3*posOut+1] = imgBuffer[3*posIn+1];
+            tempImg[3*posOut+2] = imgBuffer[3*posIn+0];
         }
         /* ================================================ */
 

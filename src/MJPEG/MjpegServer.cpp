@@ -41,11 +41,6 @@ MjpegServer::MjpegServer( unsigned short port ) :
     // Set any non-default parameters
     jpeg_set_quality( &m_cinfo , 100 , TRUE /* limit to baseline-JPEG values */);
 
-    /* Specify data destination (e.g. memory buffer). A new buffer will be
-     * allocated internally and stored in m_serveImg.
-     */
-    jpeg_mem_dest( &m_cinfo , &m_serveImg , &m_serveLen );
-
     m_row_pointer = NULL;
 }
 
@@ -165,6 +160,11 @@ void MjpegServer::serveImage( uint8_t* image , unsigned int width , unsigned int
     m_cinfo.image_width = width;
     m_cinfo.image_height = height;
 
+    /* Specify data destination (e.g. memory buffer). A new buffer will be
+     * allocated internally and stored in m_serveImg.
+     */
+    jpeg_mem_dest( &m_cinfo , &m_serveImg , &m_serveLen );
+
     // TRUE ensures that we will write a complete interchange-JPEG file
     jpeg_start_compress( &m_cinfo , TRUE );
 
@@ -195,10 +195,12 @@ void MjpegServer::serveImage( uint8_t* image , unsigned int width , unsigned int
     char buffer[imgFrame.length() + m_serveLen + 2];
     std::memcpy( buffer , imgFrame.c_str() , imgFrame.length() );
     std::memcpy( buffer + imgFrame.length() , m_serveImg , m_serveLen );
-    std::memcpy( buffer + imgFrame.length() + m_serveLen , "\r\n" , 2 );
+    buffer[imgFrame.length() + m_serveLen] = '\r';
+    buffer[imgFrame.length() + m_serveLen + 1] = '\n';
     /* =============================== */
 
     // Send JPEG to all clients
+    m_clientSocketMutex.lock();
     for ( auto i = m_clientSockets.begin() ; i != m_clientSockets.end() ; i++ ) {
         // Loop until every byte has been sent
         int sent = 0;
@@ -221,11 +223,12 @@ void MjpegServer::serveImage( uint8_t* image , unsigned int width , unsigned int
             }
         }
     }
+    m_clientSocketMutex.unlock();
 }
 
 void MjpegServer::serverFunc() {
     char packet[256];
-    unsigned int recvSize = 0;
+    int recvSize = 0;
 
     while ( m_isRunning ) {
         // Wait until one of the sockets is ready for reading, or timeout is reached
@@ -266,14 +269,16 @@ void MjpegServer::serverFunc() {
             }
 
             // Check if sockets are requesting data stream
+            m_clientSocketMutex.lock();
             for ( auto i = m_clientSockets.begin() ; i != m_clientSockets.end() ; i++ ) {
                 // If current client is ready to be read from
                 if ( m_clientSelector.isReady( *i , mjpeg_sck_selector::read ) ) {
                     // Receive a chunk of bytes
                     recvSize = recv(*i, packet, 255, 0);
-                    packet[recvSize] = '\0';
 
                     if ( recvSize > 0 ) {
+                        packet[recvSize] = '\0';
+
                         /* Parse request to determine the right MJPEG stream to send them
                          * It should be "GET %s HTTP/1.0\r\n\r\n"
                          */
@@ -337,6 +342,7 @@ void MjpegServer::serverFunc() {
                     continue;
                 }
             }
+            m_clientSocketMutex.unlock();
         }
     }
 }

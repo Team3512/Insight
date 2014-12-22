@@ -9,6 +9,7 @@
 
 #include <atomic>
 #include <list>
+#include <mutex>
 #include <thread>
 #include <cstdint>
 
@@ -29,6 +30,7 @@ public:
 private:
     mjpeg_sck_selector m_clientSelector;
     std::list<mjpeg_socket_t> m_clientSockets;
+    std::mutex m_clientSocketMutex;
 
     mjpeg_socket_t m_listenSock;
     unsigned short m_port;
