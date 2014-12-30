@@ -27,7 +27,6 @@ MainWindow::MainWindow() {
             [this] { button->setText( "Start Stream" ); } );
 
     button = new QPushButton( "Start Stream" );
-    button->setGeometry( QRect( QPoint( 5 , 5 ) , QSize( 100 , 28 ) ) );
     connect( button , SIGNAL(released()) , this , SLOT(toggleButton()) );
 
     slider = new QSlider( Qt::Horizontal );
