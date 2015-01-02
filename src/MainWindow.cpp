@@ -126,7 +126,7 @@ void MainWindow::stopMJPEG() {
 void MainWindow::about() {
     QMessageBox::about( this , tr("About Insight") ,
             tr("<br>Insight, Version 1.0<br>"
-               "Copyright &copy;2013 FRC Team 3512<br>"
+               "Copyright &copy;2013-2015 FRC Team 3512<br>"
                "FRC Team 3512<br>"
                "All Rights Reserved") );
 }
