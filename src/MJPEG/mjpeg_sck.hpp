@@ -38,29 +38,32 @@ typedef enum mjpeg_sck_status {
 /* Returns 1 if socket is valid
  * Returns 0 if socket is invalid
  */
-int mjpeg_sck_valid( mjpeg_socket_t sd );
+int mjpeg_sck_valid(mjpeg_socket_t sd);
 
 /* enable != 0 sets socket to non-blocking
  * enable == 0 sets socket to blocking
  */
-int mjpeg_sck_setnonblocking( mjpeg_socket_t sd , int enable );
+int mjpeg_sck_setnonblocking(mjpeg_socket_t sd, int enable);
 
 /* Returns platform independent error condition */
 mjpeg_sck_status mjpeg_sck_geterror();
 
 /* mjpeg_sck_connect() attempts to connect to the specified
-   remote host on the specified port. The function blocks
-   until either cancelfd becomes ready for reading, or the
-   connection succeeds or times out.
-   If the connection succeeds, the new socket descriptor
-   is returned. On error, -1 is returned, and errno is
-   set appropriately. */
-mjpeg_socket_t mjpeg_sck_connect( const char* host , int port , mjpeg_socket_t cancelfd );
+ *  remote host on the specified port. The function blocks
+ *  until either cancelfd becomes ready for reading, or the
+ *  connection succeeds or times out.
+ *  If the connection succeeds, the new socket descriptor
+ *  is returned. On error, -1 is returned, and errno is
+ *  set appropriately. */
+mjpeg_socket_t mjpeg_sck_connect(const char* host,
+                                 int port,
+                                 mjpeg_socket_t cancelfd);
 
-int mjpeg_sck_close( mjpeg_socket_t sd );
+int mjpeg_sck_close(mjpeg_socket_t sd);
 
 /* A platform independent wrapper function which acts like
-   the call socketpair(AF_INET, SOCK_STREAM, 0, sv) . */
-mjpeg_socket_t mjpeg_pipe( mjpeg_socket_t sv[2] );
+ *  the call socketpair(AF_INET, SOCK_STREAM, 0, sv) . */
+mjpeg_socket_t mjpeg_pipe(mjpeg_socket_t sv[2]);
 
 #endif // MJPEG_SCK_HPP
+

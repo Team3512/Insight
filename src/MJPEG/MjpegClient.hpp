@@ -1,9 +1,9 @@
-//=============================================================================
-//File Name: MjpegClient.hpp
-//Description: Receives an MJPEG stream and displays it in a child window with
+// =============================================================================
+// File Name: MjpegClient.hpp
+// Description: Receives an MJPEG stream and displays it in a child window with
 //             the specified properties
-//Author: FRC Team 3512, Spartatroniks
-//=============================================================================
+// Author: FRC Team 3512, Spartatroniks
+// =============================================================================
 
 #ifndef MJPEG_CLIENT_HPP
 #define MJPEG_CLIENT_HPP
@@ -37,8 +37,8 @@
 
 class MjpegClient {
 public:
-    MjpegClient( const std::string& hostName , unsigned short port ,
-            const std::string& requestPath );
+    MjpegClient(const std::string& hostName, unsigned short port,
+                const std::string& requestPath);
     virtual ~MjpegClient();
 
     // Request MJPEG stream
@@ -51,7 +51,7 @@ public:
     bool isStreaming() const;
 
     // Saves most recently received image to a file
-    void saveCurrentImage( const std::string& fileName );
+    void saveCurrentImage(const std::string& fileName);
 
     /* Copies the most recently received image into a secondary internal buffer
      * and returns it to the user. After a call to this function, the new size
@@ -66,7 +66,7 @@ public:
 
 protected:
     // Called if the new image loaded successfully
-    virtual void newImageCallback( char* buf , int bufsize ) = 0;
+    virtual void newImageCallback(char* buf, int bufsize) = 0;
 
     // Called when client thread starts
     virtual void startCallback() = 0;
@@ -117,14 +117,15 @@ private:
     /* buffer is input JPEG data; width, height, and channel amount are stored
      * in member variables
      */
-    uint8_t* jpeg_load_from_memory( uint8_t* buffer , int len );
+    uint8_t* jpeg_load_from_memory(uint8_t* buffer, int len);
 };
 
 /* mjpeg_sck_recv() blocks until either len bytes of data have
-   been read into buf, or cancelfd becomes ready for reading.
-   If either len bytes are read, or cancelfd becomes ready for
-   reading, the number of bytes received is returned. On error,
-   -1 is returned, and errno is set appropriately. */
-int mjpeg_sck_recv( int sockfd , void* buf , size_t len , int cancelfd );
+ *  been read into buf, or cancelfd becomes ready for reading.
+ *  If either len bytes are read, or cancelfd becomes ready for
+ *  reading, the number of bytes received is returned. On error,
+ *  -1 is returned, and errno is set appropriately. */
+int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd);
 
 #endif // MJPEG_CLIENT_HPP
+

@@ -31,7 +31,7 @@ private slots:
     void about();
 
     void toggleButton();
-    void handleSlider( int value );
+    void handleSlider(int value);
     void newImageFunc();
 
 private:
@@ -92,3 +92,4 @@ private:
 };
 
 #endif // MAIN_WINDOW_HPP
+

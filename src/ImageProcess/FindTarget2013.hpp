@@ -1,9 +1,9 @@
-//=============================================================================
-//File Name: FindTarget2013.hpp
-//Description: Processes a provided image and finds targets like the ones from
+// =============================================================================
+// File Name: FindTarget2013.hpp
+// Description: Processes a provided image and finds targets like the ones from
 //             FRC 2013
-//Author: FRC Team 3512, Spartatroniks
-//=============================================================================
+// Author: FRC Team 3512, Spartatroniks
+// =============================================================================
 
 #ifndef FIND_TARGET_2013_HPP
 #define FIND_TARGET_2013_HPP
@@ -18,3 +18,4 @@ private:
 };
 
 #endif // FIND_TARGET_2013_HPP
+

@@ -1,9 +1,9 @@
-//=============================================================================
-//File Name: ProcBase.hpp
-//Description: Contains a common collection of functions that must be called
+// =============================================================================
+// File Name: ProcBase.hpp
+// Description: Contains a common collection of functions that must be called
 //             to do proper image processing on an object in FRC.
-//Author: FRC Team 3512, Spartatroniks
-//=============================================================================
+// Author: FRC Team 3512, Spartatroniks
+// =============================================================================
 
 #ifndef PROC_BASE_HPP
 #define PROC_BASE_HPP
@@ -25,7 +25,7 @@ public:
      * to that buffer. Since a shallow copy is used, the buffer must exist for
      * the duration of processing. An RGB image is expected.
      */
-    void setImage( uint8_t* image , uint32_t width , uint32_t height );
+    void setImage(uint8_t* image, uint32_t width, uint32_t height);
 
     // Processes provided image with the overriden functions
     void processImage();
@@ -43,10 +43,10 @@ public:
     /* When enabled, PNG images of the intermediate processing steps are saved
      * to disk.
      */
-    void enableDebugging( bool enable );
+    void enableDebugging(bool enable);
 
     // Click event
-    virtual void clickEvent( int x , int y );
+    virtual void clickEvent(int x, int y);
 
 protected:
     // Internal OpenCV primitives
@@ -65,3 +65,4 @@ private:
 };
 
 #endif // PROC_BASE_HPP
+

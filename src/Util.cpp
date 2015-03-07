@@ -1,12 +1,12 @@
-//=============================================================================
-//File Name: Util.cpp
-//Description: Contains miscellaneous utility functions
-//Author: FRC Team 3512, Spartatroniks
-//=============================================================================
+// =============================================================================
+// File Name: Util.cpp
+// Description: Contains miscellaneous utility functions
+// Author: FRC Team 3512, Spartatroniks
+// =============================================================================
 
 #include "Util.hpp"
 
-int npot( int num ) {
+int npot(int num) {
     num--;
     num |= num >> 1;
     num |= num >> 2;
@@ -17,3 +17,4 @@ int npot( int num ) {
 
     return num;
 }
+

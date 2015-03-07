@@ -40,11 +40,10 @@ typedef int socklen_t;
  *   sockets must be closed with closesocket() regardless.
  */
 
-int dumb_socketpair(SOCKET socks[2], int make_overlapped)
-{
+int dumb_socketpair(SOCKET socks[2], int make_overlapped) {
     union {
-       struct sockaddr_in inaddr;
-       struct sockaddr addr;
+        struct sockaddr_in inaddr;
+        struct sockaddr addr;
     } a;
     SOCKET listener;
     int e;
@@ -53,13 +52,14 @@ int dumb_socketpair(SOCKET socks[2], int make_overlapped)
     int reuse = 1;
 
     if (socks == 0) {
-      WSASetLastError(WSAEINVAL);
-      return SOCKET_ERROR;
+        WSASetLastError(WSAEINVAL);
+        return SOCKET_ERROR;
     }
 
     listener = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (listener == INVALID_SOCKET)
+    if (listener == INVALID_SOCKET) {
         return SOCKET_ERROR;
+    }
 
     memset(&a, 0, sizeof(a));
     a.inaddr.sin_family = AF_INET;
@@ -69,26 +69,32 @@ int dumb_socketpair(SOCKET socks[2], int make_overlapped)
     socks[0] = socks[1] = INVALID_SOCKET;
     do {
         if (setsockopt(listener, SOL_SOCKET, SO_REUSEADDR,
-               (char*) &reuse, (socklen_t) sizeof(reuse)) == -1)
+                       (char*) &reuse, (socklen_t) sizeof(reuse)) == -1) {
             break;
-        if  (bind(listener, &a.addr, sizeof(a.inaddr)) == SOCKET_ERROR)
+        }
+        if  (bind(listener, &a.addr, sizeof(a.inaddr)) == SOCKET_ERROR) {
             break;
-        if  (getsockname(listener, &a.addr, &addrlen) == SOCKET_ERROR)
+        }
+        if  (getsockname(listener, &a.addr, &addrlen) == SOCKET_ERROR) {
             break;
-        if (listen(listener, 1) == SOCKET_ERROR)
+        }
+        if (listen(listener, 1) == SOCKET_ERROR) {
             break;
+        }
         socks[0] = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, flags);
-        if (socks[0] == INVALID_SOCKET)
+        if (socks[0] == INVALID_SOCKET) {
             break;
-        if (connect(socks[0], &a.addr, sizeof(a.inaddr)) == SOCKET_ERROR)
+        }
+        if (connect(socks[0], &a.addr, sizeof(a.inaddr)) == SOCKET_ERROR) {
             break;
+        }
         socks[1] = accept(listener, NULL, NULL);
-        if (socks[1] == INVALID_SOCKET)
+        if (socks[1] == INVALID_SOCKET) {
             break;
+        }
 
         closesocket(listener);
         return 0;
-
     } while (0);
 
     e = WSAGetLastError();
@@ -100,3 +106,4 @@ int dumb_socketpair(SOCKET socks[2], int make_overlapped)
 }
 
 #endif
+

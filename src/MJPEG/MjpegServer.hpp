@@ -1,8 +1,8 @@
-//=============================================================================
-//File Name: MjpegServer.hpp
-//Description: An MJPEG server implementation
-//Author: FRC Team 3512, Spartatroniks
-//=============================================================================
+// =============================================================================
+// File Name: MjpegServer.hpp
+// Description: An MJPEG server implementation
+// Author: FRC Team 3512, Spartatroniks
+// =============================================================================
 
 #ifndef MJPEG_SERVER_HPP
 #define MJPEG_SERVER_HPP
@@ -18,14 +18,14 @@
 
 class MjpegServer {
 public:
-    MjpegServer( unsigned short port );
+    MjpegServer(unsigned short port);
     virtual ~MjpegServer();
 
     void start();
     void stop();
 
     // Converts BGR image to JPEG before serving it
-    void serveImage( uint8_t* image , unsigned int width , unsigned int height );
+    void serveImage(uint8_t* image, unsigned int width, unsigned int height);
 
 private:
     mjpeg_sck_selector m_clientSelector;
@@ -51,3 +51,4 @@ private:
 };
 
 #endif // MJPEG_SERVER_HPP
+

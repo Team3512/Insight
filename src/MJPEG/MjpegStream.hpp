@@ -1,9 +1,9 @@
-//=============================================================================
-//File Name: MjpegStream.hpp
-//Description: Receives an MJPEG stream and displays it in a child window with
+// =============================================================================
+// File Name: MjpegStream.hpp
+// Description: Receives an MJPEG stream and displays it in a child window with
 //             the specified properties
-//Author: FRC Team 3512, Spartatroniks
-//=============================================================================
+// Author: FRC Team 3512, Spartatroniks
+// =============================================================================
 
 #ifndef MJPEG_STREAM_HPP
 #define MJPEG_STREAM_HPP
@@ -49,32 +49,31 @@ class MjpegStream : public QOpenGLWidget, public MjpegClient {
     Q_OBJECT
 
 public:
-    MjpegStream( const std::string& hostName ,
-            unsigned short port ,
-            const std::string& requestPath,
-            QWidget* parentWin ,
-            int width ,
-            int height ,
-            WindowCallbacks* windowCallbacks ,
-            std::function<void(void)> newImageCbk = nullptr ,
-            std::function<void(void)> startCbk = nullptr ,
-            std::function<void(void)> stopCbk = nullptr
-            );
+    MjpegStream(const std::string& hostName,
+                unsigned short port,
+                const std::string& requestPath,
+                QWidget* parentWin,
+                int width,
+                int height,
+                WindowCallbacks* windowCallbacks,
+                std::function<void(void)> newImageCbk = nullptr,
+                std::function<void(void)> startCbk = nullptr,
+                std::function<void(void)> stopCbk = nullptr);
     virtual ~MjpegStream();
 
     QSize sizeHint() const;
 
     // Set max frame rate of images displaying in window
-    void setFPS( unsigned int fps );
+    void setFPS(unsigned int fps);
 
 protected:
-    void newImageCallback( char* buf , int bufsize );
+    void newImageCallback(char* buf, int bufsize);
     void startCallback();
     void stopCallback();
 
-    void mousePressEvent( QMouseEvent* event );
+    void mousePressEvent(QMouseEvent* event);
     void paintGL();
-    void resizeGL( int w , int h ); // Arguments are buffer dimensions
+    void resizeGL(int w, int h); // Arguments are buffer dimensions
 
 private:
     // Contains "Connecting" message
@@ -126,7 +125,7 @@ private:
     /* Recreates the graphics that display messages in the stream window
      * (Resizes them and recenters the text in the window)
      */
-    void recreateGraphics( int width , int height );
+    void recreateGraphics(int width, int height);
 
     // Function is used by m_updateThread
     void updateFunc();
@@ -136,3 +135,4 @@ signals:
 };
 
 #endif // MJPEG_STREAM_HPP
+

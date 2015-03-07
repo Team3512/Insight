@@ -1,42 +1,42 @@
-//=============================================================================
-//File Name: ProcBase.cpp
-//Description: Contains a common collection of functions that must be called
+// =============================================================================
+// File Name: ProcBase.cpp
+// Description: Contains a common collection of functions that must be called
 //             to do proper image processing on an object in FRC.
-//Author: FRC Team 3512, Spartatroniks
-//=============================================================================
+// Author: FRC Team 3512, Spartatroniks
+// =============================================================================
 
 #include <opencv2/highgui/highgui.hpp>
 #include "ProcBase.hpp"
 
-ProcBase::ProcBase() : m_debugEnabled( false ) {
+ProcBase::ProcBase() : m_debugEnabled(false) {
 }
 
 ProcBase::~ProcBase() {
 }
 
-void ProcBase::setImage( uint8_t* image , uint32_t width , uint32_t height ) {
+void ProcBase::setImage(uint8_t* image, uint32_t width, uint32_t height) {
     // Create new image and store data from provided image into it
-    m_rawImage = cv::Mat( height , width , CV_8UC(3) , image );
+    m_rawImage = cv::Mat(height, width, CV_8UC(3), image);
 
     // Used later after image is processed
-    m_grayChannel.create( width , height , CV_8UC(1) );
+    m_grayChannel.create(width, height, CV_8UC(1));
 }
 
 void ProcBase::processImage() {
-    if ( m_debugEnabled ) {
-        cv::imwrite( "rawImage.png" , m_rawImage );
+    if (m_debugEnabled) {
+        cv::imwrite("rawImage.png", m_rawImage);
     }
 
     prepareImage();
-    if ( m_debugEnabled ) {
-        cv::imwrite( "preparedImage.png" , m_grayChannel );
+    if (m_debugEnabled) {
+        cv::imwrite("preparedImage.png", m_grayChannel);
     }
 
     findTargets();
 
     drawOverlay();
-    if ( m_debugEnabled ) {
-        cv::imwrite( "processedImage.png" , m_rawImage );
+    if (m_debugEnabled) {
+        cv::imwrite("processedImage.png", m_rawImage);
     }
 }
 
@@ -60,7 +60,7 @@ const std::vector<Target>& ProcBase::getTargetPositions() const {
     return m_targets;
 }
 
-void ProcBase::enableDebugging( bool enable ) {
+void ProcBase::enableDebugging(bool enable) {
     m_debugEnabled = enable;
 }
 
@@ -71,5 +71,6 @@ void ProcBase::drawOverlay() {
 }
 
 // Empty clickEvent() function in case not overridden
-void ProcBase::clickEvent( int x , int y ) {
+void ProcBase::clickEvent(int x, int y) {
 }
+
