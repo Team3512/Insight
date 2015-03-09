@@ -12,38 +12,38 @@ MainWindow::MainWindow() {
     centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
 
-    settings = new Settings("IPSettings.txt");
+    m_settings = new Settings("IPSettings.txt");
 
-    streamCallback.clickEvent =
-        [&] (int x, int y) { processor->clickEvent(x, y); };
-    client = new MjpegStream(settings->getString("streamHost"),
-                             settings->getInt("streamPort"),
-                             settings->getString("streamRequestPath"),
+    m_streamCallback.clickEvent =
+        [&] (int x, int y) { m_processor->clickEvent(x, y); };
+    m_client = new MjpegStream(m_settings->getString("streamHost"),
+                             m_settings->getInt("streamPort"),
+                             m_settings->getString("streamRequestPath"),
                              this,
                              320,
                              240,
-                             &streamCallback,
+                             &m_streamCallback,
                              [this] { newImageFunc(); },
-                             [this] { button->setText("Stop Stream"); },
-                             [this] { button->setText("Start Stream"); });
+                             [this] { m_button->setText("Stop Stream"); },
+                             [this] { m_button->setText("Start Stream"); });
 
-    button = new QPushButton("Start Stream");
-    connect(button, SIGNAL(released()), this, SLOT(toggleButton()));
+    m_button = new QPushButton("Start Stream");
+    connect(m_button, SIGNAL(released()), this, SLOT(toggleButton()));
 
-    slider = new QSlider(Qt::Horizontal);
-    slider->setRange(0, 100);
-    slider->setTickInterval(20);
-    slider->setTickPosition(QSlider::TicksBelow);
-    slider->setSingleStep(1);
-    slider->setValue(settings->getInt("overlayPercent"));
-    connect(slider, SIGNAL(valueChanged(int)), this, SLOT(handleSlider(int)));
+    m_slider = new QSlider(Qt::Horizontal);
+    m_slider->setRange(0, 100);
+    m_slider->setTickInterval(20);
+    m_slider->setTickPosition(QSlider::TicksBelow);
+    m_slider->setSingleStep(1);
+    m_slider->setValue(m_settings->getInt("overlayPercent"));
+    connect(m_slider, SIGNAL(valueChanged(int)), this, SLOT(handleSlider(int)));
 
     QHBoxLayout* serverCtrlLayout = new QHBoxLayout;
-    serverCtrlLayout->addWidget(button);
-    serverCtrlLayout->addWidget(slider);
+    serverCtrlLayout->addWidget(m_button);
+    serverCtrlLayout->addWidget(m_slider);
 
     QVBoxLayout* mainLayout = new QVBoxLayout;
-    mainLayout->addWidget(client);
+    mainLayout->addWidget(m_client);
     mainLayout->addLayout(serverCtrlLayout);
 
     centralWidget->setLayout(mainLayout);
@@ -53,76 +53,73 @@ MainWindow::MainWindow() {
 
     setUnifiedTitleAndToolBarOnMac(true);
 
-    server = new MjpegServer(settings->getInt("streamServerPort"));
-    processor = new FindTarget2014();
-    processor->setOverlayPercent(settings->getInt("overlayPercent"));
+    m_server = new MjpegServer(m_settings->getInt("streamServerPort"));
+    m_processor = new FindTarget2014();
+    m_processor->setOverlayPercent(m_settings->getInt("overlayPercent"));
 
     // Image processing debugging is disabled by default
-    if (settings->getString("enableImgProcDebug") == "true") {
-        processor->enableDebugging(true);
+    if (m_settings->getString("enableImgProcDebug") == "true") {
+        m_processor->enableDebugging(true);
     }
 
     /* ===== Robot Data Sending Variables ===== */
-    ctrlSocket = socket(AF_INET, SOCK_DGRAM, 0);
+    m_ctrlSocket = socket(AF_INET, SOCK_DGRAM, 0);
 
-    if (mjpeg_sck_valid(ctrlSocket)) {
-        mjpeg_sck_setnonblocking(ctrlSocket, 1);
+    if (mjpeg_sck_valid(m_ctrlSocket)) {
+        mjpeg_sck_setnonblocking(m_ctrlSocket, 1);
     }
     else {
         std::cout << __FILE__ << ": failed to create robot control socket\n";
     }
 
-    std::strcpy(data, "ctrl\r\n\0\0");
-    std::memset(data + 8, 0, sizeof(data) - 8);
-    newData = false;
+    std::strcpy(m_data, "ctrl\r\n\0\0");
+    std::memset(m_data + 8, 0, sizeof(m_data) - 8);
+    m_newData = false;
 
-    robotIP = 0;
-    robotIPStr = settings->getString("robotIP");
+    m_robotIP = 0;
+    m_robotIPStr = m_settings->getString("robotIP");
 
-    if (robotIPStr == "255.255.255.255") {
-        robotIP = INADDR_BROADCAST;
+    if (m_robotIPStr == "255.255.255.255") {
+        m_robotIP = INADDR_BROADCAST;
     }
     else {
-        robotIP = inet_addr(robotIPStr.c_str());
+        m_robotIP = inet_addr(m_robotIPStr.c_str());
 
-        if (robotIP == INADDR_NONE) {
+        if (m_robotIP == INADDR_NONE) {
             // Not a valid address, try to convert it as a host name
-            hostent* host = gethostbyname(robotIPStr.c_str());
+            hostent* host = gethostbyname(m_robotIPStr.c_str());
 
             if (host) {
-                robotIP =
+                m_robotIP =
                     reinterpret_cast<in_addr*>(host->h_addr_list[0])->s_addr;
             }
             else {
                 // Not a valid address nor a host name
-                robotIP = 0;
+                m_robotIP = 0;
             }
         }
     }
 
-    robotCtrlPort = settings->getInt("robotControlPort");
-
-    // Make sure control data isn't sent too fast
-    std::chrono::time_point<std::chrono::system_clock> lastSendTime;
+    m_robotCtrlPort = m_settings->getInt("robotControlPort");
     /* ======================================== */
 }
 
 MainWindow::~MainWindow() {
     // Delete MJPEG stream window and server
-    delete client;
-    delete server;
+    delete m_client;
+    delete m_server;
 
-    delete[] tempImg;
+    delete[] m_tempImg;
 }
 
 void MainWindow::startMJPEG() {
-    client->start();
-    server->start();
+    m_client->start();
+    m_server->start();
 }
 
 void MainWindow::stopMJPEG() {
-    server->stop();
-    client->stop();
+    m_server->stop();
+    m_client->stop();
 }
 
 void MainWindow::about() {
@@ -134,7 +131,7 @@ void MainWindow::about() {
 }
 
 void MainWindow::toggleButton() {
-    if (client->isStreaming()) {
+    if (m_client->isStreaming()) {
         stopMJPEG();
     }
     else {
@@ -143,57 +140,57 @@ void MainWindow::toggleButton() {
 }
 
 void MainWindow::handleSlider(int value) {
-    slider->setValue(value);
-    processor->setOverlayPercent(value);
+    m_slider->setValue(value);
+    m_processor->setOverlayPercent(value);
 }
 
 void MainWindow::newImageFunc() {
     // Get new image to process
-    imgBuffer = client->getCurrentImage();
-    imgWidth = client->getCurrentWidth();
-    imgHeight = client->getCurrentHeight();
+    m_imgBuffer = m_client->getCurrentImage();
+    m_imgWidth = m_client->getCurrentWidth();
+    m_imgHeight = m_client->getCurrentHeight();
 
-    if (imgBuffer != NULL && imgWidth > 0 && imgHeight > 0) {
-        if (tempImg == NULL) {
-            tempImg = new uint8_t[imgWidth * imgHeight * 3];
+    if (m_imgBuffer != nullptr && m_imgWidth > 0 && m_imgHeight > 0) {
+        if (m_tempImg == nullptr) {
+            m_tempImg = new uint8_t[m_imgWidth * m_imgHeight * 3];
         }
-        else if (lastWidth * lastHeight != imgWidth * imgHeight) {
-            delete[] tempImg;
-            tempImg = new uint8_t[imgWidth * imgHeight * 3];
+        else if (m_lastWidth * m_lastHeight != m_imgWidth * m_imgHeight) {
+            delete[] m_tempImg;
+            m_tempImg = new uint8_t[m_imgWidth * m_imgHeight * 3];
         }
 
         /* ===== Convert RGB image to BGR for OpenCV ===== */
         // Copy R, G, and B channels but ignore A channel
         for (unsigned int posIn = 0, posOut = 0;
-             posIn < imgWidth * imgHeight;
+             posIn < m_imgWidth * m_imgHeight;
              posIn++, posOut++) {
             // Copy bytes of pixel into corresponding channels
-            tempImg[3 * posOut + 0] = imgBuffer[3 * posIn + 2];
-            tempImg[3 * posOut + 1] = imgBuffer[3 * posIn + 1];
-            tempImg[3 * posOut + 2] = imgBuffer[3 * posIn + 0];
+            m_tempImg[3 * posOut + 0] = m_imgBuffer[3 * posIn + 2];
+            m_tempImg[3 * posOut + 1] = m_imgBuffer[3 * posIn + 1];
+            m_tempImg[3 * posOut + 2] = m_imgBuffer[3 * posIn + 0];
         }
         /* ================================================ */
 
         // Process the new image
-        processor->setImage(tempImg, imgWidth, imgHeight);
-        processor->processImage();
+        m_processor->setImage(m_tempImg, m_imgWidth, m_imgHeight);
+        m_processor->processImage();
 
-        server->serveImage(tempImg, imgWidth, imgHeight);
+        m_server->serveImage(m_tempImg, m_imgWidth, m_imgHeight);
 
         // Send status on target search to robot
-        data[8] = processor->foundTarget();
+        m_data[8] = m_processor->foundTarget();
 
 #if 0
         // Retrieve positions of targets and send them to robot
-        if (processor->getTargetPositions().size() > 0) {
+        if (m_processor->getTargetPositions().size() > 0) {
             char x = 0;
             char y = 0;
 
             // Pack data structure with points
             for (unsigned int i = 0;
-                 i < processor->getTargetPositions().size() &&
+                 i < m_processor->getTargetPositions().size() &&
                  i < 3; i++) {
-                quad_t target = processor->getTargetPositions()[i];
+                quad_t target = m_processor->getTargetPositions()[i];
                 for (unsigned int j = 0; j < 4; j++) {
                     x += target.point[j].x;
                     y += target.point[j].y;
@@ -201,73 +198,71 @@ void MainWindow::newImageFunc() {
                 x /= 4;
                 y /= 4;
 
-                data[9 + 2 * i] = x;
-                data[10 + 2 * i] = y;
+                m_data[9 + 2 * i] = x;
+                m_data[10 + 2 * i] = y;
             }
 
             /* If there are less than three points in the data
              * structure, zero the rest out.
              */
-            for (unsigned int i = processor->getTargetPositions().size();
+            for (unsigned int i = m_processor->getTargetPositions().size();
                  i < 3; i++) {
-                data[9 + 2 * i] = 0;
-                data[10 + 2 * i] = 0;
+                m_data[9 + 2 * i] = 0;
+                m_data[10 + 2 * i] = 0;
             }
 
             // We have new target data to send to the robot
-            newData = true;
+            m_newData = true;
         }
 #endif
-        newData = true;
+        m_newData = true;
 
         // Update width and height
-        lastWidth = imgWidth;
-        lastHeight = imgHeight;
+        m_lastWidth = m_imgWidth;
+        m_lastHeight = m_imgHeight;
     }
 
     // If socket is valid, data was sent at least 200ms ago, and there is new data
-    if (mjpeg_sck_valid(ctrlSocket) &&
-        std::chrono::system_clock::now() - lastSendTime >
+    if (mjpeg_sck_valid(m_ctrlSocket) &&
+        std::chrono::system_clock::now() - m_lastSendTime >
         std::chrono::milliseconds(200) &&
-        newData) {
+        m_newData) {
         // Build the target address
         sockaddr_in addr;
         std::memset(addr.sin_zero, 0, sizeof(addr.sin_zero));
-        addr.sin_addr.s_addr = htonl(robotIP);
+        addr.sin_addr.s_addr = htonl(m_robotIP);
         addr.sin_family      = AF_INET;
-        addr.sin_port        = htons(robotCtrlPort);
+        addr.sin_port        = htons(m_robotCtrlPort);
 
         int sent =
-            sendto(ctrlSocket, data, sizeof(data), 0,
+            sendto(m_ctrlSocket, m_data, sizeof(m_data), 0,
                    reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
 
         // Check for errors
         if (sent >= 0) {
-            newData = false;
-            lastSendTime = std::chrono::system_clock::now();
+            m_newData = false;
+            m_lastSendTime = std::chrono::system_clock::now();
         }
     }
 }
 
 void MainWindow::createActions() {
-    startMJPEGAct = new QAction(tr("&Start"), this);
-    connect(startMJPEGAct, SIGNAL(triggered()), this, SLOT(startMJPEG()));
+    m_startMJPEGAct = new QAction(tr("&Start"), this);
+    connect(m_startMJPEGAct, SIGNAL(triggered()), this, SLOT(startMJPEG()));
 
-    stopMJPEGAct = new QAction(tr("&Stop"), this);
-    connect(stopMJPEGAct, SIGNAL(triggered()), this, SLOT(stopMJPEG()));
+    m_stopMJPEGAct = new QAction(tr("&Stop"), this);
+    connect(m_stopMJPEGAct, SIGNAL(triggered()), this, SLOT(stopMJPEG()));
 
-    aboutAct = new QAction(tr("&About Insight"), this);
-    connect(aboutAct, SIGNAL(triggered()), this, SLOT(about()));
+    m_aboutAct = new QAction(tr("&About Insight"), this);
+    connect(m_aboutAct, SIGNAL(triggered()), this, SLOT(about()));
 }
 
 void MainWindow::createMenus() {
-    serverMenu = menuBar()->addMenu(tr("&Server"));
-    serverMenu->addAction(startMJPEGAct);
-    serverMenu->addAction(stopMJPEGAct);
+    m_serverMenu = menuBar()->addMenu(tr("&Server"));
+    m_serverMenu->addAction(m_startMJPEGAct);
+    m_serverMenu->addAction(m_stopMJPEGAct);
 
-    menuBar()->addSeparator();
-
-    helpMenu = menuBar()->addMenu(tr("&Help"));
-    helpMenu->addAction(aboutAct);
+    m_helpMenu = menuBar()->addMenu(tr("&Help"));
+    m_helpMenu->addAction(m_aboutAct);
 }
 

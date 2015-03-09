@@ -38,33 +38,33 @@ private:
     void createActions();
     void createMenus();
 
-    Settings* settings;
+    Settings* m_settings;
 
-    WindowCallbacks streamCallback;
-    MjpegStream* client;
-    QPushButton* button;
-    QSlider* slider;
+    WindowCallbacks m_streamCallback;
+    MjpegStream* m_client;
+    QPushButton* m_button;
+    QSlider* m_slider;
 
-    QMenu* serverMenu;
-    QMenu* helpMenu;
-    QAction* startMJPEGAct;
-    QAction* stopMJPEGAct;
-    QAction* aboutAct;
+    QMenu* m_serverMenu;
+    QMenu* m_helpMenu;
+    QAction* m_startMJPEGAct;
+    QAction* m_stopMJPEGAct;
+    QAction* m_aboutAct;
 
-    MjpegServer* server;
-    FindTarget2014* processor;
+    MjpegServer* m_server;
+    FindTarget2014* m_processor;
 
     /* ===== Image Processing Variables ===== */
-    uint8_t* imgBuffer = NULL;
-    uint8_t* tempImg = NULL;
-    uint32_t imgWidth = 0;
-    uint32_t imgHeight = 0;
-    uint32_t lastWidth = 0;
-    uint32_t lastHeight = 0;
+    uint8_t* m_imgBuffer = nullptr;
+    uint8_t* m_tempImg = nullptr;
+    uint32_t m_imgWidth = 0;
+    uint32_t m_imgHeight = 0;
+    uint32_t m_lastWidth = 0;
+    uint32_t m_lastHeight = 0;
     /* ====================================== */
 
     /* ===== Robot Data Sending Variables ===== */
-    mjpeg_socket_t ctrlSocket;
+    mjpeg_socket_t m_ctrlSocket;
 
     /* Used for sending control packets to robot
      * data format:
@@ -79,15 +79,15 @@ private:
      *     char y
      * 2 empty bytes
      */
-    char data[9];
+    char m_data[9];
 
-    bool newData;
-    uint32_t robotIP;
-    std::string robotIPStr;
-    unsigned short robotCtrlPort;
+    bool m_newData;
+    uint32_t m_robotIP;
+    std::string m_robotIPStr;
+    unsigned short m_robotCtrlPort;
 
     // Make sure control data isn't sent too fast
-    std::chrono::time_point<std::chrono::system_clock> lastSendTime;
+    std::chrono::time_point<std::chrono::system_clock> m_lastSendTime;
     /* ======================================== */
 };
 
