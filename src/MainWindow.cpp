@@ -12,7 +12,7 @@ MainWindow::MainWindow() {
     centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
 
-    m_settings = new Settings("IPSettings.txt");
+    m_settings = std::make_unique<Settings>("IPSettings.txt");
 
     m_streamCallback.clickEvent =
         [&] (int x, int y) { m_processor->clickEvent(x, y); };
@@ -53,8 +53,9 @@ MainWindow::MainWindow() {
 
     setUnifiedTitleAndToolBarOnMac(true);
 
-    m_server = new MjpegServer(m_settings->getInt("streamServerPort"));
-    m_processor = new FindTarget2014();
+    m_server =
+        std::make_unique<MjpegServer>(m_settings->getInt("streamServerPort"));
+    m_processor = std::make_unique<FindTarget2014>();
     m_processor->setOverlayPercent(m_settings->getInt("overlayPercent"));
 
     // Image processing debugging is disabled by default
@@ -105,10 +106,6 @@ MainWindow::MainWindow() {
 }
 
 MainWindow::~MainWindow() {
-    // Delete MJPEG stream window and server
-    delete m_client;
-    delete m_server;
-
     delete[] m_tempImg;
 }
 

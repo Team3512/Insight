@@ -15,6 +15,7 @@ class QAction;
 #include "MJPEG/mjpeg_sck.hpp"
 #include "ImageProcess/FindTarget2014.hpp"
 
+#include <memory>
 #include <cstdint>
 
 class MainWindow : public QMainWindow {
@@ -38,7 +39,7 @@ private:
     void createActions();
     void createMenus();
 
-    Settings* m_settings;
+    std::unique_ptr<Settings> m_settings;
 
     WindowCallbacks m_streamCallback;
     MjpegStream* m_client;
@@ -51,8 +52,8 @@ private:
     QAction* m_stopMJPEGAct;
     QAction* m_aboutAct;
 
-    MjpegServer* m_server;
-    FindTarget2014* m_processor;
+    std::unique_ptr<MjpegServer> m_server;
+    std::unique_ptr<FindTarget2014> m_processor;
 
     /* ===== Image Processing Variables ===== */
     uint8_t* m_imgBuffer = nullptr;
