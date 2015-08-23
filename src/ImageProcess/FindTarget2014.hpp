@@ -12,8 +12,6 @@
 
 class FindTarget2014 : public ProcBase {
 public:
-    FindTarget2014();
-
     /* Returns true if point selected is bright enough to be considered part of
      * a target
      */
@@ -31,12 +29,12 @@ private:
     void drawOverlay();
 
     // Mouse x and y position
-    int m_mx;
-    int m_my;
+    int m_mx = 0;
+    int m_my = 0;
 
-    bool m_foundTarget;
+    bool m_foundTarget = false;
 
-    float m_overlayScale;
+    float m_overlayScale = 1.f;
 };
 
 #endif // FIND_TARGET_2014_HPP

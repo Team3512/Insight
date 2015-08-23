@@ -15,9 +15,6 @@ mjpeg_sck_selector::mjpeg_sck_selector() {
     m_exceptfds = m_in_exceptfds;
 }
 
-mjpeg_sck_selector::~mjpeg_sck_selector() {
-}
-
 void mjpeg_sck_selector::addSocket(mjpeg_socket_t sd, uint32_t types) {
     if (types & select_type::read) {
         FD_SET(sd, &m_in_readfds);

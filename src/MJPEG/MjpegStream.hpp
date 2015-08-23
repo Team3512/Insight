@@ -86,11 +86,11 @@ private:
     QImage m_waitImg;
 
     // Stores image before displaying it on the screen
-    uint8_t* m_img;
-    unsigned int m_imgWidth;
-    unsigned int m_imgHeight;
-    unsigned int m_textureWidth;
-    unsigned int m_textureHeight;
+    uint8_t* m_img = nullptr;
+    unsigned int m_imgWidth = 0;
+    unsigned int m_imgHeight = 0;
+    unsigned int m_textureWidth = 0;
+    unsigned int m_textureHeight = 0;
     std::mutex m_imageMutex;
 
     /* Set to true when a new image is received from the MJPEG server
@@ -101,14 +101,14 @@ private:
     /* Used to determine when to draw the "Connecting..." message
      * (when the stream first starts)
      */
-    std::atomic<bool> m_firstImage;
+    std::atomic<bool> m_firstImage{true};
 
     // Determines when a video frame is old
     std::chrono::time_point<std::chrono::system_clock> m_imageAge;
 
     // Used to limit display frame rate
     std::chrono::time_point<std::chrono::system_clock> m_displayTime;
-    unsigned int m_frameRate;
+    unsigned int m_frameRate = 15;
 
     // Locks window so only one thread can access or draw to it at a time
     std::mutex m_windowMutex;
@@ -120,7 +120,7 @@ private:
     std::function<void(void)> m_stopCallback;
 
     // Makes sure "Waiting..." graphic is drawn after timeout
-    std::thread* m_updateThread;
+    std::thread m_updateThread;
 
     /* Recreates the graphics that display messages in the stream window
      * (Resizes them and recenters the text in the window)

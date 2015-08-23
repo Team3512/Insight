@@ -11,15 +11,7 @@
 #include "MjpegServer.hpp"
 
 MjpegServer::MjpegServer(unsigned short port) :
-    m_listenSock(INVALID_SOCKET),
-    m_port(port),
-    m_cancelfdr(0),
-    m_cancelfdw(0),
-    m_isRunning(false) {
-    m_serverThread = nullptr;
-
-    m_serveImg = NULL;
-    m_serveLen = 0;
+    m_port(port) {
 
     // Set up the error handler
     m_cinfo.err = jpeg_std_error(&m_jerr);
@@ -41,7 +33,7 @@ MjpegServer::MjpegServer(unsigned short port) :
     // Set any non-default parameters
     jpeg_set_quality(&m_cinfo, 100, TRUE /* limit to baseline-JPEG values */);
 
-    m_row_pointer = NULL;
+    m_row_pointer = nullptr;
 }
 
 MjpegServer::~MjpegServer() {
@@ -132,7 +124,7 @@ void MjpegServer::start() {
                                    mjpeg_sck_selector::except);
 
         m_isRunning = true;
-        m_serverThread = new std::thread([this] { MjpegServer::serverFunc(); });
+        m_serverThread = std::thread([this] { MjpegServer::serverFunc(); });
     }
 }
 
@@ -143,8 +135,7 @@ void MjpegServer::stop() {
         // Cancel any currently blocking operations
         send(m_cancelfdw, "U", 1, 0);
 
-        m_serverThread->join();
-        delete m_serverThread;
+        m_serverThread.join();
 
         mjpeg_sck_close(m_cancelfdr);
         mjpeg_sck_close(m_cancelfdw);
@@ -244,7 +235,7 @@ void MjpegServer::serverFunc() {
 
     while (m_isRunning) {
         // Wait until one of the sockets is ready for reading, or timeout is reached
-        int count = m_clientSelector.select(NULL);
+        int count = m_clientSelector.select(nullptr);
 
         if (count > 0) {
             // If listener is ready to be read from
@@ -309,7 +300,7 @@ void MjpegServer::serverFunc() {
                         char* tok = std::strtok(packet, " ");
                         if (std::strncmp(tok, "GET", 3) == 0) {
                             // Get request path
-                            tok = std::strtok(NULL, " ");
+                            tok = std::strtok(nullptr, " ");
 
                             // TODO Finish parsing
 

@@ -8,12 +8,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include "ProcBase.hpp"
 
-ProcBase::ProcBase() : m_debugEnabled(false) {
-}
-
-ProcBase::~ProcBase() {
-}
-
 void ProcBase::setImage(uint8_t* image, uint32_t width, uint32_t height) {
     // Create new image and store data from provided image into it
     m_rawImage = cv::Mat(height, width, CV_8UC(3), image);

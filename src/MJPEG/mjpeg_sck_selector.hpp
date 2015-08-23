@@ -19,7 +19,7 @@ struct selector_sck {
 class mjpeg_sck_selector {
 public:
     mjpeg_sck_selector();
-    virtual ~mjpeg_sck_selector();
+    virtual ~mjpeg_sck_selector() = default;
 
     enum select_type {
         read   = 1 << 0,

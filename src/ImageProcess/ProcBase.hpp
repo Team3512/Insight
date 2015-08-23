@@ -16,8 +16,7 @@ typedef std::vector<cv::Point> Target;
 
 class ProcBase {
 public:
-    ProcBase();
-    virtual ~ProcBase();
+    virtual ~ProcBase() = default;
 
     /* Sets internal image to process
      *
@@ -56,7 +55,7 @@ protected:
     std::vector<Target> m_targets;
 
 private:
-    bool m_debugEnabled;
+    bool m_debugEnabled = false;
 
     // Override these to process different objects
     virtual void prepareImage() = 0;

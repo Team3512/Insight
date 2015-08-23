@@ -61,8 +61,8 @@ public:
     uint8_t* getCurrentImage();
 
     // Returns size of image currently in secondary buffer
-    unsigned int getCurrentWidth();
-    unsigned int getCurrentHeight();
+    unsigned int getCurrentWidth() const;
+    unsigned int getCurrentHeight() const;
 
 protected:
     // Called if the new image loaded successfully
@@ -80,32 +80,32 @@ private:
     std::string m_requestPath;
 
     // Stores image before displaying it on the screen
-    uint8_t* m_pxlBuf;
-    unsigned int m_imgWidth;
-    unsigned int m_imgHeight;
-    unsigned int m_imgChannels;
-    std::mutex m_imageMutex;
+    uint8_t* m_pxlBuf = nullptr;
+    unsigned int m_imgWidth = 0;
+    unsigned int m_imgHeight = 0;
+    unsigned int m_imgChannels = 0;
+    mutable std::mutex m_imageMutex;
 
     /* Stores copy of image for use by external programs. It only updates when
      * getCurrentImage() is called.
      */
-    uint8_t* m_extBuf;
-    unsigned int m_extWidth;
-    unsigned int m_extHeight;
-    std::mutex m_extMutex;
+    uint8_t* m_extBuf = nullptr;
+    unsigned int m_extWidth = 0;
+    unsigned int m_extHeight = 0;
+    mutable std::mutex m_extMutex;
 
-    std::thread* m_recvThread;
+    std::thread m_recvThread;
 
     /* If false:
      *     Lets receive thread run
      * If true:
      *     Closes receive thread
      */
-    std::atomic<bool> m_stopReceive;
+    std::atomic<bool> m_stopReceive{true};
 
-    mjpeg_socket_t m_cancelfdr;
-    mjpeg_socket_t m_cancelfdw;
-    mjpeg_socket_t m_sd;
+    mjpeg_socket_t m_cancelfdr = 0;
+    mjpeg_socket_t m_cancelfdw = 0;
+    mjpeg_socket_t m_sd = INVALID_SOCKET;
 
     struct jpeg_decompress_struct m_cinfo;
     struct jpeg_error_mgr m_jerr;

@@ -32,22 +32,7 @@ MjpegClient::MjpegClient(const std::string& hostName,
                          const std::string& requestPath) :
     m_hostName(hostName),
     m_port(port),
-    m_requestPath(requestPath),
-
-    m_pxlBuf(NULL),
-    m_imgWidth(0),
-    m_imgHeight(0),
-    m_imgChannels(0),
-
-    m_extBuf(NULL),
-    m_extWidth(0),
-    m_extHeight(0),
-
-    m_recvThread(nullptr),
-    m_stopReceive(true),
-    m_cancelfdr(0),
-    m_cancelfdw(0),
-    m_sd(INVALID_SOCKET) {
+    m_requestPath(requestPath) {
     m_cinfo.err = jpeg_std_error(&m_jerr);
     m_cinfo.do_fancy_upsampling = 0;
     m_cinfo.do_block_smoothing = 0;
@@ -80,7 +65,7 @@ void MjpegClient::start() {
         // Mark the thread as running
         m_stopReceive = false;
 
-        m_recvThread = new std::thread([this] { MjpegClient::recvFunc(); });
+        m_recvThread = std::thread([this] { MjpegClient::recvFunc(); });
     }
 }
 
@@ -92,8 +77,7 @@ void MjpegClient::stop() {
         send(m_cancelfdw, "U", 1, 0);
 
         // Close the receive thread
-        m_recvThread->join();
-        delete m_recvThread;
+        m_recvThread.join();
 
         mjpeg_sck_close(m_cancelfdr);
         mjpeg_sck_close(m_cancelfdw);
@@ -143,7 +127,7 @@ uint8_t* MjpegClient::getCurrentImage() {
     return m_extBuf;
 }
 
-unsigned int MjpegClient::getCurrentWidth() {
+unsigned int MjpegClient::getCurrentWidth() const {
     m_extMutex.lock();
 
     unsigned int temp(m_extWidth);
@@ -153,7 +137,7 @@ unsigned int MjpegClient::getCurrentWidth() {
     return temp;
 }
 
-unsigned int MjpegClient::getCurrentHeight() {
+unsigned int MjpegClient::getCurrentHeight() const {
     m_extMutex.lock();
 
     unsigned int temp(m_extHeight);
