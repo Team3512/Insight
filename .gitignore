@@ -5,6 +5,7 @@
 *.exe
 *.png
 Insight
+*.swp
 
 # CMake-generated files
 CMakeFiles/
