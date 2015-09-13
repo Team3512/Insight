@@ -13,8 +13,7 @@
 
 class Settings {
 public:
-    Settings(std::string fileName);
-    virtual ~Settings() = default;
+    explicit Settings(std::string fileName);
 
     // Updates list of values from given file
     void update();
@@ -22,12 +21,12 @@ public:
     /* Returns value associated with the given key
      * Returns "NOT_FOUND" if there is no entry for that name-value pair
      */
-    const std::string getString(const std::string& key) const;
+    std::string getString(const std::string& key) const;
 
     /* Returns value associated with the given key
      * Returns 0 if there is no entry for that name-value pair
      */
-    float getFloat(const std::string& key) const;
+    double getDouble(const std::string& key) const;
 
     /* Returns value associated with the given key
      * Returns 0 if there is no entry for that name-value pair
@@ -47,7 +46,8 @@ private:
     // Used when stepping through m_rawStr
     size_t m_index = 0;
 
-    std::string extractDataFromString(const bool& isName);
+    std::string extractKey();
+    std::string extractValue();
 };
 
 #endif // SETTINGS_HPP
