@@ -42,7 +42,7 @@ MjpegStream::MjpegStream(const std::string& hostName,
     m_imgWidth = width;
     m_imgHeight = height;
 
-    m_updateThread = std::thread([this] { MjpegStream::updateFunc(); });
+    m_updateThread = std::thread(&MjpegStream::updateFunc, this);
 }
 
 MjpegStream::~MjpegStream() {
@@ -58,7 +58,10 @@ void MjpegStream::setFPS(unsigned int fps) {
     m_frameRate = fps;
 }
 
-void MjpegStream::newImageCallback(char* buf, int bufsize) {
+void MjpegStream::newImageCallback(uint8_t* buf, int bufsize) {
+    (void) buf;
+    (void) bufsize;
+
     // Send message to parent window about the new image
     if (std::chrono::system_clock::now() - m_displayTime >
         std::chrono::duration<double>(1.0 / m_frameRate)) {
@@ -67,14 +70,12 @@ void MjpegStream::newImageCallback(char* buf, int bufsize) {
             m_newImageCallback();
         }
 
-        m_imageMutex.lock();
-
-        m_img = getCurrentImage();
-
-        m_imgWidth = getCurrentWidth();
-        m_imgHeight = getCurrentHeight();
-
-        m_imageMutex.unlock();
+        {
+            std::lock_guard<std::mutex> lock(m_imageMutex);
+            m_img = getCurrentImage();
+            m_imgWidth = getCurrentWidth();
+            m_imgHeight = getCurrentHeight();
+        }
 
         if (m_firstImage) {
             m_firstImage = false;
@@ -104,7 +105,9 @@ void MjpegStream::stopCallback() {
 }
 
 void MjpegStream::mousePressEvent(QMouseEvent* event) {
-    m_windowCallbacks->clickEvent(event->x(), event->y());
+    if (m_windowCallbacks != nullptr) {
+        m_windowCallbacks->clickEvent(event->x(), event->y());
+    }
 }
 
 void MjpegStream::paintGL() {
@@ -114,36 +117,31 @@ void MjpegStream::paintGL() {
     if (isStreaming()) {
         // If no image has been received yet
         if (m_firstImage) {
-            m_imageMutex.lock();
+            std::lock_guard<std::mutex> lock(m_imageMutex);
             painter.drawPixmap(0, 0, QPixmap::fromImage(m_connectImg));
-            m_imageMutex.unlock();
         }
 
         // If it's been too long since we received our last image
         else if (std::chrono::system_clock::now() - m_imageAge >
                  std::chrono::milliseconds(1000)) {
             // Display "Waiting..." over the last image received
-            m_imageMutex.lock();
+            std::lock_guard<std::mutex> lock(m_imageMutex);
             painter.drawPixmap(0, 0, QPixmap::fromImage(m_waitImg));
-            m_imageMutex.unlock();
         }
 
         // Else display the image last received
         else {
-            m_imageMutex.lock();
+            std::lock_guard<std::mutex> lock(m_imageMutex);
 
             QImage tmp(m_img, m_imgWidth, m_imgHeight, QImage::Format_RGB888);
             painter.drawPixmap(0, 0, QPixmap::fromImage(tmp));
-
-            m_imageMutex.unlock();
         }
     }
 
     // Else we aren't connected to the host; display disconnect graphic
     else {
-        m_imageMutex.lock();
+        std::lock_guard<std::mutex> lock(m_imageMutex);
         painter.drawPixmap(0, 0, QPixmap::fromImage(m_disconnectImg));
-        m_imageMutex.unlock();
     }
 
     m_displayTime = std::chrono::system_clock::now();
@@ -211,13 +209,12 @@ void MjpegStream::recreateGraphics(int width, int height) {
     p.end();
     /* ====================================== */
 
-    m_imageMutex.lock();
+    std::lock_guard<std::mutex> lock(m_imageMutex);
     /* ===== Store bits from graphics in another buffer ===== */
     m_connectImg = connectBuf;
     m_disconnectImg = disconnectBuf;
     m_waitImg = waitBuf;
     /* ====================================================== */
-    m_imageMutex.unlock();
 }
 
 void MjpegStream::updateFunc() {

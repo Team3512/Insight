@@ -28,6 +28,7 @@
  */
 
 #include <string>
+#include <vector>
 #include <atomic>
 #include <thread>
 #include <mutex>
@@ -66,7 +67,7 @@ public:
 
 protected:
     // Called if the new image loaded successfully
-    virtual void newImageCallback(char* buf, int bufsize) = 0;
+    virtual void newImageCallback(uint8_t* buf, int bufsize) = 0;
 
     // Called when client thread starts
     virtual void startCallback() = 0;
@@ -80,7 +81,7 @@ private:
     std::string m_requestPath;
 
     // Stores image before displaying it on the screen
-    uint8_t* m_pxlBuf = nullptr;
+    std::vector<uint8_t> m_pxlBuf;
     unsigned int m_imgWidth = 0;
     unsigned int m_imgHeight = 0;
     unsigned int m_imgChannels = 0;
@@ -89,7 +90,7 @@ private:
     /* Stores copy of image for use by external programs. It only updates when
      * getCurrentImage() is called.
      */
-    uint8_t* m_extBuf = nullptr;
+    std::vector<uint8_t> m_extBuf;
     unsigned int m_extWidth = 0;
     unsigned int m_extHeight = 0;
     mutable std::mutex m_extMutex;
@@ -109,15 +110,16 @@ private:
 
     struct jpeg_decompress_struct m_cinfo;
     struct jpeg_error_mgr m_jerr;
-    JSAMPARRAY m_buffer; /* Output row buffer */
+    JSAMPARRAY m_buffer = nullptr; /* Output row buffer */
 
     // Used by m_recvThread
     void recvFunc();
 
-    /* buffer is input JPEG data; width, height, and channel amount are stored
+    /* inputBuf is input JPEG data; width, height, and channel amount are stored
      * in member variables
      */
-    uint8_t* jpeg_load_from_memory(uint8_t* buffer, int len);
+    void jpeg_load_from_memory(uint8_t* inputBuf, int inputLen,
+                               std::vector<uint8_t>& outputBuf);
 };
 
 /* mjpeg_sck_recv() blocks until either len bytes of data have

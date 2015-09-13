@@ -12,7 +12,7 @@
 class WindowCallbacks {
 public:
     // The arguments are 'int x' and 'int y'
-    std::function<void (int, int)> clickEvent;
+    std::function<void (int, int)> clickEvent = [](int, int) {};
 };
 
 #endif // WINDOW_CALLBACKS_HPP

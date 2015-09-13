@@ -67,7 +67,7 @@ public:
     void setFPS(unsigned int fps);
 
 protected:
-    void newImageCallback(char* buf, int bufsize);
+    void newImageCallback(uint8_t* buf, int bufsize);
     void startCallback();
     void stopCallback();
 

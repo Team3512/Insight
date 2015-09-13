@@ -5,27 +5,16 @@
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================
 
-#include "../Util.hpp"
 #include "MjpegClient.hpp"
 #include "mjpeg_sck_selector.hpp"
 
 #include <QImage>
 #include <QString>
 
-#include <sys/types.h>
-
 #include <iostream>
-#include <algorithm>
-#include <list>
+#include <system_error>
+#include <map>
 #include <cstring>
-
-// Convert a string to lower case
-std::string toLower(std::string str) {
-    for (auto i : str) {
-        i = std::tolower(i);
-    }
-    return str;
-}
 
 MjpegClient::MjpegClient(const std::string& hostName,
                          unsigned short port,
@@ -33,6 +22,18 @@ MjpegClient::MjpegClient(const std::string& hostName,
     m_hostName(hostName),
     m_port(port),
     m_requestPath(requestPath) {
+
+    mjpeg_socket_t pipefd[2];
+
+    /* Create a pipe that, when written to, causes any operation in the
+     * mjpegrx thread currently blocking to be cancelled.
+     */
+    if (mjpeg_pipe(pipefd) != 0) {
+        throw std::system_error();
+    }
+    m_cancelfdr = pipefd[0];
+    m_cancelfdw = pipefd[1];
+
     m_cinfo.err = jpeg_std_error(&m_jerr);
     m_cinfo.do_fancy_upsampling = 0;
     m_cinfo.do_block_smoothing = 0;
@@ -45,42 +46,35 @@ MjpegClient::~MjpegClient() {
 
     jpeg_destroy_decompress(&m_cinfo);
 
-    delete[] m_pxlBuf;
-    delete[] m_extBuf;
+    mjpeg_sck_close(m_cancelfdr);
+    mjpeg_sck_close(m_cancelfdw);
 }
 
 void MjpegClient::start() {
     if (!isStreaming()) { // if stream is closed, reopen it
-        mjpeg_socket_t pipefd[2];
-
-        /* Create a pipe that, when written to, causes any operation in the
-         * mjpegrx thread currently blocking to be cancelled.
-         */
-        if (mjpeg_pipe(pipefd) != 0) {
-            return;
+        // Join previous thread before making a new one
+        if (m_recvThread.joinable()) {
+            m_recvThread.join();
         }
-        m_cancelfdr = pipefd[0];
-        m_cancelfdw = pipefd[1];
 
         // Mark the thread as running
         m_stopReceive = false;
 
-        m_recvThread = std::thread([this] { MjpegClient::recvFunc(); });
+        m_recvThread = std::thread(&MjpegClient::recvFunc, this);
     }
 }
 
 void MjpegClient::stop() {
-    if (isStreaming()) { // if stream is open, close it
+    if (isStreaming()) {
         m_stopReceive = true;
 
         // Cancel any currently blocking operations
         send(m_cancelfdw, "U", 1, 0);
+    }
 
-        // Close the receive thread
+    // Close the receive thread
+    if (m_recvThread.joinable()) {
         m_recvThread.join();
-
-        mjpeg_sck_close(m_cancelfdr);
-        mjpeg_sck_close(m_cancelfdw);
     }
 }
 
@@ -89,151 +83,102 @@ bool MjpegClient::isStreaming() const {
 }
 
 void MjpegClient::saveCurrentImage(const std::string& fileName) {
-    m_imageMutex.lock();
+    std::lock_guard<std::mutex> lock(m_imageMutex);
 
-    QImage tmp(m_pxlBuf, m_imgWidth, m_imgHeight, QImage::Format_RGB888);
+    QImage tmp(&m_pxlBuf[0], m_imgWidth, m_imgHeight, QImage::Format_RGB888);
     if (!tmp.save(fileName.c_str())) {
         std::cout << "MjpegClient: failed to save image to '" << fileName <<
             "'\n";
     }
-
-    m_imageMutex.unlock();
 }
 
 uint8_t* MjpegClient::getCurrentImage() {
-    m_imageMutex.lock();
-    m_extMutex.lock();
+    std::lock_guard<std::mutex> imageLock(m_imageMutex);
+    std::lock_guard<std::mutex> extLock(m_extMutex);
 
-    if (m_pxlBuf != NULL) {
-        // If buffer is wrong size, reallocate it
-        if (m_imgWidth != m_extWidth || m_imgHeight != m_extHeight) {
-            if (m_extBuf != NULL) {
-                delete[] m_extBuf;
-            }
-
-            // Allocate new buffer to fit latest image
-            m_extBuf = new uint8_t[m_imgWidth * m_imgHeight * m_imgChannels];
-            m_extWidth = m_imgWidth;
-            m_extHeight = m_imgHeight;
-        }
-
-        std::memcpy(m_extBuf, m_pxlBuf,
-                    m_extWidth * m_extHeight * m_imgChannels);
+    // If buffer is wrong size, reallocate it
+    if (m_imgWidth != m_extWidth || m_imgHeight != m_extHeight) {
+        m_extWidth = m_imgWidth;
+        m_extHeight = m_imgHeight;
     }
 
-    m_extMutex.unlock();
-    m_imageMutex.unlock();
+    m_extBuf = m_pxlBuf;
 
-    return m_extBuf;
+    return &m_extBuf[0];
 }
 
 unsigned int MjpegClient::getCurrentWidth() const {
-    m_extMutex.lock();
-
-    unsigned int temp(m_extWidth);
-
-    m_extMutex.unlock();
-
-    return temp;
+    std::lock_guard<std::mutex> lock(m_extMutex);
+    return m_extWidth;
 }
 
 unsigned int MjpegClient::getCurrentHeight() const {
-    m_extMutex.lock();
-
-    unsigned int temp(m_extHeight);
-
-    m_extMutex.unlock();
-
-    return temp;
+    std::lock_guard<std::mutex> lock(m_extMutex);
+    return m_extHeight;
 }
 
-uint8_t* MjpegClient::jpeg_load_from_memory(uint8_t* buffer, int len) {
-    jpeg_mem_src(&m_cinfo, buffer, len);
-
+void MjpegClient::jpeg_load_from_memory(uint8_t* inputBuf, int inputLen,
+                                        std::vector<uint8_t>& outputBuf) {
+    jpeg_mem_src(&m_cinfo, inputBuf, inputLen);
     if (jpeg_read_header(&m_cinfo, TRUE) != JPEG_HEADER_OK) {
-        return NULL;
+        return;
     }
 
     jpeg_start_decompress(&m_cinfo);
 
     int m_row_stride = m_cinfo.output_width * m_cinfo.output_components;
 
-    JSAMPARRAY samp = (*m_cinfo.mem->alloc_sarray)
-                          ((j_common_ptr) & m_cinfo, JPOOL_IMAGE, m_row_stride,
-                          1);
-    uint8_t* imageBuf = new uint8_t[m_row_stride * m_cinfo.output_height];
-
     m_imgWidth = m_cinfo.output_width;
     m_imgHeight = m_cinfo.output_height;
     m_imgChannels = m_cinfo.output_components;
 
+    // Change size of output buffer if necessary
+    if (outputBuf.size() != m_imgWidth * m_imgChannels * m_imgHeight) {
+        outputBuf.resize(m_imgWidth * m_imgChannels * m_imgHeight);
+    }
+
+    uint8_t* sampleBuf;
     for (int outpos = 0; m_cinfo.output_scanline < m_cinfo.output_height;
          outpos += m_row_stride) {
-        jpeg_read_scanlines(&m_cinfo, samp, 1);
-
-        /* Assume put_scanline_someplace wants a pointer and sample count. */
-        std::memcpy(imageBuf + outpos, samp[0], m_row_stride);
+        sampleBuf = &outputBuf[outpos];
+        jpeg_read_scanlines(&m_cinfo, &sampleBuf, 1);
     }
 
     jpeg_finish_decompress(&m_cinfo);
-
-    return imageBuf;
-}
-
-char* strtok_r_n(char* str, const char* sep, char** last, char* used);
-
-/* Read a byte from sd into (*buf)+*bufpos . If afterwards,
- * bufpos == (*bufsize)-1, reallocate the buffer as 1024
- *  bytes larger, updating *bufsize . This function blocks
- *  until either a byte is received, or cancelfd becomes
- *  ready for reading. */
-int mjpeg_rxbyte(char** buf, int* bufpos, int* bufsize, int sd, int cancelfd) {
-    int bytesread;
-
-    bytesread = mjpeg_sck_recv(sd, (*buf) + *bufpos, 1, cancelfd);
-    if (bytesread == -1) {
-        return -1;
-    }
-    if (bytesread != 1) {
-        return 1;
-    }
-    (*bufpos)++;
-
-    if (*bufpos == (*bufsize) - 1) {
-        *bufsize += 1024;
-        *buf = static_cast<char*>(realloc(*buf, *bufsize));
-    }
-
-    return 0;
 }
 
 // Read data up until the character sequence "\r\n\r\n" is received.
-int mjpeg_rxheaders(char** buf_out, int* bufsize_out, int sd, int cancelfd) {
-    int allocsize = 1024;
-    int bufpos = 0;
-    char* buf = static_cast<char*>(malloc(allocsize));
+int mjpeg_rxheaders(std::vector<uint8_t>& buf, int sd, int cancelfd) {
+    size_t bufpos = 0;
+    buf.resize(1024);
 
-    do {
-        if (mjpeg_rxbyte(&buf, &bufpos, &allocsize, sd, cancelfd) != 0) {
-            free(buf);
+    while (!(bufpos >= 4 && buf[bufpos - 4] == '\r' &&
+            buf[bufpos - 3] == '\n' &&
+            buf[bufpos - 2] == '\r' && buf[bufpos - 1] == '\n')) {
+        /* Read a byte from sd into &buf[bufpos]. If afterwards, bufpos ==
+         * buf.size(), reallocate the buffer as 1024 bytes larger. This function
+         * blocks until either a byte is received, or cancelfd becomes ready for
+         * reading.
+         */
+        int bytesread = mjpeg_sck_recv(sd, &buf[bufpos], 1, cancelfd);
+        if (bytesread != 1) {
             return -1;
         }
-    } while (!(bufpos >= 4 && buf[bufpos - 4] == '\r' &&
-               buf[bufpos - 3] == '\n' &&
-               buf[bufpos - 2] == '\r' && buf[bufpos - 1] == '\n'));
-    buf[bufpos] = '\0';
+        bufpos++;
 
-    *buf_out = buf;
-    *bufsize_out = bufpos;
+        if (bufpos == buf.size()) {
+            buf.resize(buf.size() + 1024);
+        }
+    }
 
     return 0;
 }
 
-/* mjpeg_sck_recv() blocks until either len bytes of data have
- *  been read into buf, or cancelfd becomes ready for reading.
- *  If either len bytes are read, or cancelfd becomes ready for
- *  reading, the number of bytes received is returned. On error,
- *  -1 is returned, and errno is set appropriately. */
+/* mjpeg_sck_recv() blocks until either len bytes of data have been read into
+ * buf, or cancelfd becomes ready for reading. If either len bytes are read, or
+ * cancelfd becomes ready for reading, the number of bytes received is returned.
+ * On error, -1 is returned, and errno is set appropriately.
+ */
 int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd) {
     int error;
     size_t nread;
@@ -254,7 +199,7 @@ int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd) {
                                mjpeg_sck_selector::except);
         }
 
-        error = selector.select(NULL);
+        error = selector.select(nullptr);
 
         if (error == -1) {
             return -1;
@@ -271,6 +216,8 @@ int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd) {
          * so far.
          */
         if (cancelfd && selector.isReady(cancelfd, mjpeg_sck_selector::read)) {
+            char cancel[2];
+            recv(cancelfd, cancel, 2, 0);
             return nread;
         }
 
@@ -285,182 +232,73 @@ int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd) {
     return nread;
 }
 
-/* Searches string 'str' for any of the characters in 'c', then returns a
- * pointer to the first occurrence of any one of those characters, NULL if
- * none are found
+/* Processes the HTTP response headers, separating them into key-value pairs.
+ * These are then stored in a map. The "header" argument should point to a block
+ * of HTTP response headers in the standard ':' and '\n' separated format. The
+ * key is the text on a line before the ':', the value is the text after the
+ * ':', but before the '\n'. Any line without a ':' is ignored.
  */
-char* strchrs(char* str, const char* c) {
-    for (char* t = str; *t != '\0'; t++) {
-        for (const char* ct = c; *ct != '\0'; ct++) {
-            if (*t == *ct) {
-                return t;
-            }
-        }
-    }
+std::map<std::string, std::string> mjpeg_process_header(std::string header) {
+    std::map<std::string, std::string> list;
 
-    return NULL;
-}
-
-/* A slightly modified version of strtok_r. When the function encounters a
- *  character in the separator list, that character is set into *used before
- *  the token is returned. This allows the caller to determine which separator
- *  character preceded the returned token. */
-char* strtok_r_n(char* str, const char* sep, char** last, char* used) {
-    char* strsep;
-    char* ret;
-
-    if (str != NULL) {
-        *last = str;
-    }
-
-    strsep = strchrs(*last, sep);
-    if (strsep == NULL) {
-        return NULL;
-    }
-    if (used != NULL) {
-        *used = *strsep;
-    }
-    *strsep = '\0';
-
-    ret = *last;
-    *last = strsep + 1;
-
-    return ret;
-}
-
-/* Processes the HTTP response headers, separating them into key-value
- *  pairs. These are then stored in a linked list. The "header" argument
- *  should point to a block of HTTP response headers in the standard ':'
- *  and '\n' separated format. The key is the text on a line before the
- *  ':', the value is the text after the ':', but before the '\n'. Any
- *  line without a ':' is ignored. a pointer to the first element in a
- *  linked list is returned. */
-std::list<std::pair<char*, char*>> mjpeg_process_header(char* header) {
-    char* strtoksave;
-    std::list<std::pair<char*, char*>> list;
-    char* key;
-    char* value;
-    char used;
-
-    header = strdup(header);
-    if (header == NULL) {
+    if (header.length() == 0) {
         return list;
     }
 
-    key = strtok_r_n(header, ":\n", &strtoksave, &used);
-    if (key == NULL) {
-        return list;
-    }
+    std::string key;
+    std::string value;
+    size_t startPos = 0;
+    size_t endPos = 0;
 
-    while (1) { // we break out inside
-        // if no ':' exists on the line, ignore it
-        if (used == '\n') {
-            key = strtok_r_n(
-                NULL,
-                ":\n",
-                &strtoksave,
-                &used);
-            if (key == NULL) {
-                break;
-            }
-            continue;
-        }
+    while (endPos != std::string::npos) {
+        // Get the key
+        endPos = header.find_first_of(":\n", startPos);
+        key = header.substr(startPos, endPos - startPos);
+        startPos = endPos + 1;
 
-        // create a linked list element
-        list.push_back(std::pair<char*, char*>());
+        // Get the value if a ':' exists on the line
+        if (endPos != std::string::npos && header[endPos] == ':') {
+            endPos = header.find('\r', startPos);
+            value = header.substr(startPos, endPos - startPos);
+            startPos = endPos + 1;
 
-        // save off the key
-        list.back().first = strdup(key);
-
-        // get the value
-        value = strtok_r_n(NULL, "\n", &strtoksave, NULL);
-        if (value == NULL) {
-            list.back().second = strdup("");
-            break;
-        }
-        value++;
-        if (value[strlen(value) - 1] == '\r') {
-            value[strlen(value) - 1] = '\0';
-        }
-        list.back().second = strdup(value);
-
-        /* get the key for next loop */
-        key = strtok_r_n(NULL, ":\n", &strtoksave, &used);
-        if (key == NULL) {
-            break;
+            list.emplace(key, value);
         }
     }
-
-    free(header);
 
     return list;
-}
-
-/* mjpeg_freelist() frees a key/value pair list generated by
- *  mjpeg_process_header() . */
-void mjpeg_freelist(std::list<std::pair<char*, char*>>& list) {
-    for (auto i : list) {
-        free(i.first);
-        free(i.second);
-    }
-}
-
-/* Return the data in the specified list that corresponds
- *  to the specified key. */
-char* mjpeg_getvalue(std::list<std::pair<char*, char*>>& list,
-                     const char* key) {
-    for (auto i : list) {
-        // Check for matching key
-        if (strcmp(i.first, key) == 0) {
-            return i.second;
-        }
-    }
-
-    // Return NULL if no match found
-    return NULL;
 }
 
 void MjpegClient::recvFunc() {
     startCallback();
 
-    mjpeg_socket_t sd;
+    std::vector<uint8_t> headerbuf;
+    std::vector<uint8_t> buf;
 
-    char* asciisize;
-    int datasize;
-    char* buf;
-    char tmp[256];
-
-    char* headerbuf;
-    int headerbufsize;
-    std::list<std::pair<char*, char*>> headerlist;
-
-    int bytesread;
-
-    /* Connect to the remote host. */
-    sd = mjpeg_sck_connect(m_hostName.c_str(), m_port, m_cancelfdr);
-    if (!mjpeg_sck_valid(sd)) {
+    // Connect to the remote host.
+    m_sd = mjpeg_sck_connect(m_hostName.c_str(), m_port, m_cancelfdr);
+    if (!mjpeg_sck_valid(m_sd)) {
         std::cerr << "mjpegrx: Connection failed\n";
         m_stopReceive = true;
         stopCallback();
 
         return;
     }
-    m_sd = sd;
 
     // Send the HTTP request.
-    snprintf(tmp, 255, "GET %s HTTP/1.0\r\n\r\n", m_requestPath.c_str());
-    send(sd, tmp, strlen(tmp), 0);
+    std::string tmp = "GET ";
+    tmp += m_requestPath + " HTTP/1.0\r\n\r\n";
+    send(m_sd, tmp.c_str(), tmp.length(), 0);
     std::cout << tmp;
 
     while (!m_stopReceive) {
         // Read and parse incoming HTTP response headers.
-        if (mjpeg_rxheaders(&headerbuf, &headerbufsize, sd,
-                            m_cancelfdr) == -1) {
+        if (mjpeg_rxheaders(headerbuf, m_sd, m_cancelfdr) == -1) {
             std::cerr << "mjpegrx: recv(2) failed\n";
             break;
         }
-        headerlist = mjpeg_process_header(headerbuf);
-        free(headerbuf);
+        std::string str(headerbuf.begin(), headerbuf.end());
+        auto headerlist = mjpeg_process_header(std::move(str));
         if (headerlist.size() == 0) {
             break;
         }
@@ -468,55 +306,36 @@ void MjpegClient::recvFunc() {
         /* Read the Content-Length header to determine the length of data to
          * read.
          */
-        asciisize = mjpeg_getvalue(
-            headerlist,
-            "Content-Length");
+        std::string asciisize = headerlist["Content-Length"];
 
-        if (asciisize == NULL) {
-            mjpeg_freelist(headerlist);
+        if (asciisize == "") {
             continue;
         }
 
-        datasize = atoi(asciisize);
-        mjpeg_freelist(headerlist);
+        int datasize = std::stoi(asciisize);
 
         // Read the JPEG image data.
-        buf = static_cast<char*>(malloc(datasize));
-        bytesread = mjpeg_sck_recv(sd, buf, datasize, m_cancelfdr);
+        buf.resize(datasize);
+        int bytesread = mjpeg_sck_recv(m_sd, &buf[0], datasize, m_cancelfdr);
         if (bytesread != datasize) {
-            free(buf);
             std::cerr << "mjpegrx: recv(2) failed\n";
             break;
         }
 
         // Load the image received (converts from JPEG to pixel array)
-        uint8_t* ptr =
-            jpeg_load_from_memory(reinterpret_cast<unsigned char*>(buf),
-                                  datasize);
-
-        if (ptr) {
-            m_imageMutex.lock();
-
-            // Free old buffer and store new one created by jpeg_load_from_memory()
-            delete[] m_pxlBuf;
-
-            m_pxlBuf = ptr;
-
-            m_imageMutex.unlock();
-
-            newImageCallback(buf, datasize);
-        }
-        else {
-            std::cout << "MjpegClient: image failed to load\n";
+        {
+            std::lock_guard<std::mutex> lock(m_imageMutex);
+            jpeg_load_from_memory(&buf[0], datasize, m_pxlBuf);
         }
 
-        free(buf);
+        newImageCallback(&m_pxlBuf[0], m_pxlBuf.size());
     }
 
     // The loop has exited. We should now clean up and exit the thread.
-    mjpeg_sck_close(sd);
+    mjpeg_sck_close(m_sd);
 
     m_stopReceive = true;
+
     stopCallback();
 }
 

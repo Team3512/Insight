@@ -124,7 +124,7 @@ mjpeg_socket_t mjpeg_sck_connect(const char* host,
 
     // Resolve the specified hostname to an IPv4 address.
     hp = gethostbyname(host);
-    if (hp == NULL) {
+    if (hp == nullptr) {
         mjpeg_sck_close(sd);
         return -1;
     }
@@ -160,7 +160,7 @@ mjpeg_socket_t mjpeg_sck_connect(const char* host,
     selector.addSocket(sd,
                        mjpeg_sck_selector::write | mjpeg_sck_selector::except);
 
-    if (selector.select(NULL) == -1) {
+    if (selector.select(nullptr) == -1) {
         mjpeg_sck_close(sd);
         return -1;
     }
