@@ -6,12 +6,24 @@
 
 #include <iostream>
 #include <sstream>
+#include <system_error>
 #include <cstdlib>
 #include <cstring>
 #include "MjpegServer.hpp"
 
 MjpegServer::MjpegServer(unsigned short port) :
     m_port(port) {
+
+    mjpeg_socket_t pipefd[2];
+
+    /* Create a pipe that, when written to, causes any operation in the
+     * mjpegrx thread currently blocking to be cancelled.
+     */
+    if (mjpeg_pipe(pipefd) != 0) {
+        throw std::system_error();
+    }
+    m_cancelfdr = pipefd[0];
+    m_cancelfdw = pipefd[1];
 
     // Set up the error handler
     m_cinfo.err = jpeg_std_error(&m_jerr);
@@ -40,6 +52,9 @@ MjpegServer::~MjpegServer() {
     stop();
 
     jpeg_destroy_compress(&m_cinfo);
+
+    mjpeg_sck_close(m_cancelfdr);
+    mjpeg_sck_close(m_cancelfdw);
     std::free(m_serveImg);
 }
 
@@ -96,18 +111,6 @@ void MjpegServer::start() {
 
         std::cout << "Started listening on " << m_port << "\n";
 
-        mjpeg_socket_t pipefd[2];
-
-        /* Create a pipe that, when written to, causes any operation in the
-         * mjpegrx thread currently blocking to be cancelled.
-         */
-        if (mjpeg_pipe(pipefd) != 0) {
-            mjpeg_sck_close(m_listenSock);
-            return;
-        }
-        m_cancelfdr = pipefd[0];
-        m_cancelfdw = pipefd[1];
-
         // Zero selector before populating it
         m_clientSelector.zero(mjpeg_sck_selector::read |
                               mjpeg_sck_selector::write |
@@ -124,7 +127,7 @@ void MjpegServer::start() {
                                    mjpeg_sck_selector::except);
 
         m_isRunning = true;
-        m_serverThread = std::thread([this] { MjpegServer::serverFunc(); });
+        m_serverThread = std::thread(&MjpegServer::serverFunc, this);
     }
 }
 
@@ -137,8 +140,6 @@ void MjpegServer::stop() {
 
         m_serverThread.join();
 
-        mjpeg_sck_close(m_cancelfdr);
-        mjpeg_sck_close(m_cancelfdw);
         mjpeg_sck_close(m_listenSock);
 
         // Close and disconnect client sockets
@@ -202,7 +203,7 @@ void MjpegServer::serveImage(uint8_t* image,
     /* =============================== */
 
     // Send JPEG to all clients
-    m_clientSocketMutex.lock();
+    std::lock_guard<std::mutex> lock(m_clientSocketMutex);
     for (auto i = m_clientSockets.begin(); i != m_clientSockets.end(); i++) {
         // Loop until every byte has been sent
         int sent = 0;
@@ -226,7 +227,6 @@ void MjpegServer::serveImage(uint8_t* image,
             }
         }
     }
-    m_clientSocketMutex.unlock();
 }
 
 void MjpegServer::serverFunc() {
@@ -282,7 +282,7 @@ void MjpegServer::serverFunc() {
             }
 
             // Check if sockets are requesting data stream
-            m_clientSocketMutex.lock();
+            std::lock_guard<std::mutex> lock(m_clientSocketMutex);
             for (auto i = m_clientSockets.begin();
                  i != m_clientSockets.end();
                  i++) {
@@ -363,7 +363,6 @@ void MjpegServer::serverFunc() {
                     continue;
                 }
             }
-            m_clientSocketMutex.unlock();
         }
     }
 }
