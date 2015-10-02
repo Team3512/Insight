@@ -17,15 +17,15 @@ MainWindow::MainWindow() {
     m_streamCallback.clickEvent =
         [&] (int x, int y) { m_processor->clickEvent(x, y); };
     m_client = new MjpegStream(m_settings->getString("streamHost"),
-                             m_settings->getInt("streamPort"),
-                             m_settings->getString("streamRequestPath"),
-                             this,
-                             320,
-                             240,
-                             &m_streamCallback,
-                             [this] { newImageFunc(); },
-                             [this] { m_button->setText("Stop Stream"); },
-                             [this] { m_button->setText("Start Stream"); });
+                               m_settings->getInt("streamPort"),
+                               m_settings->getString("streamRequestPath"),
+                               this,
+                               320,
+                               240,
+                               &m_streamCallback,
+                               [this] { newImageFunc(); },
+                               [this] { m_button->setText("Stop Stream"); },
+                               [this] { m_button->setText("Start Stream"); });
 
     m_button = new QPushButton("Start Stream");
     connect(m_button, SIGNAL(released()), this, SLOT(toggleButton()));

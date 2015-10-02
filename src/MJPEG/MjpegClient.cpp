@@ -22,7 +22,6 @@ MjpegClient::MjpegClient(const std::string& hostName,
     m_hostName(hostName),
     m_port(port),
     m_requestPath(requestPath) {
-
     mjpeg_socket_t pipefd[2];
 
     /* Create a pipe that, when written to, causes any operation in the
@@ -117,7 +116,8 @@ unsigned int MjpegClient::getCurrentHeight() const {
     return m_extHeight;
 }
 
-void MjpegClient::jpeg_load_from_memory(uint8_t* inputBuf, int inputLen,
+void MjpegClient::jpeg_load_from_memory(uint8_t* inputBuf,
+                                        int inputLen,
                                         std::vector<uint8_t>& outputBuf) {
     jpeg_mem_src(&m_cinfo, inputBuf, inputLen);
     if (jpeg_read_header(&m_cinfo, TRUE) != JPEG_HEADER_OK) {
@@ -153,8 +153,8 @@ int mjpeg_rxheaders(std::vector<uint8_t>& buf, int sd, int cancelfd) {
     buf.resize(1024);
 
     while (!(bufpos >= 4 && buf[bufpos - 4] == '\r' &&
-            buf[bufpos - 3] == '\n' &&
-            buf[bufpos - 2] == '\r' && buf[bufpos - 1] == '\n')) {
+             buf[bufpos - 3] == '\n' &&
+             buf[bufpos - 2] == '\r' && buf[bufpos - 1] == '\n')) {
         /* Read a byte from sd into &buf[bufpos]. If afterwards, bufpos ==
          * buf.size(), reallocate the buffer as 1024 bytes larger. This function
          * blocks until either a byte is received, or cancelfd becomes ready for

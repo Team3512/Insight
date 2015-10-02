@@ -13,7 +13,6 @@
 
 MjpegServer::MjpegServer(unsigned short port) :
     m_port(port) {
-
     mjpeg_socket_t pipefd[2];
 
     /* Create a pipe that, when written to, causes any operation in the
