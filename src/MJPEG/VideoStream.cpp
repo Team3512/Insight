@@ -1,13 +1,11 @@
 // =============================================================================
-// File Name: MjpegStream.cpp
-// Description: Receives an MJPEG stream and displays it in a child window with
+// File Name: VideoStream.cpp
+// Description: Receives a video stream and displays it in a child window with
 //             the specified properties
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================
 
 #include "../Util.hpp"
-#include "MjpegStream.hpp"
-
 #include <QMouseEvent>
 #include <QImage>
 #include <QPainter>
@@ -16,9 +14,12 @@
 #include <iostream>
 #include <cstring>
 
-MjpegStream::MjpegStream(const std::string& hostName,
-                         unsigned short port,
-                         const std::string& requestPath,
+#include "VideoStream.hpp"
+#include "ClientBase.hpp"
+
+using namespace std::literals;
+
+VideoStream::VideoStream(ClientBase* client,
                          QWidget* parentWin,
                          int width,
                          int height,
@@ -27,12 +28,17 @@ MjpegStream::MjpegStream(const std::string& hostName,
                          std::function<void(void)> startCbk,
                          std::function<void(void)> stopCbk) :
     QOpenGLWidget(parentWin),
-    MjpegClient(hostName, port, requestPath),
 
     m_newImageCallback(newImageCbk),
     m_startCallback(startCbk),
     m_stopCallback(stopCbk) {
     connect(this, SIGNAL(redraw()), this, SLOT(repaint()));
+
+    m_client = client;
+    m_client->setObject(this);
+    m_client->setNewImageCallback(&VideoStream::newImageCallback);
+    m_client->setStartCallback(&VideoStream::startCallback);
+    m_client->setStopCallback(&VideoStream::stopCallback);
 
     // Initialize the WindowCallbacks pointer
     m_windowCallbacks = windowCallbacks;
@@ -42,23 +48,24 @@ MjpegStream::MjpegStream(const std::string& hostName,
     m_imgWidth = width;
     m_imgHeight = height;
 
-    m_updateThread = std::thread(&MjpegStream::updateFunc, this);
+    m_updateThread = std::thread(&VideoStream::updateFunc, this);
 }
 
-MjpegStream::~MjpegStream() {
-    stop();
+VideoStream::~VideoStream() {
+    m_client->stop();
     m_updateThread.join();
+    delete m_client;
 }
 
-QSize MjpegStream::sizeHint() const {
+QSize VideoStream::sizeHint() const {
     return QSize(320, 240);
 }
 
-void MjpegStream::setFPS(unsigned int fps) {
+void VideoStream::setFPS(unsigned int fps) {
     m_frameRate = fps;
 }
 
-void MjpegStream::newImageCallback(uint8_t* buf, int bufsize) {
+void VideoStream::newImageCallback(uint8_t* buf, int bufsize) {
     (void) buf;
     (void) bufsize;
 
@@ -72,9 +79,9 @@ void MjpegStream::newImageCallback(uint8_t* buf, int bufsize) {
 
         {
             std::lock_guard<std::mutex> lock(m_imageMutex);
-            m_img = getCurrentImage();
-            m_imgWidth = getCurrentWidth();
-            m_imgHeight = getCurrentHeight();
+            m_img = m_client->getCurrentImage();
+            m_imgWidth = m_client->getCurrentWidth();
+            m_imgHeight = m_client->getCurrentHeight();
         }
 
         if (m_firstImage) {
@@ -85,8 +92,8 @@ void MjpegStream::newImageCallback(uint8_t* buf, int bufsize) {
     m_imageAge = std::chrono::system_clock::now();
 }
 
-void MjpegStream::startCallback() {
-    if (isStreaming()) {
+void VideoStream::startCallback() {
+    if (m_client->isStreaming()) {
         m_firstImage = true;
         m_imageAge = std::chrono::system_clock::now();
 
@@ -97,24 +104,24 @@ void MjpegStream::startCallback() {
     }
 }
 
-void MjpegStream::stopCallback() {
+void VideoStream::stopCallback() {
     redraw();
     if (m_stopCallback != nullptr) {
         m_stopCallback();
     }
 }
 
-void MjpegStream::mousePressEvent(QMouseEvent* event) {
+void VideoStream::mousePressEvent(QMouseEvent* event) {
     if (m_windowCallbacks != nullptr) {
         m_windowCallbacks->clickEvent(event->x(), event->y());
     }
 }
 
-void MjpegStream::paintGL() {
+void VideoStream::paintGL() {
     QPainter painter(this);
 
     // If streaming is enabled
-    if (isStreaming()) {
+    if (m_client->isStreaming()) {
         // If no image has been received yet
         if (m_firstImage) {
             std::lock_guard<std::mutex> lock(m_imageMutex);
@@ -135,6 +142,7 @@ void MjpegStream::paintGL() {
 
             QImage tmp(m_img, m_imgWidth, m_imgHeight, QImage::Format_RGB888);
             painter.drawPixmap(0, 0, QPixmap::fromImage(tmp));
+
         }
     }
 
@@ -147,12 +155,12 @@ void MjpegStream::paintGL() {
     m_displayTime = std::chrono::system_clock::now();
 }
 
-void MjpegStream::resizeGL(int w, int h) {
+void VideoStream::resizeGL(int w, int h) {
     // Create the textures that can be displayed in the stream window
     recreateGraphics(w, h);
 }
 
-void MjpegStream::recreateGraphics(int width, int height) {
+void VideoStream::recreateGraphics(int width, int height) {
     // Create intermediate buffers for graphics
     QImage connectBuf(width, height, QImage::Format_RGB888);
     QImage disconnectBuf(width, height, QImage::Format_RGB888);
@@ -217,11 +225,11 @@ void MjpegStream::recreateGraphics(int width, int height) {
     /* ====================================================== */
 }
 
-void MjpegStream::updateFunc() {
+void VideoStream::updateFunc() {
     std::chrono::duration<double> lastTime(0.0);
     std::chrono::duration<double> currentTime(0.0);
 
-    while (isStreaming()) {
+    while (m_client->isStreaming()) {
         currentTime = std::chrono::system_clock::now() - m_imageAge;
 
         // Make "Waiting..." graphic show up

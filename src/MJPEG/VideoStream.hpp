@@ -1,31 +1,12 @@
 // =============================================================================
-// File Name: MjpegStream.hpp
-// Description: Receives an MJPEG stream and displays it in a child window with
+// File Name: VideoStream.hpp
+// Description: Receives a video stream and displays it in a child window with
 //             the specified properties
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================
 
-#ifndef MJPEG_STREAM_HPP
-#define MJPEG_STREAM_HPP
-
-/* This class creates a child window that receives MJPEG images and displays
- * them from a separate thread.
- *
- * To start using this class, just create an instance of it; everything else
- * is handled in a spawned thread
- *
- * Call startStream() to start the MJPEG stream or stopStream() to stop it
- * manually. This won't open or close the window.
- *
- * startStream() and stopStream() are called automatically in the constructor
- * and destructor respectively, but they can be called manually if desired.
- *
- * Change the button ID from IDC_STREAM_BUTTON to another ID if you want to
- * process more than one stream at once in WndProc
- *
- * Make sure every instance you create of this class is destroyed before its
- * respective parent window. If not, the application will crash.
- */
+#ifndef VIDEO_STREAM_HPP
+#define VIDEO_STREAM_HPP
 
 #include <QOpenGLWidget>
 
@@ -41,17 +22,15 @@ class QMouseEvent;
 #include <thread>
 #include <mutex>
 
-#include "MjpegClient.hpp"
-
 #include "WindowCallbacks.hpp"
 
-class MjpegStream : public QOpenGLWidget, public MjpegClient {
+class ClientBase;
+
+class VideoStream : public QOpenGLWidget {
     Q_OBJECT
 
 public:
-    MjpegStream(const std::string& hostName,
-                unsigned short port,
-                const std::string& requestPath,
+    VideoStream(ClientBase* client,
                 QWidget* parentWin,
                 int width,
                 int height,
@@ -59,7 +38,7 @@ public:
                 std::function<void(void)> newImageCbk = nullptr,
                 std::function<void(void)> startCbk = nullptr,
                 std::function<void(void)> stopCbk = nullptr);
-    virtual ~MjpegStream();
+    virtual ~VideoStream();
 
     QSize sizeHint() const;
 
@@ -76,6 +55,8 @@ protected:
     void resizeGL(int w, int h); // Arguments are buffer dimensions
 
 private:
+    ClientBase* m_client;
+
     // Contains "Connecting" message
     QImage m_connectImg;
 
@@ -134,5 +115,5 @@ signals:
     void redraw();
 };
 
-#endif // MJPEG_STREAM_HPP
+#endif // VIDEO_STREAM_HPP
 

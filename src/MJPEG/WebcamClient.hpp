@@ -1,12 +1,12 @@
 // =============================================================================
-// File Name: MjpegClient.hpp
-// Description: Receives an MJPEG stream and displays it in a child window with
-//             the specified properties
+// File Name: WebcamClient.hpp
+// Description: Receives a video stream from a webcam and displays it in a child
+//              window with the specified properties
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================
 
-#ifndef MJPEG_CLIENT_HPP
-#define MJPEG_CLIENT_HPP
+#ifndef WEBCAM_CLIENT_HPP
+#define WEBCAM_CLIENT_HPP
 
 /* This class creates a child window that receives MJPEG images and displays
  * them from a separate thread.
@@ -27,23 +27,20 @@
  * respective parent window. If not, the application will crash.
  */
 
-#include <atomic>
-#include <map>
-#include <mutex>
 #include <string>
-#include <thread>
 #include <vector>
+#include <atomic>
+#include <thread>
+#include <mutex>
 #include <cstdint>
-#include <jpeglib.h>
-#include "mjpeg_sck.hpp"
+#include <opencv2/highgui/highgui.hpp>
 
 #include "ClientBase.hpp"
 
-class MjpegClient : public ClientBase {
+class WebcamClient : public ClientBase {
 public:
-    MjpegClient(const std::string& hostName, unsigned short port,
-                const std::string& requestPath);
-    virtual ~MjpegClient();
+    explicit WebcamClient(int device = 0);
+    virtual ~WebcamClient();
 
     // Request MJPEG stream
     void start();
@@ -69,9 +66,8 @@ public:
     unsigned int getCurrentHeight() const;
 
 private:
-    std::string m_hostName;
-    unsigned short m_port;
-    std::string m_requestPath;
+    cv::VideoCapture m_cap{0};
+    int m_device;
 
     // Stores image before displaying it on the screen
     std::vector<uint8_t> m_pxlBuf;
@@ -97,36 +93,9 @@ private:
      */
     std::atomic<bool> m_stopReceive{true};
 
-    mjpeg_socket_t m_cancelfdr = 0;
-    mjpeg_socket_t m_cancelfdw = 0;
-    mjpeg_socket_t m_sd = INVALID_SOCKET;
-
-    struct jpeg_decompress_struct m_cinfo;
-    struct jpeg_error_mgr m_jerr;
-    JSAMPARRAY m_buffer = nullptr; /* Output row buffer */
-
     // Used by m_recvThread
     void recvFunc();
-
-    /* inputBuf is input JPEG data; width, height, and channel amount are stored
-     * in member variables
-     */
-    void jpeg_load_from_memory(uint8_t* inputBuf, int inputLen,
-                               std::vector<uint8_t>& outputBuf);
 };
 
-int mjpeg_rxheaders(std::vector<uint8_t>& buf, int sd, int cancelfd);
-
-int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd);
-
-std::map<std::string, std::string> mjpeg_process_header(std::string header);
-
-/* mjpeg_sck_recv() blocks until either len bytes of data have
- *  been read into buf, or cancelfd becomes ready for reading.
- *  If either len bytes are read, or cancelfd becomes ready for
- *  reading, the number of bytes received is returned. On error,
- *  -1 is returned, and errno is set appropriately. */
-int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd);
-
-#endif // MJPEG_CLIENT_HPP
+#endif // WEBCAM_CLIENT_HPP
 

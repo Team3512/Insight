@@ -19,9 +19,9 @@
 MjpegClient::MjpegClient(const std::string& hostName,
                          unsigned short port,
                          const std::string& requestPath) :
-    m_hostName(hostName),
-    m_port(port),
-    m_requestPath(requestPath) {
+        m_hostName(hostName),
+        m_port(port),
+        m_requestPath(requestPath) {
     mjpeg_socket_t pipefd[2];
 
     /* Create a pipe that, when written to, causes any operation in the
@@ -147,6 +147,76 @@ void MjpegClient::jpeg_load_from_memory(uint8_t* inputBuf,
     jpeg_finish_decompress(&m_cinfo);
 }
 
+void MjpegClient::recvFunc() {
+    ClientBase::callStart();
+
+    std::vector<uint8_t> headerbuf;
+    std::vector<uint8_t> buf;
+
+    // Connect to the remote host.
+    m_sd = mjpeg_sck_connect(m_hostName.c_str(), m_port, m_cancelfdr);
+    if (!mjpeg_sck_valid(m_sd)) {
+        std::cerr << "mjpegrx: Connection failed\n";
+        m_stopReceive = true;
+        ClientBase::callStop();
+
+        return;
+    }
+
+    // Send the HTTP request.
+    std::string tmp = "GET ";
+    tmp += m_requestPath + " HTTP/1.0\r\n\r\n";
+    send(m_sd, tmp.c_str(), tmp.length(), 0);
+    std::cout << tmp;
+
+    while (!m_stopReceive) {
+        // Read and parse incoming HTTP response headers.
+        if (mjpeg_rxheaders(headerbuf, m_sd, m_cancelfdr) == -1) {
+            std::cerr << "mjpegrx: recv(2) failed\n";
+            break;
+        }
+        std::string str(headerbuf.begin(), headerbuf.end());
+        auto headerlist = mjpeg_process_header(std::move(str));
+        if (headerlist.size() == 0) {
+            break;
+        }
+
+        /* Read the Content-Length header to determine the length of data to
+         * read.
+         */
+        std::string asciisize = headerlist["Content-Length"];
+
+        if (asciisize == "") {
+            continue;
+        }
+
+        int datasize = std::stoi(asciisize);
+
+        // Read the JPEG image data.
+        buf.resize(datasize);
+        int bytesread = mjpeg_sck_recv(m_sd, &buf[0], datasize, m_cancelfdr);
+        if (bytesread != datasize) {
+            std::cerr << "mjpegrx: recv(2) failed\n";
+            break;
+        }
+
+        // Load the image received (converts from JPEG to pixel array)
+        {
+            std::lock_guard<std::mutex> lock(m_imageMutex);
+            jpeg_load_from_memory(&buf[0], datasize, m_pxlBuf);
+        }
+
+        ClientBase::callNewImage(&m_pxlBuf[0], m_pxlBuf.size());
+    }
+
+    // The loop has exited. We should now clean up and exit the thread.
+    mjpeg_sck_close(m_sd);
+
+    m_stopReceive = true;
+
+    ClientBase::callStop();
+}
+
 // Read data up until the character sequence "\r\n\r\n" is received.
 int mjpeg_rxheaders(std::vector<uint8_t>& buf, int sd, int cancelfd) {
     size_t bufpos = 0;
@@ -267,75 +337,5 @@ std::map<std::string, std::string> mjpeg_process_header(std::string header) {
     }
 
     return list;
-}
-
-void MjpegClient::recvFunc() {
-    startCallback();
-
-    std::vector<uint8_t> headerbuf;
-    std::vector<uint8_t> buf;
-
-    // Connect to the remote host.
-    m_sd = mjpeg_sck_connect(m_hostName.c_str(), m_port, m_cancelfdr);
-    if (!mjpeg_sck_valid(m_sd)) {
-        std::cerr << "mjpegrx: Connection failed\n";
-        m_stopReceive = true;
-        stopCallback();
-
-        return;
-    }
-
-    // Send the HTTP request.
-    std::string tmp = "GET ";
-    tmp += m_requestPath + " HTTP/1.0\r\n\r\n";
-    send(m_sd, tmp.c_str(), tmp.length(), 0);
-    std::cout << tmp;
-
-    while (!m_stopReceive) {
-        // Read and parse incoming HTTP response headers.
-        if (mjpeg_rxheaders(headerbuf, m_sd, m_cancelfdr) == -1) {
-            std::cerr << "mjpegrx: recv(2) failed\n";
-            break;
-        }
-        std::string str(headerbuf.begin(), headerbuf.end());
-        auto headerlist = mjpeg_process_header(std::move(str));
-        if (headerlist.size() == 0) {
-            break;
-        }
-
-        /* Read the Content-Length header to determine the length of data to
-         * read.
-         */
-        std::string asciisize = headerlist["Content-Length"];
-
-        if (asciisize == "") {
-            continue;
-        }
-
-        int datasize = std::stoi(asciisize);
-
-        // Read the JPEG image data.
-        buf.resize(datasize);
-        int bytesread = mjpeg_sck_recv(m_sd, &buf[0], datasize, m_cancelfdr);
-        if (bytesread != datasize) {
-            std::cerr << "mjpegrx: recv(2) failed\n";
-            break;
-        }
-
-        // Load the image received (converts from JPEG to pixel array)
-        {
-            std::lock_guard<std::mutex> lock(m_imageMutex);
-            jpeg_load_from_memory(&buf[0], datasize, m_pxlBuf);
-        }
-
-        newImageCallback(&m_pxlBuf[0], m_pxlBuf.size());
-    }
-
-    // The loop has exited. We should now clean up and exit the thread.
-    mjpeg_sck_close(m_sd);
-
-    m_stopReceive = true;
-
-    stopCallback();
 }
 

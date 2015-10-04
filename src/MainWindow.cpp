@@ -12,13 +12,18 @@ MainWindow::MainWindow() {
     centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
 
-    m_settings = std::make_unique<Settings>("IPSettings.txt");
-
     m_streamCallback.clickEvent =
         [&] (int x, int y) { m_processor->clickEvent(x, y); };
-    m_client = new MjpegStream(m_settings->getString("streamHost"),
-                               m_settings->getInt("streamPort"),
-                               m_settings->getString("streamRequestPath"),
+
+#if USE_MJPEG
+    m_client = new MjpegClient(m_settings.getString("streamHost"),
+                               m_settings.getInt("streamPort"),
+                               m_settings.getString("streamRequestPath"));
+#else
+    m_client = new WebcamClient();
+#endif
+
+    m_stream = new VideoStream(m_client,
                                this,
                                320,
                                240,
@@ -35,7 +40,7 @@ MainWindow::MainWindow() {
     m_slider->setTickInterval(20);
     m_slider->setTickPosition(QSlider::TicksBelow);
     m_slider->setSingleStep(1);
-    m_slider->setValue(m_settings->getInt("overlayPercent"));
+    m_slider->setValue(m_settings.getInt("overlayPercent"));
     connect(m_slider, SIGNAL(valueChanged(int)), this, SLOT(handleSlider(int)));
 
     QHBoxLayout* serverCtrlLayout = new QHBoxLayout;
@@ -43,7 +48,7 @@ MainWindow::MainWindow() {
     serverCtrlLayout->addWidget(m_slider);
 
     QVBoxLayout* mainLayout = new QVBoxLayout;
-    mainLayout->addWidget(m_client);
+    mainLayout->addWidget(m_stream);
     mainLayout->addLayout(serverCtrlLayout);
 
     centralWidget->setLayout(mainLayout);
@@ -54,12 +59,12 @@ MainWindow::MainWindow() {
     setUnifiedTitleAndToolBarOnMac(true);
 
     m_server =
-        std::make_unique<MjpegServer>(m_settings->getInt("streamServerPort"));
+        std::make_unique<MjpegServer>(m_settings.getInt("streamServerPort"));
     m_processor = std::make_unique<FindTarget2014>();
-    m_processor->setOverlayPercent(m_settings->getInt("overlayPercent"));
+    m_processor->setOverlayPercent(m_settings.getInt("overlayPercent"));
 
     // Image processing debugging is disabled by default
-    if (m_settings->getString("enableImgProcDebug") == "true") {
+    if (m_settings.getString("enableImgProcDebug") == "true") {
         m_processor->enableDebugging(true);
     }
 
@@ -78,7 +83,7 @@ MainWindow::MainWindow() {
     m_newData = false;
 
     m_robotIP = 0;
-    m_robotIPStr = m_settings->getString("robotIP");
+    m_robotIPStr = m_settings.getString("robotIP");
 
     if (m_robotIPStr == "255.255.255.255") {
         m_robotIP = INADDR_BROADCAST;
@@ -101,7 +106,7 @@ MainWindow::MainWindow() {
         }
     }
 
-    m_robotCtrlPort = m_settings->getInt("robotControlPort");
+    m_robotCtrlPort = m_settings.getInt("robotControlPort");
     /* ======================================== */
 }
 

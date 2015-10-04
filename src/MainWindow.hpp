@@ -1,6 +1,8 @@
 #ifndef MAIN_WINDOW_HPP
 #define MAIN_WINDOW_HPP
 
+#define USE_MJPEG 0
+
 #include <QMainWindow>
 
 class QPushButton;
@@ -9,7 +11,12 @@ class QMenu;
 class QAction;
 
 #include "Settings.hpp"
-#include "MJPEG/MjpegStream.hpp"
+#include "MJPEG/VideoStream.hpp"
+#if USE_MJPEG
+#include "MJPEG/MjpegClient.hpp"
+#else
+#include "MJPEG/WebcamClient.hpp"
+#endif
 #include "MJPEG/WindowCallbacks.hpp"
 #include "MJPEG/MjpegServer.hpp"
 #include "MJPEG/mjpeg_sck.hpp"
@@ -39,10 +46,15 @@ private:
     void createActions();
     void createMenus();
 
-    std::unique_ptr<Settings> m_settings;
+    Settings m_settings{"IPSettings.txt"};
 
     WindowCallbacks m_streamCallback;
-    MjpegStream* m_client;
+#if USE_MJPEG
+    MjpegClient* m_client;
+#else
+    WebcamClient* m_client;
+#endif
+    VideoStream* m_stream;
     QPushButton* m_button;
     QSlider* m_slider;
 
