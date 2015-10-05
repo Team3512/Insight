@@ -111,6 +111,7 @@ MainWindow::MainWindow() {
 }
 
 MainWindow::~MainWindow() {
+    stopMJPEG();
     delete[] m_tempImg;
 }
 

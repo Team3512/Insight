@@ -1,20 +1,14 @@
 *.dll
 *.o
-*.d
 *.res
 *.exe
 *.png
 Insight
 *.swp
 
-# CMake-generated files
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
 Makefile
 
 # Qt-generated files
 moc_*
-Insight_automoc.cpp
-Insight.qrc.depends
-qrc_Insight.cpp
+qrc_*
+*.pro.user

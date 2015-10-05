@@ -66,5 +66,7 @@ void ProcBase::drawOverlay() {
 
 // Empty clickEvent() function in case not overridden
 void ProcBase::clickEvent(int x, int y) {
+    (void) x;
+    (void) y;
 }
 

@@ -33,7 +33,7 @@
 #include <thread>
 #include <mutex>
 #include <cstdint>
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/videoio.hpp>
 
 #include "ClientBase.hpp"
 

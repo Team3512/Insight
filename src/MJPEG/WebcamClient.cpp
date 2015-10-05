@@ -113,7 +113,6 @@ void WebcamClient::recvFunc() {
         {
             std::lock_guard<std::mutex> lock(m_imageMutex);
             m_pxlBuf = buf;
-            //m_pxlBuf.assign(frame.datastart, frame.dataend);
         }
 
         ClientBase::callNewImage(&m_pxlBuf[0], m_pxlBuf.size());

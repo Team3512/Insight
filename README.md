@@ -29,7 +29,7 @@ OpenCV is a vision processing library written in C++. Since Insight links static
 
 ##### Run the following commands in Msys shell:
     cd opencv
-    git checkout 2.4.9
+    git checkout 3.0.0
     mkdir build
     cd build
     cmake-gui ..
