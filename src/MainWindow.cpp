@@ -8,6 +8,8 @@
 #include <cstring>
 #include <chrono>
 
+using namespace std::literals;
+
 MainWindow::MainWindow() {
     centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
@@ -226,10 +228,8 @@ void MainWindow::newImageFunc() {
     }
 
     // If socket is valid, data was sent at least 200ms ago, and there is new data
-    if (mjpeg_sck_valid(m_ctrlSocket) &&
-        std::chrono::system_clock::now() - m_lastSendTime >
-        std::chrono::milliseconds(200) &&
-        m_newData) {
+    if (mjpeg_sck_valid(m_ctrlSocket) && std::chrono::system_clock::now() -
+          m_lastSendTime > 200ms && m_newData) {
         // Build the target address
         sockaddr_in addr;
         std::memset(addr.sin_zero, 0, sizeof(addr.sin_zero));

@@ -129,8 +129,7 @@ void VideoStream::paintGL() {
         }
 
         // If it's been too long since we received our last image
-        else if (std::chrono::system_clock::now() - m_imageAge >
-                 std::chrono::milliseconds(1000)) {
+        else if (std::chrono::system_clock::now() - m_imageAge > 1s) {
             // Display "Waiting..." over the last image received
             std::lock_guard<std::mutex> lock(m_imageMutex);
             painter.drawPixmap(0, 0, QPixmap::fromImage(m_waitImg));
@@ -233,14 +232,13 @@ void VideoStream::updateFunc() {
         currentTime = std::chrono::system_clock::now() - m_imageAge;
 
         // Make "Waiting..." graphic show up
-        if (currentTime > std::chrono::milliseconds(1000) &&
-            lastTime <= std::chrono::milliseconds(1000)) {
+        if (currentTime > 1s && lastTime <= 1s) {
             redraw();
         }
 
         lastTime = currentTime;
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        std::this_thread::sleep_for(50ms);
     }
 }
 
