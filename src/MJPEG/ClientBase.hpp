@@ -52,7 +52,7 @@ protected:
     VideoStream* m_object = nullptr;
 
     // Called if the new image loaded successfully
-    void (VideoStream::*m_newImageCbk)(uint8_t* buf, int bufsize);
+    void (VideoStream::*m_newImageCbk)(uint8_t* buf, int bufsize) = nullptr;
 
     // Called when client thread starts
     void (VideoStream::*m_startCbk)() = nullptr;
