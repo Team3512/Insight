@@ -83,6 +83,20 @@ int Settings::getInt(const std::string& key) const {
     return atoi(index->second.c_str());
 }
 
+bool Settings::getBool(const std::string& key) const {
+    auto index = m_values.find(key);
+
+    // If the element wasn't found
+    if (index == m_values.end()) {
+        std::cout << "Settings: " << m_fileName << ": '" << key <<
+            "' not found\n";
+        return false;
+    }
+
+    // Else return the value for that element
+    return index->second == "true";
+}
+
 void Settings::saveToFile(const std::string& fileName) {
     std::ofstream outFile(fileName, std::ios_base::out | std::ios_base::trunc);
 

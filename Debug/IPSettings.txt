@@ -1,3 +1,7 @@
+#'true' selects MJPEG, 'false' selects the default webcam
+useMJPEG           = false
+
+#MJPEG server configuration
 streamHost         = 10.35.12.11
 streamPort         = 80
 streamRequestPath  = /mjpg/video.mjpg

@@ -3,6 +3,9 @@
 #include <QSlider>
 
 #include "MainWindow.hpp"
+#include "MJPEG/VideoStream.hpp"
+#include "MJPEG/MjpegClient.hpp"
+#include "MJPEG/WebcamClient.hpp"
 
 #include <iostream>
 #include <cstring>
@@ -17,13 +20,14 @@ MainWindow::MainWindow() {
     m_streamCallback.clickEvent =
         [&] (int x, int y) { m_processor->clickEvent(x, y); };
 
-#if USE_MJPEG
-    m_client = new MjpegClient(m_settings.getString("streamHost"),
-                               m_settings.getInt("streamPort"),
-                               m_settings.getString("streamRequestPath"));
-#else
-    m_client = new WebcamClient();
-#endif
+    if (m_settings.getBool("useMJPEG")) {
+        m_client = new MjpegClient(m_settings.getString("streamHost"),
+                                   m_settings.getInt("streamPort"),
+                                   m_settings.getString("streamRequestPath"));
+    }
+    else {
+        m_client = new WebcamClient();
+    }
 
     m_stream = new VideoStream(m_client,
                                this,
@@ -66,7 +70,7 @@ MainWindow::MainWindow() {
     m_processor->setOverlayPercent(m_settings.getInt("overlayPercent"));
 
     // Image processing debugging is disabled by default
-    if (m_settings.getString("enableImgProcDebug") == "true") {
+    if (m_settings.getBool("enableImgProcDebug")) {
         m_processor->enableDebugging(true);
     }
 

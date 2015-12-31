@@ -1,22 +1,16 @@
 #ifndef MAIN_WINDOW_HPP
 #define MAIN_WINDOW_HPP
 
-#define USE_MJPEG 0
-
 #include <QMainWindow>
 
 class QPushButton;
 class QSlider;
 class QMenu;
 class QAction;
+class ClientBase;
+class VideoStream;
 
 #include "Settings.hpp"
-#include "MJPEG/VideoStream.hpp"
-#if USE_MJPEG
-#include "MJPEG/MjpegClient.hpp"
-#else
-#include "MJPEG/WebcamClient.hpp"
-#endif
 #include "MJPEG/WindowCallbacks.hpp"
 #include "MJPEG/MjpegServer.hpp"
 #include "MJPEG/mjpeg_sck.hpp"
@@ -49,11 +43,7 @@ private:
     Settings m_settings{"IPSettings.txt"};
 
     WindowCallbacks m_streamCallback;
-#if USE_MJPEG
-    MjpegClient* m_client;
-#else
-    WebcamClient* m_client;
-#endif
+    ClientBase* m_client;
     VideoStream* m_stream;
     QPushButton* m_button;
     QSlider* m_slider;

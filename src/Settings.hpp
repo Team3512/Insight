@@ -33,6 +33,11 @@ public:
      */
     int getInt(const std::string& key) const;
 
+    /* Returns value associated with the given key
+     * Returns false if there is no entry for that name-value pair
+     */
+    bool getBool(const std::string& key) const;
+
     // Saves all name-value pairs to external file with the given name
     void saveToFile(const std::string& fileName);
 
