@@ -9,6 +9,7 @@
 #include <QString>
 
 #include <iostream>
+#include <opencv2/imgproc.hpp>
 
 #include "WebcamClient.hpp"
 
@@ -101,6 +102,7 @@ void WebcamClient::recvFunc() {
     while (!m_stopReceive) {
         cv::Mat frame;
         m_cap >> frame;
+        cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
 
         m_imgWidth = frame.cols;
         m_imgHeight = frame.rows;

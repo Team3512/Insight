@@ -140,7 +140,12 @@ void VideoStream::paintGL() {
             std::lock_guard<std::mutex> lock(m_imageMutex);
 
             QImage tmp(m_img, m_imgWidth, m_imgHeight, QImage::Format_RGB888);
-            painter.drawPixmap(0, 0, QPixmap::fromImage(tmp));
+            QSize dstsize = tmp.size();
+            dstsize.scale(size(), Qt::KeepAspectRatio);
+            QSize offset = size() - dstsize;
+            offset /= 2;
+            painter.drawPixmap(offset.width(), offset.height(),
+                               dstsize.width(), dstsize.height(), QPixmap::fromImage(tmp));
 
         }
     }
@@ -241,4 +246,3 @@ void VideoStream::updateFunc() {
         std::this_thread::sleep_for(50ms);
     }
 }
-
