@@ -1,5 +1,4 @@
 // =============================================================================
-// File Name: Util.cpp
 // Description: Contains miscellaneous utility functions
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================

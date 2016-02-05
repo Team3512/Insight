@@ -1,5 +1,4 @@
 // =============================================================================
-// File Name: WebcamClient.hpp
 // Description: Receives a video stream from a webcam and displays it in a child
 //              window with the specified properties
 // Author: FRC Team 3512, Spartatroniks

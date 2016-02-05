@@ -1,5 +1,4 @@
 // =============================================================================
-// File Name: WindowCallbacks.hpp
 // Description: Provides callback interface for MjpegStream's window events
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================

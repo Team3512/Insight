@@ -1,5 +1,4 @@
 // =============================================================================
-// File Name: MjpegServer.hpp
 // Description: An MJPEG server implementation
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================

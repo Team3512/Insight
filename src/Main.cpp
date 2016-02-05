@@ -1,5 +1,4 @@
 // =============================================================================
-// File Name: Main.cpp
 // Description: Receives images from the robot, processes them, then forwards
 //             them to the DriverStationDisplay
 // Author: FRC Team 3512, Spartatroniks

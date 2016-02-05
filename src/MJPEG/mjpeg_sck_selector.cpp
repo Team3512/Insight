@@ -1,5 +1,4 @@
 // =============================================================================
-// File Name: mjpeg_sck_selector.cpp
 // Description: A wrapper around select(3)
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================

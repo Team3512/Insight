@@ -1,5 +1,4 @@
 // =============================================================================
-// File Name: Util.hpp
 // Description: Contains miscellaneous utility functions
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================

@@ -1,5 +1,4 @@
 // =============================================================================
-// File Name: FindTarget2014.hpp
 // Description: Processes a provided image and finds targets like the ones from
 //             FRC 2014
 // Author: FRC Team 3512, Spartatroniks

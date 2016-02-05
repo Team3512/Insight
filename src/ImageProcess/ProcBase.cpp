@@ -1,5 +1,4 @@
 // =============================================================================
-// File Name: ProcBase.cpp
 // Description: Contains a common collection of functions that must be called
 //             to do proper image processing on an object in FRC.
 // Author: FRC Team 3512, Spartatroniks

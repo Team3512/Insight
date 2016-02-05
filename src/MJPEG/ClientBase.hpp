@@ -1,5 +1,4 @@
 // =============================================================================
-// File Name: ClientBase.hpp
 // Description: Base class for video stream providers
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================
