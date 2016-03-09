@@ -4,17 +4,17 @@
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================
 
-#ifndef FIND_TARGET_2013_HPP
-#define FIND_TARGET_2013_HPP
+#ifndef FIND_TARGET_2016_HPP
+#define FIND_TARGET_2016_HPP
 
 #include "ProcBase.hpp"
 
-class FindTarget2013 : public ProcBase {
+class FindTarget2016 : public ProcBase {
 private:
     void prepareImage();
     void findTargets();
     void drawOverlay();
 };
 
-#endif // FIND_TARGET_2013_HPP
+#endif // FIND_TARGET_20163_HPP
 
