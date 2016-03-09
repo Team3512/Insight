@@ -364,4 +364,3 @@ void MjpegServer::serverFunc() {
         }
     }
 }
-

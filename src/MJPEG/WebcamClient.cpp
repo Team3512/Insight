@@ -121,4 +121,3 @@ void WebcamClient::recvFunc() {
 
     ClientBase::callStop();
 }
-

@@ -18,9 +18,9 @@
 MjpegClient::MjpegClient(const std::string& hostName,
                          unsigned short port,
                          const std::string& requestPath) :
-        m_hostName(hostName),
-        m_port(port),
-        m_requestPath(requestPath) {
+    m_hostName(hostName),
+    m_port(port),
+    m_requestPath(requestPath) {
     mjpeg_socket_t pipefd[2];
 
     /* Create a pipe that, when written to, causes any operation in the
@@ -337,4 +337,3 @@ std::map<std::string, std::string> mjpeg_process_header(std::string header) {
 
     return list;
 }
-

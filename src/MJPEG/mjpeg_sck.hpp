@@ -66,4 +66,3 @@ int mjpeg_sck_close(mjpeg_socket_t sd);
 mjpeg_socket_t mjpeg_pipe(mjpeg_socket_t sv[2]);
 
 #endif // MJPEG_SCK_HPP
-

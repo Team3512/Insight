@@ -17,4 +17,3 @@ private:
 };
 
 #endif // FIND_TARGET_2013_HPP
-
