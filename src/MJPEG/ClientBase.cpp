@@ -9,15 +9,17 @@ void ClientBase::setObject(VideoStream* object) {
     m_object = object;
 }
 
-void ClientBase::setNewImageCallback(void (VideoStream::*newImageCbk)(uint8_t* buf, int bufsize)) {
+void ClientBase::setNewImageCallback(void (VideoStream::* newImageCbk)(
+                                         uint8_t* buf,
+                                         int bufsize)) {
     m_newImageCbk = newImageCbk;
 }
 
-void ClientBase::setStartCallback(void (VideoStream::*startCbk)()) {
+void ClientBase::setStartCallback(void (VideoStream::* startCbk)()) {
     m_startCbk = startCbk;
 }
 
-void ClientBase::setStopCallback(void (VideoStream::*stopCbk)()) {
+void ClientBase::setStopCallback(void (VideoStream::* stopCbk)()) {
     m_stopCbk = stopCbk;
 }
 
