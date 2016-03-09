@@ -78,4 +78,3 @@ private:
 };
 
 #endif // WEBCAM_CLIENT_HPP
-

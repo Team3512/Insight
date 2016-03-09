@@ -13,6 +13,7 @@ SOURCES +=\
     src/Util.cpp \
     src/ImageProcess/FindTarget2013.cpp \
     src/ImageProcess/FindTarget2014.cpp \
+    src/ImageProcess/FindTarget2016.cpp \
     src/ImageProcess/ProcBase.cpp \
     src/MJPEG/ClientBase.cpp \
     src/MJPEG/MjpegClient.cpp \
@@ -30,6 +31,7 @@ HEADERS  += \
     src/Util.hpp \
     src/ImageProcess/FindTarget2013.hpp \
     src/ImageProcess/FindTarget2014.hpp \
+    src/ImageProcess/FindTarget2016.hpp \
     src/ImageProcess/ProcBase.hpp \
     src/MJPEG/ClientBase.hpp \
     src/MJPEG/MjpegClient.hpp \

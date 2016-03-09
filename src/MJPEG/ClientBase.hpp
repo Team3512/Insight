@@ -62,4 +62,3 @@ protected:
 };
 
 #endif // CLIENT_BASE_HPP
-

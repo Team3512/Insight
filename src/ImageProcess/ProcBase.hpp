@@ -63,4 +63,3 @@ private:
 };
 
 #endif // PROC_BASE_HPP
-
