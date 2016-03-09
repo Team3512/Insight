@@ -66,7 +66,7 @@ MainWindow::MainWindow() {
 
     m_server =
         std::make_unique<MjpegServer>(m_settings.getInt("streamServerPort"));
-    m_processor = std::make_unique<FindTarget2014>();
+    m_processor = std::make_unique<FindTarget2016>();
     m_processor->setOverlayPercent(m_settings.getInt("overlayPercent"));
 
     // Image processing debugging is disabled by default
@@ -84,8 +84,8 @@ MainWindow::MainWindow() {
         std::cout << __FILE__ << ": failed to create robot control socket\n";
     }
 
-    std::strcpy(m_data, "ctrl\r\n\0\0");
-    std::memset(m_data + 8, 0, sizeof(m_data) - 8);
+    std::memcpy(m_data, "ctrl\r\n\0\0", 8);
+    std::memset(m_data + 4, 0, sizeof(m_data) - 4);
     m_newData = false;
 
     m_robotIP = 0;
@@ -134,7 +134,7 @@ void MainWindow::stopMJPEG() {
 void MainWindow::about() {
     QMessageBox::about(this, tr("About Insight"),
                        tr("<br>Insight, Version 2.0<br>"
-                          "Copyright &copy;2013-2015 FRC Team 3512<br>"
+                          "Copyright &copy;2013-2016 FRC Team 3512<br>"
                           "FRC Team 3512<br>"
                           "All Rights Reserved"));
 }
@@ -186,45 +186,15 @@ void MainWindow::newImageFunc() {
 
         m_server->serveImage(m_tempImg, m_imgWidth, m_imgHeight);
 
-        // Send status on target search to robot
-        m_data[8] = m_processor->foundTarget();
-
-#if 0
         // Retrieve positions of targets and send them to robot
         if (m_processor->getTargetPositions().size() > 0) {
-            char x = 0;
-            char y = 0;
-
-            // Pack data structure with points
-            for (unsigned int i = 0;
-                 i < m_processor->getTargetPositions().size() &&
-                 i < 3; i++) {
-                quad_t target = m_processor->getTargetPositions()[i];
-                for (unsigned int j = 0; j < 4; j++) {
-                    x += target.point[j].x;
-                    y += target.point[j].y;
-                }
-                x /= 4;
-                y /= 4;
-
-                m_data[9 + 2 * i] = x;
-                m_data[10 + 2 * i] = y;
-            }
-
-            /* If there are less than three points in the data
-             * structure, zero the rest out.
-             */
-            for (unsigned int i = m_processor->getTargetPositions().size();
-                 i < 3; i++) {
-                m_data[9 + 2 * i] = 0;
-                m_data[10 + 2 * i] = 0;
-            }
+            // Save coordinates
+            m_data[9] = m_processor->getCenterX();
+            m_data[10] = m_processor->getCenterY();
 
             // We have new target data to send to the robot
             m_newData = true;
         }
-#endif
-        m_newData = true;
 
         // Update width and height
         m_lastWidth = m_imgWidth;
@@ -233,7 +203,7 @@ void MainWindow::newImageFunc() {
 
     // If socket is valid, data was sent at least 200ms ago, and there is new data
     if (mjpeg_sck_valid(m_ctrlSocket) && std::chrono::system_clock::now() -
-          m_lastSendTime > 200ms && m_newData) {
+        m_lastSendTime > 200ms && m_newData) {
         // Build the target address
         sockaddr_in addr;
         std::memset(addr.sin_zero, 0, sizeof(addr.sin_zero));
@@ -272,4 +242,3 @@ void MainWindow::createMenus() {
     m_helpMenu = menuBar()->addMenu(tr("&Help"));
     m_helpMenu->addAction(m_aboutAct);
 }
-

@@ -39,9 +39,10 @@ public:
     virtual unsigned int getCurrentHeight() const = 0;
 
     void setObject(VideoStream* object);
-    void setNewImageCallback(void (VideoStream::*newImageCbk)(uint8_t* buf, int bufsize));
-    void setStartCallback(void (VideoStream::*startCbk)());
-    void setStopCallback(void (VideoStream::*stopCbk)());
+    void setNewImageCallback(void (VideoStream::* newImageCbk)(uint8_t* buf,
+                                                               int bufsize));
+    void setStartCallback(void (VideoStream::* startCbk)());
+    void setStopCallback(void (VideoStream::* stopCbk)());
 
     void callNewImage(uint8_t* buf, int bufsize);
     void callStart();
@@ -51,13 +52,13 @@ protected:
     VideoStream* m_object = nullptr;
 
     // Called if the new image loaded successfully
-    void (VideoStream::*m_newImageCbk)(uint8_t* buf, int bufsize) = nullptr;
+    void (VideoStream::* m_newImageCbk)(uint8_t* buf, int bufsize) = nullptr;
 
     // Called when client thread starts
-    void (VideoStream::*m_startCbk)() = nullptr;
+    void (VideoStream::* m_startCbk)() = nullptr;
 
     // Called when client thread stops
-    void (VideoStream::*m_stopCbk)() = nullptr;
+    void (VideoStream::* m_stopCbk)() = nullptr;
 };
 
 #endif // CLIENT_BASE_HPP

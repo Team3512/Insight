@@ -128,4 +128,3 @@ std::map<std::string, std::string> mjpeg_process_header(std::string header);
 int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd);
 
 #endif // MJPEG_CLIENT_HPP
-
