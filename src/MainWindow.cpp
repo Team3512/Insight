@@ -66,7 +66,7 @@ MainWindow::MainWindow() {
 
     m_server =
         std::make_unique<MjpegServer>(m_settings.getInt("streamServerPort"));
-    m_processor = std::make_unique<FindTarget2014>();
+    m_processor = std::make_unique<FindTarget2015>();
     m_processor->setOverlayPercent(m_settings.getInt("overlayPercent"));
 
     // Image processing debugging is disabled by default
@@ -84,8 +84,8 @@ MainWindow::MainWindow() {
         std::cout << __FILE__ << ": failed to create robot control socket\n";
     }
 
-    std::strcpy(m_data, "ctrl\r\n\0\0");
-    std::memset(m_data + 8, 0, sizeof(m_data) - 8);
+    std::memcpy(m_data, "ctrl\r\n\0\0");
+    std::memset(m_data + 4, 0, sizeof(m_data) - 4);
     m_newData = false;
 
     m_robotIP = 0;
@@ -233,7 +233,7 @@ void MainWindow::newImageFunc() {
 
     // If socket is valid, data was sent at least 200ms ago, and there is new data
     if (mjpeg_sck_valid(m_ctrlSocket) && std::chrono::system_clock::now() -
-          m_lastSendTime > 200ms && m_newData) {
+        m_lastSendTime > 200ms && m_newData) {
         // Build the target address
         sockaddr_in addr;
         std::memset(addr.sin_zero, 0, sizeof(addr.sin_zero));
