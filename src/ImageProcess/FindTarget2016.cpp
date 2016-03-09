@@ -5,9 +5,9 @@
 // =============================================================================
 
 #include <opencv2/imgproc/imgproc.hpp>
-#include "FindTarget2013.hpp"
+#include "FindTarget2016.hpp"
 
-void FindTarget2013::prepareImage() {
+void FindTarget2016::prepareImage() {
     cv::cvtColor(m_rawImage, m_grayChannel, CV_BGR2GRAY);
 
     /* Apply binary threshold to all channels
@@ -25,7 +25,7 @@ void FindTarget2013::prepareImage() {
     cv::dilate(m_grayChannel, m_grayChannel, element);
 }
 
-void FindTarget2013::findTargets() {
+void FindTarget2016::findTargets() {
     Target target;
 
     // Clear list of targets because we found new targets
@@ -51,7 +51,7 @@ void FindTarget2013::findTargets() {
     }
 }
 
-void FindTarget2013::drawOverlay() {
+void FindTarget2016::drawOverlay() {
     // R , G , B , A
     CvScalar lineColor = cvScalar(0x00, 0xFF, 0x00, 0xFF);
 

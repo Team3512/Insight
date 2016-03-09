@@ -55,7 +55,7 @@ private:
     QAction* m_aboutAct;
 
     std::unique_ptr<MjpegServer> m_server;
-    std::unique_ptr<FindTarget2014> m_processor;
+    std::unique_ptr<FindTarget2015> m_processor;
 
     /* ===== Image Processing Variables ===== */
     uint8_t* m_imgBuffer = nullptr;
@@ -73,16 +73,12 @@ private:
      * data format:
      * 8 byte header
      *     "ctrl\r\n\0\0"
-     * 6 bytes of x-y pairs
-     *     char x
-     *     char y
-     *     char x
-     *     char y
+     * 2 bytes of x-y pair
      *     char x
      *     char y
      * 2 empty bytes
      */
-    char m_data[9];
+    char m_data[12];
 
     bool m_newData;
     uint32_t m_robotIP;
@@ -95,4 +91,3 @@ private:
 };
 
 #endif // MAIN_WINDOW_HPP
-

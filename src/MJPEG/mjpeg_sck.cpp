@@ -246,4 +246,3 @@ struct SocketInitializer {
 
 SocketInitializer globalInitializer;
 #endif
-

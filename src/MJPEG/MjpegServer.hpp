@@ -50,4 +50,3 @@ private:
 };
 
 #endif // MJPEG_SERVER_HPP
-

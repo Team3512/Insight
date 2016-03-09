@@ -115,4 +115,3 @@ signals:
 };
 
 #endif // VIDEO_STREAM_HPP
-
