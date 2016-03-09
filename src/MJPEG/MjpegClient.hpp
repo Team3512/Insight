@@ -100,4 +100,3 @@ int mjpeg_rxheaders(std::vector<uint8_t>& buf, int sd, int cancelfd);
 std::map<std::string, std::string> mjpeg_process_header(std::string header);
 
 #endif // MJPEG_CLIENT_HPP
-

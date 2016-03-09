@@ -245,4 +245,3 @@ void VideoStream::updateFunc() {
         std::this_thread::sleep_for(50ms);
     }
 }
-

@@ -1,5 +1,5 @@
 #video source can be MJPEG, webcam, or WPI
-sourceType         = WPI
+sourceType         = webcam
 
 #MJPEG server configuration
 streamHost         = roborio-3512-frc.local
@@ -17,4 +17,4 @@ robotControlPort   = 1130
 enableImgProcDebug = false
 
 #Overlay percent size [0-100]
-overlayPercent     = 38
+overlayPercent     = 45

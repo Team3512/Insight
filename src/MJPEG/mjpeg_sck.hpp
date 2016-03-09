@@ -73,4 +73,3 @@ mjpeg_socket_t mjpeg_pipe(mjpeg_socket_t sv[2]);
 int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd);
 
 #endif // MJPEG_SCK_HPP
-

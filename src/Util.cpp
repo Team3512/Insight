@@ -16,4 +16,3 @@ int npot(int num) {
 
     return num;
 }
-
