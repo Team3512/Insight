@@ -56,4 +56,3 @@ bool FindTarget2014::foundTarget() const {
 void FindTarget2014::setOverlayPercent(const float overlayPercent) {
     m_overlayScale = overlayPercent / 100.f;
 }
-

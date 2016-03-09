@@ -216,4 +216,3 @@ void WpiClient::recvFunc() {
 
     ClientBase::callStop();
 }
-

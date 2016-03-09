@@ -34,4 +34,3 @@ void ClientBase::callStart() {
 void ClientBase::callStop() {
     (m_object->*m_stopCbk)();
 }
-
