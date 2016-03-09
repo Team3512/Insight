@@ -17,4 +17,4 @@ robotControlPort = 1130
 enableImgProcDebug = false
 
 #Overlay percent size [0-100]
-overlayPercent = 38
+overlayPercent = 45
