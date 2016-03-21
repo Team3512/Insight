@@ -65,5 +65,12 @@ int mjpeg_sck_close(mjpeg_socket_t sd);
  *  the call socketpair(AF_INET, SOCK_STREAM, 0, sv) . */
 mjpeg_socket_t mjpeg_pipe(mjpeg_socket_t sv[2]);
 
+/* mjpeg_sck_recv() blocks until either len bytes of data have been read into
+ * buf, or cancelfd becomes ready for reading. If either len bytes are read, or
+ * cancelfd becomes ready for reading, the number of bytes received is returned.
+ * On error, -1 is returned, and errno is set appropriately.
+ */
+int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd);
+
 #endif // MJPEG_SCK_HPP
 

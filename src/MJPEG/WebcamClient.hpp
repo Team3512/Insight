@@ -7,25 +7,6 @@
 #ifndef WEBCAM_CLIENT_HPP
 #define WEBCAM_CLIENT_HPP
 
-/* This class creates a child window that receives MJPEG images and displays
- * them from a separate thread.
- *
- * To start using this class, just create an instance of it; everything else
- * is handled in a spawned thread
- *
- * Call startStream() to start the MJPEG stream or stopStream() to stop it
- * manually. This won't open or close the window.
- *
- * startStream() and stopStream() are called automatically in the constructor
- * and destructor respectively, but they can be called manually if desired.
- *
- * Change the button ID from IDC_STREAM_BUTTON to another ID if you want to
- * process more than one stream at once in WndProc
- *
- * Make sure every instance you create of this class is destroyed before its
- * respective parent window. If not, the application will crash.
- */
-
 #include <string>
 #include <vector>
 #include <atomic>

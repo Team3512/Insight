@@ -5,10 +5,8 @@
 // =============================================================================
 
 #include "MjpegClient.hpp"
-#include "mjpeg_sck_selector.hpp"
 
 #include <QImage>
-#include <QString>
 
 #include <iostream>
 #include <system_error>
@@ -18,9 +16,9 @@
 MjpegClient::MjpegClient(const std::string& hostName,
                          unsigned short port,
                          const std::string& requestPath) :
-        m_hostName(hostName),
-        m_port(port),
-        m_requestPath(requestPath) {
+    m_hostName(hostName),
+    m_port(port),
+    m_requestPath(requestPath) {
     mjpeg_socket_t pipefd[2];
 
     /* Create a pipe that, when written to, causes any operation in the
@@ -241,64 +239,6 @@ int mjpeg_rxheaders(std::vector<uint8_t>& buf, int sd, int cancelfd) {
     }
 
     return 0;
-}
-
-/* mjpeg_sck_recv() blocks until either len bytes of data have been read into
- * buf, or cancelfd becomes ready for reading. If either len bytes are read, or
- * cancelfd becomes ready for reading, the number of bytes received is returned.
- * On error, -1 is returned, and errno is set appropriately.
- */
-int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd) {
-    int error;
-    size_t nread;
-
-    mjpeg_sck_selector selector;
-
-    nread = 0;
-    while (nread < len) {
-        selector.zero(mjpeg_sck_selector::read | mjpeg_sck_selector::except);
-
-        // Set the sockets into the fd_set s
-        selector.addSocket(sockfd,
-                           mjpeg_sck_selector::read |
-                           mjpeg_sck_selector::except);
-        if (cancelfd) {
-            selector.addSocket(cancelfd,
-                               mjpeg_sck_selector::read |
-                               mjpeg_sck_selector::except);
-        }
-
-        error = selector.select(nullptr);
-
-        if (error == -1) {
-            return -1;
-        }
-
-        // If an exception occurred with either one, return error.
-        if ((cancelfd &&
-             selector.isReady(cancelfd, mjpeg_sck_selector::except)) ||
-            selector.isReady(sockfd, mjpeg_sck_selector::except)) {
-            return -1;
-        }
-
-        /* If cancelfd is ready for reading, return now with what we have read
-         * so far.
-         */
-        if (cancelfd && selector.isReady(cancelfd, mjpeg_sck_selector::read)) {
-            char cancel[2];
-            recv(cancelfd, cancel, 2, 0);
-            return nread;
-        }
-
-        // Otherwise, read some more.
-        error = recv(sockfd, static_cast<char*>(buf) + nread, len - nread, 0);
-        if (error < 1) {
-            return -1;
-        }
-        nread += error;
-    }
-
-    return nread;
 }
 
 /* Processes the HTTP response headers, separating them into key-value pairs.

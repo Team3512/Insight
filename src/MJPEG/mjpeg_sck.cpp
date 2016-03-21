@@ -232,6 +232,59 @@ mjpeg_socket_t mjpeg_pipe(mjpeg_socket_t sv[2]) {
 #endif
 }
 
+int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd) {
+    int error;
+    size_t nread;
+
+    mjpeg_sck_selector selector;
+
+    nread = 0;
+    while (nread < len) {
+        selector.zero(mjpeg_sck_selector::read | mjpeg_sck_selector::except);
+
+        // Set the sockets into the fd_set s
+        selector.addSocket(sockfd,
+                           mjpeg_sck_selector::read |
+                           mjpeg_sck_selector::except);
+        if (cancelfd) {
+            selector.addSocket(cancelfd,
+                               mjpeg_sck_selector::read |
+                               mjpeg_sck_selector::except);
+        }
+
+        error = selector.select(nullptr);
+
+        if (error == -1) {
+            return -1;
+        }
+
+        // If an exception occurred with either one, return error.
+        if ((cancelfd &&
+             selector.isReady(cancelfd, mjpeg_sck_selector::except)) ||
+            selector.isReady(sockfd, mjpeg_sck_selector::except)) {
+            return -1;
+        }
+
+        /* If cancelfd is ready for reading, return now with what we have read
+         * so far.
+         */
+        if (cancelfd && selector.isReady(cancelfd, mjpeg_sck_selector::read)) {
+            char cancel[2];
+            recv(cancelfd, cancel, 2, 0);
+            return nread;
+        }
+
+        // Otherwise, read some more.
+        error = recv(sockfd, static_cast<char*>(buf) + nread, len - nread, 0);
+        if (error < 1) {
+            return -1;
+        }
+        nread += error;
+    }
+
+    return nread;
+}
+
 #ifdef _WIN32
 struct SocketInitializer {
     SocketInitializer() {

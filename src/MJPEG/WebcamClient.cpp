@@ -5,7 +5,6 @@
 // =============================================================================
 
 #include <QImage>
-#include <QString>
 
 #include <iostream>
 #include <opencv2/imgproc.hpp>

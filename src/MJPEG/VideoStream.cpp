@@ -144,8 +144,8 @@ void VideoStream::paintGL() {
             QSize offset = size() - dstsize;
             offset /= 2;
             painter.drawPixmap(offset.width(), offset.height(),
-                               dstsize.width(), dstsize.height(), QPixmap::fromImage(tmp));
-
+                               dstsize.width(),
+                               dstsize.height(), QPixmap::fromImage(tmp));
         }
     }
 
@@ -245,3 +245,4 @@ void VideoStream::updateFunc() {
         std::this_thread::sleep_for(50ms);
     }
 }
+
