@@ -243,11 +243,6 @@ int mjpeg_rxheaders(std::vector<uint8_t>& buf, int sd, int cancelfd) {
     return 0;
 }
 
-/* mjpeg_sck_recv() blocks until either len bytes of data have been read into
- * buf, or cancelfd becomes ready for reading. If either len bytes are read, or
- * cancelfd becomes ready for reading, the number of bytes received is returned.
- * On error, -1 is returned, and errno is set appropriately.
- */
 int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd) {
     int error;
     size_t nread;

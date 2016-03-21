@@ -1,11 +1,11 @@
 // =============================================================================
-// Description: Receives an MJPEG stream and displays it in a child window with
-//             the specified properties
+// Description: Receives a video stream from WPILib's CameraServer class and
+//              displays it in a child window with the specified properties
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================
 
-#ifndef MJPEG_CLIENT_HPP
-#define MJPEG_CLIENT_HPP
+#ifndef WPI_CLIENT_HPP
+#define WPI_CLIENT_HPP
 
 /* This class creates a child window that receives MJPEG images and displays
  * them from a separate thread.
@@ -38,11 +38,10 @@
 
 #include "ClientBase.hpp"
 
-class MjpegClient : public ClientBase {
+class WpiClient : public ClientBase {
 public:
-    MjpegClient(const std::string& hostName, unsigned short port,
-                const std::string& requestPath);
-    virtual ~MjpegClient();
+    WpiClient(const std::string& hostName);
+    virtual ~WpiClient();
 
     // Request MJPEG stream
     void start();
@@ -68,9 +67,20 @@ public:
     unsigned int getCurrentHeight() const;
 
 private:
+    struct Request {
+        uint32_t fps;
+        int32_t compression;
+        uint32_t size;
+    };
+
+    static constexpr uint16_t k_port = 1180;
+    static constexpr uint8_t k_magicNumber[] = {0x01, 0x00, 0x00, 0x00};
+    static constexpr uint32_t k_size640x480 = 0;
+    static constexpr uint32_t k_size320x240 = 1;
+    static constexpr uint32_t k_size160x120 = 2;
+    static constexpr int32_t k_hardwareCompression = -1;
+
     std::string m_hostName;
-    unsigned short m_port;
-    std::string m_requestPath;
 
     // Stores image before displaying it on the screen
     std::vector<uint8_t> m_pxlBuf;
@@ -86,6 +96,8 @@ private:
     unsigned int m_extWidth = 0;
     unsigned int m_extHeight = 0;
     mutable std::mutex m_extMutex;
+
+    uint8_t magic[4];
 
     std::thread m_recvThread;
 
@@ -114,16 +126,11 @@ private:
                                std::vector<uint8_t>& outputBuf);
 };
 
-int mjpeg_rxheaders(std::vector<uint8_t>& buf, int sd, int cancelfd);
-
-/* mjpeg_sck_recv() blocks until either len bytes of data have been read into
- * buf, or cancelfd becomes ready for reading. If either len bytes are read, or
- * cancelfd becomes ready for reading, the number of bytes received is returned.
- * On error, -1 is returned, and errno is set appropriately.
- */
+/* mjpeg_sck_recv() blocks until either len bytes of data have
+ *  been read into buf, or cancelfd becomes ready for reading.
+ *  If either len bytes are read, or cancelfd becomes ready for
+ *  reading, the number of bytes received is returned. On error,
+ *  -1 is returned, and errno is set appropriately. */
 int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd);
 
-std::map<std::string, std::string> mjpeg_process_header(std::string header);
-
-#endif // MJPEG_CLIENT_HPP
-
+#endif // WPI_CLIENT_HPP

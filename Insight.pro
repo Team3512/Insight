@@ -21,6 +21,7 @@ SOURCES +=\
     src/MJPEG/MjpegServer.cpp \
     src/MJPEG/VideoStream.cpp \
     src/MJPEG/WebcamClient.cpp \
+    src/MJPEG/WpiClient.cpp \
     src/MJPEG/win32_socketpair.c
 
 HEADERS  += \

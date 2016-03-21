@@ -1,16 +1,16 @@
-#'true' selects MJPEG, 'false' selects the default webcam
-useMJPEG           = false
+#video source can be MJPEG, webcam, or WPI
+sourceType         = WPI
 
 #MJPEG server configuration
-streamHost         = 10.35.12.11
-streamPort         = 80
-streamRequestPath  = /mjpg/video.mjpg
+streamHost         = roborio-3512-frc.local
+mjpegPort         = 80
+mjpegRequestPath  = /mjpg/video.mjpg
 
 streamServerPort   = 8080
 streamServerPath   = /
 
 #Insight sends to this
-robotIP            = 10.35.12.2
+robotIP            = roborio-3512-frc.local
 robotControlPort   = 1130
 
 #'true' or 'false'

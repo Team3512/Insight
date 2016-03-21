@@ -6,6 +6,7 @@
 #include "MJPEG/VideoStream.hpp"
 #include "MJPEG/MjpegClient.hpp"
 #include "MJPEG/WebcamClient.hpp"
+#include "MJPEG/WpiClient.hpp"
 
 #include <iostream>
 #include <cstring>
@@ -20,13 +21,17 @@ MainWindow::MainWindow() {
     m_streamCallback.clickEvent =
         [&] (int x, int y) { m_processor->clickEvent(x, y); };
 
-    if (m_settings.getBool("useMJPEG")) {
+    auto source = m_settings.getString("sourceType");
+    if (source == "MJPEG") {
         m_client = new MjpegClient(m_settings.getString("streamHost"),
-                                   m_settings.getInt("streamPort"),
-                                   m_settings.getString("streamRequestPath"));
+                                   m_settings.getInt("mjpegPort"),
+                                   m_settings.getString("mjpegRequestPath"));
     }
-    else {
+    else if (source == "webcam") {
         m_client = new WebcamClient();
+    }
+    else if (source == "WPI") {
+        m_client = new WpiClient(m_settings.getString("streamHost"));
     }
 
     m_stream = new VideoStream(m_client,
