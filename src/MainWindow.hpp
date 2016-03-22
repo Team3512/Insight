@@ -1,3 +1,8 @@
+// =============================================================================
+// Description: Creates application's main window
+// Author: FRC Team 3512, Spartatroniks
+// =============================================================================
+
 #ifndef MAIN_WINDOW_HPP
 #define MAIN_WINDOW_HPP
 

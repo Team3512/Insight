@@ -1,6 +1,5 @@
 // =============================================================================
-// Description: Receives images from the robot, processes them, then forwards
-//             them to the DriverStationDisplay
+// Description: Starts application
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================
 

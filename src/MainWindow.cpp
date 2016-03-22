@@ -1,3 +1,8 @@
+// =============================================================================
+// Description: Creates application's main window
+// Author: FRC Team 3512, Spartatroniks
+// =============================================================================
+
 #include <QtWidgets>
 #include <QPushButton>
 #include <QSlider>

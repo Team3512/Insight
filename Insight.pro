@@ -38,6 +38,7 @@ HEADERS  += \
     src/MJPEG/MjpegServer.hpp \
     src/MJPEG/VideoStream.hpp \
     src/MJPEG/WebcamClient.hpp \
+    src/MJPEG/WpiClient.hpp \
     src/MJPEG/win32_socketpair.h \
     src/MJPEG/WindowCallbacks.hpp
 
