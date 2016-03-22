@@ -3,12 +3,13 @@
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================
 
+#include "MjpegServer.hpp"
+
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <system_error>
-#include <cstdlib>
-#include <cstring>
-#include "MjpegServer.hpp"
 
 MjpegServer::MjpegServer(unsigned short port) :
     m_port(port) {

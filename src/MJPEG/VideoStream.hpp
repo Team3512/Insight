@@ -12,14 +12,14 @@
 class QPaintEvent;
 class QMouseEvent;
 
-#include <string>
+#include <cstdint>
 #include <atomic>
 #include <chrono>
-#include <map>
-#include <cstdint>
 #include <functional>
-#include <thread>
+#include <map>
 #include <mutex>
+#include <string>
+#include <thread>
 
 #include "WindowCallbacks.hpp"
 

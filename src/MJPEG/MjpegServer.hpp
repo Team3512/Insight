@@ -6,13 +6,14 @@
 #ifndef MJPEG_SERVER_HPP
 #define MJPEG_SERVER_HPP
 
+#include <cstdint>
 #include <atomic>
 #include <list>
 #include <mutex>
 #include <thread>
-#include <cstdint>
 
 #include <jpeglib.h>
+
 #include "mjpeg_sck_selector.hpp"
 
 class MjpegServer {

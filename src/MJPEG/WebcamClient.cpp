@@ -1,15 +1,15 @@
 // =============================================================================
 // Description: Receives a video stream from a webcam and displays it in a child
-//             window with the specified properties
+//              window with the specified properties
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================
 
-#include <QImage>
+#include "WebcamClient.hpp"
 
 #include <iostream>
-#include <opencv2/imgproc.hpp>
 
-#include "WebcamClient.hpp"
+#include <opencv2/imgproc.hpp>
+#include <QImage>
 
 WebcamClient::WebcamClient(int device) : m_cap(device), m_device(device) {
 }

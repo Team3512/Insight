@@ -13,15 +13,15 @@ typedef u_int mjpeg_socket_t;
 
 #else
 
-#include <unistd.h>
-#include <fcntl.h>
+#include <arpa/inet.h>
 #include <errno.h>
-#include <sys/socket.h>
-#include <sys/select.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <arpa/inet.h>
 #include <netdb.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 typedef int mjpeg_socket_t;
 #define INVALID_SOCKET -1

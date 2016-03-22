@@ -14,10 +14,11 @@
 #include <string>
 #include <thread>
 #include <vector>
+
 #include <jpeglib.h>
-#include "mjpeg_sck.hpp"
 
 #include "ClientBase.hpp"
+#include "mjpeg_sck.hpp"
 
 class WpiClient : public ClientBase {
 public:

@@ -6,23 +6,23 @@
 #ifndef MAIN_WINDOW_HPP
 #define MAIN_WINDOW_HPP
 
+#include <cstdint>
+#include <memory>
+
 #include <QMainWindow>
 
-class QPushButton;
-class QSlider;
-class QMenu;
-class QAction;
-class ClientBase;
-class VideoStream;
-
-#include "Settings.hpp"
-#include "MJPEG/WindowCallbacks.hpp"
+#include "ImageProcess/FindTarget2014.hpp"
 #include "MJPEG/MjpegServer.hpp"
 #include "MJPEG/mjpeg_sck.hpp"
-#include "ImageProcess/FindTarget2014.hpp"
+#include "MJPEG/WindowCallbacks.hpp"
+#include "Settings.hpp"
 
-#include <memory>
-#include <cstdint>
+class ClientBase;
+class QAction;
+class QMenu;
+class QPushButton;
+class QSlider;
+class VideoStream;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT

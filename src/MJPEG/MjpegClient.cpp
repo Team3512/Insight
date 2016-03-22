@@ -1,17 +1,17 @@
 // =============================================================================
 // Description: Receives an MJPEG stream and displays it in a child window with
-//             the specified properties
+//              the specified properties
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================
 
 #include "MjpegClient.hpp"
 
-#include <QImage>
-
+#include <cstring>
 #include <iostream>
 #include <system_error>
 #include <map>
-#include <cstring>
+
+#include <QImage>
 
 MjpegClient::MjpegClient(const std::string& hostName,
                          unsigned short port,

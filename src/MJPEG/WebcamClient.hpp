@@ -7,12 +7,13 @@
 #ifndef WEBCAM_CLIENT_HPP
 #define WEBCAM_CLIENT_HPP
 
-#include <string>
-#include <vector>
-#include <atomic>
-#include <thread>
-#include <mutex>
 #include <cstdint>
+#include <atomic>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <vector>
+
 #include <opencv2/videoio.hpp>
 
 #include "ClientBase.hpp"

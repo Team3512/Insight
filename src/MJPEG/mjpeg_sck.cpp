@@ -1,8 +1,8 @@
 #include "mjpeg_sck.hpp"
 #include "mjpeg_sck_selector.hpp"
 
-#include <algorithm>
 #include <cstring>
+#include <algorithm>
 
 #ifdef _WIN32
 void _sck_wsainit() {

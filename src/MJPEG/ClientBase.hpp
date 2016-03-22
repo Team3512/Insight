@@ -6,8 +6,8 @@
 #ifndef CLIENT_BASE_HPP
 #define CLIENT_BASE_HPP
 
-#include <string>
 #include <cstdint>
+#include <string>
 
 class VideoStream;
 

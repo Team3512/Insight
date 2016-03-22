@@ -1,23 +1,24 @@
 // =============================================================================
 // Description: Receives an MJPEG stream and displays it in a child window with
-//             the specified properties
+//              the specified properties
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================
 
 #ifndef MJPEG_CLIENT_HPP
 #define MJPEG_CLIENT_HPP
 
+#include <cstdint>
 #include <atomic>
 #include <map>
 #include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
-#include <cstdint>
+
 #include <jpeglib.h>
-#include "mjpeg_sck.hpp"
 
 #include "ClientBase.hpp"
+#include "mjpeg_sck.hpp"
 
 class MjpegClient : public ClientBase {
 public:

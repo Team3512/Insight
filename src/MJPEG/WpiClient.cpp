@@ -5,15 +5,16 @@
 // =============================================================================
 
 #include "WpiClient.hpp"
-#include "mjpeg_sck_selector.hpp"
-#include "MjpegClient.hpp"
+
+#include <cstring>
+#include <iostream>
+#include <map>
+#include <system_error>
 
 #include <QImage>
 
-#include <iostream>
-#include <system_error>
-#include <map>
-#include <cstring>
+#include "MjpegClient.hpp"
+#include "mjpeg_sck_selector.hpp"
 
 constexpr uint8_t WpiClient::k_magicNumber[];
 

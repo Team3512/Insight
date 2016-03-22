@@ -3,19 +3,19 @@
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================
 
-#include <QtWidgets>
 #include <QPushButton>
 #include <QSlider>
+#include <QtWidgets>
 
 #include "MainWindow.hpp"
-#include "MJPEG/VideoStream.hpp"
 #include "MJPEG/MjpegClient.hpp"
+#include "MJPEG/VideoStream.hpp"
 #include "MJPEG/WebcamClient.hpp"
 #include "MJPEG/WpiClient.hpp"
 
-#include <iostream>
 #include <cstring>
 #include <chrono>
+#include <iostream>
 
 using namespace std::literals;
 

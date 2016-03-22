@@ -6,8 +6,9 @@
 #ifndef MJPEG_SCK_SELECTOR_HPP
 #define MJPEG_SCK_SELECTOR_HPP
 
-#include <list>
 #include <cstdint>
+#include <list>
+
 #include "mjpeg_sck.hpp"
 
 struct selector_sck {

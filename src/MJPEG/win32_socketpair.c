@@ -27,9 +27,9 @@
 
 #ifdef _WIN32
 # define WIN32_LEAN_AND_MEAN
-# include <winsock2.h>
-# include <windows.h>
 # include <io.h>
+# include <windows.h>
+# include <winsock2.h>
 typedef int socklen_t;
 
 /* dumb_socketpair:

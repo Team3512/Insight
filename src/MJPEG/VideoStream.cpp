@@ -4,17 +4,17 @@
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================
 
-#include "../Util.hpp"
-#include <QMouseEvent>
-#include <QImage>
-#include <QPainter>
 #include <QFont>
+#include <QImage>
+#include <QMouseEvent>
+#include <QPainter>
 
-#include <iostream>
 #include <cstring>
+#include <iostream>
 
-#include "VideoStream.hpp"
+#include "../Util.hpp"
 #include "ClientBase.hpp"
+#include "VideoStream.hpp"
 
 using namespace std::literals;
 
