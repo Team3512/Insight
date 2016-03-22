@@ -277,4 +277,3 @@ std::map<std::string, std::string> mjpeg_process_header(std::string header) {
 
     return list;
 }
-

@@ -44,7 +44,8 @@ int dumb_socketpair(SOCKET socks[2], int make_overlapped) {
     union {
         struct sockaddr_in inaddr;
         struct sockaddr addr;
-    } a;
+    }
+    a;
     SOCKET listener;
     int e;
     socklen_t addrlen = sizeof(a.inaddr);
@@ -106,4 +107,3 @@ int dumb_socketpair(SOCKET socks[2], int make_overlapped) {
 }
 
 #endif
-

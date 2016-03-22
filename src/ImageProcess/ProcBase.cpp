@@ -68,4 +68,3 @@ void ProcBase::clickEvent(int x, int y) {
     (void) x;
     (void) y;
 }
-

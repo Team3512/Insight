@@ -277,4 +277,3 @@ void MainWindow::createMenus() {
     m_helpMenu = menuBar()->addMenu(tr("&Help"));
     m_helpMenu->addAction(m_aboutAct);
 }
-

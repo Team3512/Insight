@@ -65,4 +65,3 @@ void FindTarget2013::drawOverlay() {
         cv::line(m_rawImage, (*i)[3], (*i)[0], lineColor, 2);
     }
 }
-
