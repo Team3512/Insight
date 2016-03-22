@@ -6,7 +6,9 @@ TARGET = Insight
 TEMPLATE = app
 CONFIG += c++14
 
-SOURCES +=\
+win32:LIBS += -lws2_32
+
+SOURCES += \
     src/MainWindow.cpp \
     src/Main.cpp \
     src/Settings.cpp \

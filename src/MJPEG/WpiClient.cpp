@@ -168,7 +168,7 @@ void WpiClient::recvFunc() {
     request.compression = htonl(k_hardwareCompression);
     request.size = htonl(k_size320x240);
 
-    send(m_sd, &request, sizeof(Request), 0);
+    send(m_sd, reinterpret_cast<const char*>(&request), sizeof(Request), 0);
 
     while (!m_stopReceive) {
         // Read magic numbers
