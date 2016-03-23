@@ -71,29 +71,32 @@ void FindTarget2016::findTargets() {
 
     // find center of mass
     cv::Moments mo = cv::moments(convexHull);
-    cv::Point center = cv::Point(mo.m10 / mo.m00, mo.m01 / mo.m00);
-    m_centerX = center.x;
-    m_centerY = center.y;
+    m_center = cv::Point(mo.m10 / mo.m00, mo.m01 / mo.m00);
 }
 
 int FindTarget2016::getCenterX() {
-    return m_centerX;
+    return m_center.x;
 }
+
 int FindTarget2016::getCenterY() {
-    return m_centerY;
+    return m_center.y;
 }
+
 void FindTarget2016::drawOverlay() {
     // R , G , B , A
     CvScalar lineColor = cvScalar(0xFF, 0x00, 0xFF, 0xFF);
 
-    // Draw lines to show user where the targets are
     for (std::vector<Target>::iterator i = m_targets.begin();
          i != m_targets.end();
          i++) {
-        cv::line(m_rawImage, (*i)[0], (*i)[1], lineColor, 2);
-        cv::line(m_rawImage, (*i)[1], (*i)[2], lineColor, 2);
-        cv::line(m_rawImage, (*i)[2], (*i)[3], lineColor, 2);
-        cv::line(m_rawImage, (*i)[3], (*i)[0], lineColor, 2);
+        // Draw lines to show user where the targets are
+        cv::line(m_rawImage, (*i)[0], (*i)[1], lineColor, 3);
+        cv::line(m_rawImage, (*i)[1], (*i)[2], lineColor, 3);
+        cv::line(m_rawImage, (*i)[2], (*i)[3], lineColor, 3);
+        cv::line(m_rawImage, (*i)[3], (*i)[0], lineColor, 3);
+
+        // Draw crosshair
+        cv::circle(m_rawImage, m_center, 5, lineColor, 3);
     }
 }
 

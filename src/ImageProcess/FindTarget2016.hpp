@@ -29,6 +29,7 @@ private:
     void drawOverlay();
 
     // Returns center of mass of goal
+    cv::Point m_center;
     int m_centerX = -1;
     int m_centerY = -1;
 

@@ -1,8 +1,10 @@
 #video source can be MJPEG, webcam, or WPI
-sourceType = WPI
+# sourceType = WPI
+sourceType = webcam
 
 #MJPEG server configuration
-streamHost       = roborio-3512-frc.local
+# streamHost       = roborio-3512-frc.local
+streamHost       = 10.35.12.2
 mjpegPort        = 80
 mjpegRequestPath = /mjpg/video.mjpg
 
