@@ -54,11 +54,11 @@ const std::vector<Target>& ProcBase::getTargetPositions() const {
 }
 
 int ProcBase::getCenterX() const {
-    return m_centerX;
+    return m_center.x;
 }
 
 int ProcBase::getCenterY() const {
-    return m_centerY;
+    return m_center.y;
 }
 
 void ProcBase::enableDebugging(bool enable) {

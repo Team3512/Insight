@@ -60,8 +60,7 @@ protected:
     std::vector<Target> m_targets;
 
     // Returns center of mass of goal
-    int m_centerX = -1;
-    int m_centerY = -1;
+    cv::Point m_center{-1, -1};
 
 private:
     bool m_debugEnabled = false;

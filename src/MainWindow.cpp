@@ -56,7 +56,8 @@ MainWindow::MainWindow() {
     m_slider->setTickInterval(20);
     m_slider->setTickPosition(QSlider::TicksBelow);
     m_slider->setSingleStep(1);
-    m_slider->setValue(m_settings.getInt("overlayPercent"));
+    m_slider->setValue((m_settings.getDouble(
+                            "lowerGreenFilterValue") / 255) * 100);
     connect(m_slider, SIGNAL(valueChanged(int)), this, SLOT(handleSlider(int)));
 
     QHBoxLayout* serverCtrlLayout = new QHBoxLayout;
@@ -160,7 +161,8 @@ void MainWindow::toggleButton() {
 
 void MainWindow::handleSlider(int value) {
     m_slider->setValue(value);
-    m_processor->setOverlayPercent(value);
+    m_processor->setLowerGreenFilterValue(value);
+    // m_processor->setOverlayPercent(value);
 }
 
 void MainWindow::newImageFunc() {
@@ -202,8 +204,8 @@ void MainWindow::newImageFunc() {
             m_data[8] = m_processor->getCenterX();
             m_data[9] = m_processor->getCenterY();
 
-            std::cout << "X:" << m_processor->getCenterX() << " Y:" <<
-                m_processor->getCenterY() << std::endl;
+            // std::cout << "X:" << m_processor->getCenterX() << " Y:" <<
+            //    m_processor->getCenterY() << std::endl;
 
             // We have new target data to send to the robot
             m_newData = true;
