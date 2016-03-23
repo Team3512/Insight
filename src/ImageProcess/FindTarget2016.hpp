@@ -17,11 +17,15 @@ public:
      */
     void setOverlayPercent(const float percent);
 
+    // Sets the range for green colors that will pass filtering
+    void setLowerGreenFilterValue(const float range);
+
 private:
     void prepareImage();
     void findTargets();
     void drawOverlay();
 
+    int m_lowerGreenFilterValue = 230;
     float m_overlayScale = 1.f;
 };
 

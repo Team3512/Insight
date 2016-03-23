@@ -1,9 +1,11 @@
 #video source can be MJPEG, webcam, or WPI
-sourceType = WPI
+# sourceType = MJPEG
+sourceType = webcam
 
 #MJPEG server configuration
-streamHost       = roborio-3512-frc.local
-mjpegPort        = 80
+# streamHost       = roborio-3512-frc.local
+streamHost       = 10.35.12.2
+mjpegPort        = 5800
 mjpegRequestPath = /mjpg/video.mjpg
 
 streamServerPort = 8080
@@ -17,4 +19,7 @@ robotControlPort = 1130
 enableImgProcDebug = false
 
 #Overlay percent size [0-100]
-overlayPercent = 45
+overlayPercent = 10
+
+# Lower range value for green colors that will pass filtering
+lowerGreenFilterValue = 230

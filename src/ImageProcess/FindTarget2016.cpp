@@ -20,9 +20,8 @@ void FindTarget2016::findTargets() {
 
     // Filter green contours
     cv::Mat rgb;
-    cv::inRange(m_grayChannel, cv::Scalar(0, 230, 0), cv::Scalar(255,
-                                                                 255,
-                                                                 255), rgb);
+    cv::inRange(m_grayChannel, cv::Scalar(0, m_lowerGreenFilterValue, 0),
+                cv::Scalar(255, 255, 255), rgb);
 
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy;
@@ -53,8 +52,6 @@ void FindTarget2016::findTargets() {
     }
 
     if (maxArea == 0) {
-        m_centerX = -1;
-        m_centerY = -1;
         m_targets = filtered;
         return;
     }
@@ -71,24 +68,42 @@ void FindTarget2016::findTargets() {
 
     // find center of mass
     cv::Moments mo = cv::moments(convexHull);
-    cv::Point center = cv::Point(mo.m10 / mo.m00, mo.m01 / mo.m00);
-    m_centerX = center.x;
-    m_centerY = center.y;
+    m_center = cv::Point(mo.m10 / mo.m00, mo.m01 / mo.m00);
 }
 
 void FindTarget2016::drawOverlay() {
     // R , G , B , A
-    CvScalar lineColor = cvScalar(0xFF, 0x00, 0xFF, 0xFF);
+    CvScalar lineColor = cvScalar(0x00, 0x00, 0xFF, 0xFF);
 
-    // Draw lines to show user where the targets are
-    for (std::vector<Target>::iterator i = m_targets.begin();
-         i != m_targets.end();
-         i++) {
-        cv::line(m_rawImage, (*i)[0], (*i)[1], lineColor, 2);
-        cv::line(m_rawImage, (*i)[1], (*i)[2], lineColor, 2);
-        cv::line(m_rawImage, (*i)[2], (*i)[3], lineColor, 2);
-        cv::line(m_rawImage, (*i)[3], (*i)[0], lineColor, 2);
+    for (auto& target : m_targets) {
+        // Draw lines to show user where the targets are
+        cv::line(m_rawImage, target[0], target[1], lineColor, 3);
+        cv::line(m_rawImage, target[1], target[2], lineColor, 3);
+        cv::line(m_rawImage, target[2], target[3], lineColor, 3);
+        cv::line(m_rawImage, target[3], target[0], lineColor, 3);
+
+        // Draw target
+        cv::circle(m_rawImage, m_center, 5, lineColor, 3);
     }
+
+    // Draw crosshair horizontal
+    cv::line(m_rawImage, cv::Point(m_rawImage.cols / 2, m_rawImage.rows / 2),
+             cv::Point(m_rawImage.cols / 2 + 20, m_rawImage.rows / 2),
+             lineColor, 4);
+    cv::line(m_rawImage, cv::Point(m_rawImage.cols / 2, m_rawImage.rows / 2),
+             cv::Point(m_rawImage.cols / 2 - 20, m_rawImage.rows / 2),
+             lineColor, 4);
+
+    // Draw crosshair horizontal
+    cv::line(m_rawImage, cv::Point(m_rawImage.cols / 2, m_rawImage.rows / 2),
+             cv::Point(m_rawImage.cols / 2, m_rawImage.rows / 2 + 20),
+             lineColor, 4);
+    cv::line(m_rawImage, cv::Point(m_rawImage.cols / 2, m_rawImage.rows / 2),
+             cv::Point(m_rawImage.cols / 2, m_rawImage.rows / 2 - 20),
+             lineColor, 4);
+}
+void FindTarget2016::setLowerGreenFilterValue(const float range) {
+    m_lowerGreenFilterValue = (range / 100.f) * 255;
 }
 
 void FindTarget2016::setOverlayPercent(const float overlayPercent) {
