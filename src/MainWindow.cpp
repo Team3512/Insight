@@ -199,8 +199,8 @@ void MainWindow::newImageFunc() {
         // Retrieve positions of targets and send them to robot
         if (m_processor->getTargetPositions().size() > 0) {
             // Save coordinates
-            m_data[9] = m_processor->getCenterX();
-            m_data[10] = m_processor->getCenterY();
+            m_data[8] = m_processor->getCenterX();
+            m_data[9] = m_processor->getCenterY();
 
             std::cout << "X:" << m_processor->getCenterX() << " Y:" <<
                 m_processor->getCenterY() << std::endl;
