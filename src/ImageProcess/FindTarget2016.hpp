@@ -23,15 +23,20 @@ public:
     // Returns the center mass x-coord of the goal
     int getCenterY();
 
+    // Sets the range for green colors that will pass filtering
+    void setLowerGreenFilterValue(const float range);
+
 private:
     void prepareImage();
     void findTargets();
     void drawOverlay();
 
     // Returns center of mass of goal
+    cv::Point m_center;
     int m_centerX = -1;
     int m_centerY = -1;
 
+    int m_lowerGreenFilterValue = 230;
     float m_overlayScale = 1.f;
 };
 
