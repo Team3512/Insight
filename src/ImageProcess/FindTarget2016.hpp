@@ -17,20 +17,10 @@ public:
      */
     void setOverlayPercent(const float percent);
 
-    // Returns the center mass x-coord of the goal
-    int getCenterX();
-
-    // Returns the center mass x-coord of the goal
-    int getCenterY();
-
 private:
     void prepareImage();
     void findTargets();
     void drawOverlay();
-
-    // Returns center of mass of goal
-    int m_centerX = -1;
-    int m_centerY = -1;
 
     float m_overlayScale = 1.f;
 };

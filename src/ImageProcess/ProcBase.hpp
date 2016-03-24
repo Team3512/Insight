@@ -38,6 +38,12 @@ public:
 
     const std::vector<Target>& getTargetPositions() const;
 
+    // Returns the center mass x-coord of the goal
+    int getCenterX() const;
+
+    // Returns the center mass x-coord of the goal
+    int getCenterY() const;
+
     /* When enabled, PNG images of the intermediate processing steps are saved
      * to disk.
      */
@@ -52,6 +58,10 @@ protected:
     cv::Mat m_grayChannel; // Prepared grayscale channel (output of prepareImage())
 
     std::vector<Target> m_targets;
+
+    // Returns center of mass of goal
+    int m_centerX = -1;
+    int m_centerY = -1;
 
 private:
     bool m_debugEnabled = false;

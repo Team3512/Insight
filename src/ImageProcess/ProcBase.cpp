@@ -53,6 +53,14 @@ const std::vector<Target>& ProcBase::getTargetPositions() const {
     return m_targets;
 }
 
+int ProcBase::getCenterX() const {
+    return m_centerX;
+}
+
+int ProcBase::getCenterY() const {
+    return m_centerY;
+}
+
 void ProcBase::enableDebugging(bool enable) {
     m_debugEnabled = enable;
 }

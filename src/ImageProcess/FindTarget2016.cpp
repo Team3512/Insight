@@ -76,12 +76,6 @@ void FindTarget2016::findTargets() {
     m_centerY = center.y;
 }
 
-int FindTarget2016::getCenterX() {
-    return m_centerX;
-}
-int FindTarget2016::getCenterY() {
-    return m_centerY;
-}
 void FindTarget2016::drawOverlay() {
     // R , G , B , A
     CvScalar lineColor = cvScalar(0xFF, 0x00, 0xFF, 0xFF);
