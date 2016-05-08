@@ -8,6 +8,8 @@ CONFIG += c++14
 
 win32:LIBS += -lws2_32
 
+CONFIG += debug_and_release
+
 SOURCES += \
     src/MainWindow.cpp \
     src/Main.cpp \
