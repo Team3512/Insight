@@ -38,6 +38,12 @@ MainWindow::MainWindow() {
     else if (source == "WPI") {
         m_client = new WpiClient(m_settings.getString("streamHost"));
     }
+    else {
+        /* Either settings file doesn't exist or it doesn't have the required
+         * options
+         */
+        std::exit(1);
+    }
 
     m_stream = new VideoStream(m_client,
                                this,
