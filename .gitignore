@@ -6,8 +6,6 @@
 Insight
 *.swp
 
-Makefile
-
 # Qt-generated files
 moc_*
 qrc_*
