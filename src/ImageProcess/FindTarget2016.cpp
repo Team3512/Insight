@@ -1,6 +1,6 @@
 // =============================================================================
 // Description: Processes a provided image and finds targets like the ones from
-//             FRC 2013
+//              FRC 2016
 // Author: FRC Team 3512, Spartatroniks
 // =============================================================================
 
