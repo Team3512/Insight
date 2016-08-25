@@ -1,10 +1,10 @@
 *.dll
-*.o
-*.res
 *.exe
+*.o
 *.png
-Insight
+*.res
 *.swp
+Insight
 
 # Qt-generated files
 .qmake.stash
