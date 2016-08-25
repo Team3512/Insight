@@ -1,11 +1,8 @@
-// =============================================================================
-// Description: Processes a provided image and finds targets like the ones from
-//              FRC 2016
-// Author: FRC Team 3512, Spartatroniks
-// =============================================================================
+// Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
+
+#include "FindTarget2016.hpp"
 
 #include <opencv2/imgproc/imgproc.hpp>
-#include "FindTarget2016.hpp"
 
 void FindTarget2016::prepareImage() {
     // remove noise by eroding and dilating twice
@@ -44,7 +41,7 @@ void FindTarget2016::findTargets() {
     std::vector<cv::Point> largeContour;
     int maxArea = 0;
     for (auto& contour : filtered) {
-        int area = (int) cv::contourArea(contour);
+        int area = static_cast<int>(cv::contourArea(contour));
         if (area > maxArea) {
             largeContour = contour;
             maxArea = area;

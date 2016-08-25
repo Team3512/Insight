@@ -1,8 +1,4 @@
-// =============================================================================
-// Description: Opens a given file and creates an STL map of its name-value
-//              pairs
-// Author: FRC Team 3512, Spartatroniks
-// =============================================================================
+// Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
 #ifndef SETTINGS_HPP
 #define SETTINGS_HPP
@@ -10,6 +6,9 @@
 #include <map>
 #include <string>
 
+/**
+ * Opens a given file and creates an STL map of its name-value pairs
+ */
 class Settings {
 public:
     explicit Settings(std::string fileName);
@@ -54,4 +53,4 @@ private:
     std::string extractValue();
 };
 
-#endif // SETTINGS_HPP
+#endif  // SETTINGS_HPP

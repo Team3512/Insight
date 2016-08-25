@@ -1,13 +1,10 @@
-// =============================================================================
-// Description: Receives a video stream from WPILib's CameraServer class and
-//              displays it in a child window with the specified properties
-// Author: FRC Team 3512, Spartatroniks
-// =============================================================================
+// Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
 #ifndef WPI_CLIENT_HPP
 #define WPI_CLIENT_HPP
 
-#include <cstdint>
+#include <stdint.h>
+
 #include <atomic>
 #include <map>
 #include <mutex>
@@ -20,6 +17,10 @@
 #include "ClientBase.hpp"
 #include "mjpeg_sck.hpp"
 
+/**
+ * Receives a video stream from WPILib's CameraServer class and displays it in a
+ * child window with the specified properties
+ */
 class WpiClient : public ClientBase {
 public:
     WpiClient(const std::string& hostName);
@@ -115,4 +116,4 @@ private:
  *  -1 is returned, and errno is set appropriately. */
 int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd);
 
-#endif // WPI_CLIENT_HPP
+#endif  // WPI_CLIENT_HPP

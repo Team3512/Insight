@@ -1,8 +1,4 @@
-// =============================================================================
-// Description: Receives a video stream from WPILib's CameraServer class and
-//              displays it in a child window with the specified properties
-// Author: FRC Team 3512, Spartatroniks
-// =============================================================================
+// Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
 #include "WpiClient.hpp"
 
@@ -47,7 +43,7 @@ WpiClient::~WpiClient() {
 }
 
 void WpiClient::start() {
-    if (!isStreaming()) { // if stream is closed, reopen it
+    if (!isStreaming()) {  // if stream is closed, reopen it
         // Join previous thread before making a new one
         if (m_recvThread.joinable()) {
             m_recvThread.join();
@@ -74,17 +70,15 @@ void WpiClient::stop() {
     }
 }
 
-bool WpiClient::isStreaming() const {
-    return !m_stopReceive;
-}
+bool WpiClient::isStreaming() const { return !m_stopReceive; }
 
 void WpiClient::saveCurrentImage(const std::string& fileName) {
     std::lock_guard<std::mutex> lock(m_imageMutex);
 
     QImage tmp(&m_pxlBuf[0], m_imgWidth, m_imgHeight, QImage::Format_RGB888);
     if (!tmp.save(fileName.c_str())) {
-        std::cout << "WpiClient: failed to save image to '" << fileName <<
-            "'\n";
+        std::cout << "WpiClient: failed to save image to '" << fileName
+                  << "'\n";
     }
 }
 
@@ -113,8 +107,7 @@ unsigned int WpiClient::getCurrentHeight() const {
     return m_extHeight;
 }
 
-void WpiClient::jpeg_load_from_memory(uint8_t* inputBuf,
-                                      int inputLen,
+void WpiClient::jpeg_load_from_memory(uint8_t* inputBuf, int inputLen,
                                       std::vector<uint8_t>& outputBuf) {
     jpeg_mem_src(&m_cinfo, inputBuf, inputLen);
     if (jpeg_read_header(&m_cinfo, TRUE) != JPEG_HEADER_OK) {
@@ -183,8 +176,8 @@ void WpiClient::recvFunc() {
         }
 
         // Read image size
-        bytesRead = mjpeg_sck_recv(m_sd, &dataSize, sizeof(dataSize),
-                                   m_cancelfdr);
+        bytesRead =
+            mjpeg_sck_recv(m_sd, &dataSize, sizeof(dataSize), m_cancelfdr);
 
         if (bytesRead != sizeof(dataSize)) {
             std::cerr << "recv(2) failed\n";

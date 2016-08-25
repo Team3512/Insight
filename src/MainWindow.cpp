@@ -1,55 +1,47 @@
-// =============================================================================
-// Description: Creates application's main window
-// Author: FRC Team 3512, Spartatroniks
-// =============================================================================
+// Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
+
+#include "MainWindow.hpp"
+
+#include <chrono>
+#include <cstring>
+#include <iostream>
 
 #include <QPushButton>
 #include <QSlider>
 #include <QtWidgets>
 
-#include "MainWindow.hpp"
 #include "MJPEG/MjpegClient.hpp"
 #include "MJPEG/VideoStream.hpp"
 #include "MJPEG/WebcamClient.hpp"
 #include "MJPEG/WpiClient.hpp"
 
-#include <cstring>
-#include <chrono>
-#include <iostream>
-
-using namespace std::literals;
+using namespace std::chrono_literals;
 
 MainWindow::MainWindow() {
     centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
 
-    m_streamCallback.clickEvent =
-        [&] (int x, int y) { m_processor->clickEvent(x, y); };
+    m_streamCallback.clickEvent = [&](int x, int y) {
+        m_processor->clickEvent(x, y);
+    };
 
     auto source = m_settings.getString("sourceType");
     if (source == "MJPEG") {
         m_client = new MjpegClient(m_settings.getString("streamHost"),
                                    m_settings.getInt("mjpegPort"),
                                    m_settings.getString("mjpegRequestPath"));
-    }
-    else if (source == "webcam") {
+    } else if (source == "webcam") {
         m_client = new WebcamClient();
-    }
-    else if (source == "WPI") {
+    } else if (source == "WPI") {
         m_client = new WpiClient(m_settings.getString("streamHost"));
-    }
-    else {
+    } else {
         /* Either settings file doesn't exist or it doesn't have the required
          * options
          */
         std::exit(1);
     }
 
-    m_stream = new VideoStream(m_client,
-                               this,
-                               320,
-                               240,
-                               &m_streamCallback,
+    m_stream = new VideoStream(m_client, this, 320, 240, &m_streamCallback,
                                [this] { newImageFunc(); },
                                [this] { m_button->setText("Stop Stream"); },
                                [this] { m_button->setText("Start Stream"); });
@@ -62,8 +54,8 @@ MainWindow::MainWindow() {
     m_slider->setTickInterval(20);
     m_slider->setTickPosition(QSlider::TicksBelow);
     m_slider->setSingleStep(1);
-    m_slider->setValue((m_settings.getDouble(
-                            "lowerGreenFilterValue") / 255) * 100);
+    m_slider->setValue((m_settings.getDouble("lowerGreenFilterValue") / 255) *
+                       100);
     connect(m_slider, SIGNAL(valueChanged(int)), this, SLOT(handleSlider(int)));
 
     QHBoxLayout* serverCtrlLayout = new QHBoxLayout;
@@ -96,8 +88,7 @@ MainWindow::MainWindow() {
 
     if (mjpeg_sck_valid(m_ctrlSocket)) {
         mjpeg_sck_setnonblocking(m_ctrlSocket, 1);
-    }
-    else {
+    } else {
         std::cout << __FILE__ << ": failed to create robot control socket\n";
     }
 
@@ -110,8 +101,7 @@ MainWindow::MainWindow() {
 
     if (m_robotIPStr == "255.255.255.255") {
         m_robotIP = INADDR_BROADCAST;
-    }
-    else {
+    } else {
         m_robotIP = inet_addr(m_robotIPStr.c_str());
 
         if (m_robotIP == INADDR_NONE) {
@@ -121,8 +111,7 @@ MainWindow::MainWindow() {
             if (host) {
                 m_robotIP =
                     reinterpret_cast<in_addr*>(host->h_addr_list[0])->s_addr;
-            }
-            else {
+            } else {
                 // Not a valid address nor a host name
                 m_robotIP = 0;
             }
@@ -159,8 +148,7 @@ void MainWindow::about() {
 void MainWindow::toggleButton() {
     if (m_client->isStreaming()) {
         stopMJPEG();
-    }
-    else {
+    } else {
         startMJPEG();
     }
 }
@@ -180,8 +168,7 @@ void MainWindow::newImageFunc() {
     if (m_imgBuffer != nullptr && m_imgWidth > 0 && m_imgHeight > 0) {
         if (m_tempImg == nullptr) {
             m_tempImg = new uint8_t[m_imgWidth * m_imgHeight * 3];
-        }
-        else if (m_lastWidth * m_lastHeight != m_imgWidth * m_imgHeight) {
+        } else if (m_lastWidth * m_lastHeight != m_imgWidth * m_imgHeight) {
             delete[] m_tempImg;
             m_tempImg = new uint8_t[m_imgWidth * m_imgHeight * 3];
         }
@@ -189,8 +176,7 @@ void MainWindow::newImageFunc() {
         /* ===== Convert RGB image to BGR for OpenCV ===== */
         // Copy R, G, and B channels but ignore A channel
         for (unsigned int posIn = 0, posOut = 0;
-             posIn < m_imgWidth * m_imgHeight;
-             posIn++, posOut++) {
+             posIn < m_imgWidth * m_imgHeight; posIn++, posOut++) {
             // Copy bytes of pixel into corresponding channels
             m_tempImg[3 * posOut + 0] = m_imgBuffer[3 * posIn + 2];
             m_tempImg[3 * posOut + 1] = m_imgBuffer[3 * posIn + 1];
@@ -222,19 +208,20 @@ void MainWindow::newImageFunc() {
         m_lastHeight = m_imgHeight;
     }
 
-    // If socket is valid, data was sent at least 200ms ago, and there is new data
-    if (mjpeg_sck_valid(m_ctrlSocket) && std::chrono::system_clock::now() -
-        m_lastSendTime > 200ms && m_newData) {
+    // If socket is valid, data was sent at least 200ms ago, and there is new
+    // data
+    if (mjpeg_sck_valid(m_ctrlSocket) &&
+        std::chrono::system_clock::now() - m_lastSendTime > 200ms &&
+        m_newData) {
         // Build the target address
         sockaddr_in addr;
         std::memset(addr.sin_zero, 0, sizeof(addr.sin_zero));
         addr.sin_addr.s_addr = htonl(m_robotIP);
-        addr.sin_family      = AF_INET;
-        addr.sin_port        = htons(m_robotCtrlPort);
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons(m_robotCtrlPort);
 
-        int sent =
-            sendto(m_ctrlSocket, m_data, sizeof(m_data), 0,
-                   reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
+        int sent = sendto(m_ctrlSocket, m_data, sizeof(m_data), 0,
+                          reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
 
         // Check for errors
         if (sent >= 0) {

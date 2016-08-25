@@ -1,18 +1,20 @@
-// =============================================================================
-// Description: Contains a common collection of functions that must be called
-//             to do proper image processing on an object in FRC.
-// Author: FRC Team 3512, Spartatroniks
-// =============================================================================
+// Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
 #ifndef PROC_BASE_HPP
 #define PROC_BASE_HPP
 
-#include <cstdint>
+#include <stdint.h>
+
 #include <vector>
+
 #include <opencv2/core/core.hpp>
 
 typedef std::vector<cv::Point> Target;
 
+/**
+ * Contains a common collection of functions that must be called to do proper
+ * image processing on an object in FRC.
+ */
 class ProcBase {
 public:
     virtual ~ProcBase() = default;
@@ -53,9 +55,11 @@ public:
     virtual void clickEvent(int x, int y);
 
 protected:
-    // Internal OpenCV primitives
-    cv::Mat m_rawImage; // Raw image
-    cv::Mat m_grayChannel; // Prepared grayscale channel (output of prepareImage())
+    // Raw image
+    cv::Mat m_rawImage;
+
+    // Prepared grayscale channel (output of prepareImage())
+    cv::Mat m_grayChannel;
 
     std::vector<Target> m_targets;
 
@@ -71,4 +75,4 @@ private:
     virtual void drawOverlay();
 };
 
-#endif // PROC_BASE_HPP
+#endif  // PROC_BASE_HPP

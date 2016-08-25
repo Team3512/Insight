@@ -1,3 +1,5 @@
+// Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
+
 #ifndef MJPEG_SCK_HPP
 #define MJPEG_SCK_HPP
 
@@ -16,9 +18,9 @@ typedef u_int mjpeg_socket_t;
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <netdb.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -29,10 +31,10 @@ typedef int mjpeg_socket_t;
 #endif
 
 typedef enum mjpeg_sck_status {
-    SCK_DONE,       // The socket has sent/received the data
-    SCK_NOTREADY,   // The socket is not ready to send/receive data yet
-    SCK_DISCONNECT, // The TCP socket has been disconnected
-    SCK_ERROR       // An unexpected error occurred
+    SCK_DONE,        // The socket has sent/received the data
+    SCK_NOTREADY,    // The socket is not ready to send/receive data yet
+    SCK_DISCONNECT,  // The TCP socket has been disconnected
+    SCK_ERROR        // An unexpected error occurred
 } mjpeg_sck_status;
 
 /* Returns 1 if socket is valid
@@ -55,8 +57,7 @@ mjpeg_sck_status mjpeg_sck_geterror();
  *  If the connection succeeds, the new socket descriptor
  *  is returned. On error, -1 is returned, and errno is
  *  set appropriately. */
-mjpeg_socket_t mjpeg_sck_connect(const char* host,
-                                 int port,
+mjpeg_socket_t mjpeg_sck_connect(const char* host, int port,
                                  mjpeg_socket_t cancelfd);
 
 int mjpeg_sck_close(mjpeg_socket_t sd);
@@ -72,4 +73,4 @@ mjpeg_socket_t mjpeg_pipe(mjpeg_socket_t sv[2]);
  */
 int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd);
 
-#endif // MJPEG_SCK_HPP
+#endif  // MJPEG_SCK_HPP

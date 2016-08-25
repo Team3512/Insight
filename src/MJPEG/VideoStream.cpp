@@ -1,8 +1,4 @@
-// =============================================================================
-// Description: Receives a video stream and displays it in a child window with
-//             the specified properties
-// Author: FRC Team 3512, Spartatroniks
-// =============================================================================
+// Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
 #include <QFont>
 #include <QImage>
@@ -16,21 +12,18 @@
 #include "ClientBase.hpp"
 #include "VideoStream.hpp"
 
-using namespace std::literals;
+using namespace std::chrono_literals;
 
-VideoStream::VideoStream(ClientBase* client,
-                         QWidget* parentWin,
-                         int width,
-                         int height,
-                         WindowCallbacks* windowCallbacks,
+VideoStream::VideoStream(ClientBase* client, QWidget* parentWin, int width,
+                         int height, WindowCallbacks* windowCallbacks,
                          std::function<void(void)> newImageCbk,
                          std::function<void(void)> startCbk,
-                         std::function<void(void)> stopCbk) :
-    QOpenGLWidget(parentWin),
+                         std::function<void(void)> stopCbk)
+    : QOpenGLWidget(parentWin),
 
-    m_newImageCallback(newImageCbk),
-    m_startCallback(startCbk),
-    m_stopCallback(stopCbk) {
+      m_newImageCallback(newImageCbk),
+      m_startCallback(startCbk),
+      m_stopCallback(stopCbk) {
     connect(this, SIGNAL(redraw()), this, SLOT(repaint()));
 
     m_client = client;
@@ -56,17 +49,13 @@ VideoStream::~VideoStream() {
     delete m_client;
 }
 
-QSize VideoStream::sizeHint() const {
-    return QSize(320, 240);
-}
+QSize VideoStream::sizeHint() const { return QSize(320, 240); }
 
-void VideoStream::setFPS(unsigned int fps) {
-    m_frameRate = fps;
-}
+void VideoStream::setFPS(unsigned int fps) { m_frameRate = fps; }
 
 void VideoStream::newImageCallback(uint8_t* buf, int bufsize) {
-    (void) buf;
-    (void) bufsize;
+    (void)buf;
+    (void)bufsize;
 
     // Send message to parent window about the new image
     if (std::chrono::system_clock::now() - m_displayTime >
@@ -125,17 +114,14 @@ void VideoStream::paintGL() {
         if (m_firstImage) {
             std::lock_guard<std::mutex> lock(m_imageMutex);
             painter.drawPixmap(0, 0, QPixmap::fromImage(m_connectImg));
-        }
+        } else if (std::chrono::system_clock::now() - m_imageAge > 1s) {
+            // If it's been too long since we received our last image
 
-        // If it's been too long since we received our last image
-        else if (std::chrono::system_clock::now() - m_imageAge > 1s) {
             // Display "Waiting..." over the last image received
             std::lock_guard<std::mutex> lock(m_imageMutex);
             painter.drawPixmap(0, 0, QPixmap::fromImage(m_waitImg));
-        }
-
-        // Else display the image last received
-        else {
+        } else {
+            // Else display the image last received
             std::lock_guard<std::mutex> lock(m_imageMutex);
 
             QImage tmp(m_img, m_imgWidth, m_imgHeight, QImage::Format_RGB888);
@@ -143,14 +129,11 @@ void VideoStream::paintGL() {
             dstsize.scale(size(), Qt::KeepAspectRatio);
             QSize offset = size() - dstsize;
             offset /= 2;
-            painter.drawPixmap(offset.width(), offset.height(),
-                               dstsize.width(),
+            painter.drawPixmap(offset.width(), offset.height(), dstsize.width(),
                                dstsize.height(), QPixmap::fromImage(tmp));
         }
-    }
-
-    // Else we aren't connected to the host; display disconnect graphic
-    else {
+    } else {
+        // Else we aren't connected to the host; display disconnect graphic
         std::lock_guard<std::mutex> lock(m_imageMutex);
         painter.drawPixmap(0, 0, QPixmap::fromImage(m_disconnectImg));
     }
@@ -187,8 +170,7 @@ void VideoStream::recreateGraphics(int width, int height) {
 
     p.begin(&waitBuf);
     // Add transparent rectangle
-    p.fillRect(width / 3, height / 3, width / 3,
-               height / 3, Qt::darkGray);
+    p.fillRect(width / 3, height / 3, width / 3, height / 3, Qt::darkGray);
     p.end();
 
     p.begin(&waitBuf);

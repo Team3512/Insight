@@ -1,8 +1,10 @@
+// Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
+
 #include "mjpeg_sck.hpp"
 #include "mjpeg_sck_selector.hpp"
 
-#include <cstring>
 #include <algorithm>
+#include <cstring>
 
 #ifdef _WIN32
 void _sck_wsainit() {
@@ -44,8 +46,7 @@ int mjpeg_sck_setnonblocking(mjpeg_socket_t sd, int enable) {
     }
     if (enable != 0) {
         error = fcntl(sd, F_SETFL, flags | O_NONBLOCK);
-    }
-    else {
+    } else {
         error = fcntl(sd, F_SETFL, flags & ~O_NONBLOCK);
     }
     if (error == -1) {
@@ -59,13 +60,20 @@ int mjpeg_sck_setnonblocking(mjpeg_socket_t sd, int enable) {
 mjpeg_sck_status mjpeg_sck_geterror() {
 #ifdef _WIN32
     switch (WSAGetLastError()) {
-    case WSAEWOULDBLOCK:  return SCK_NOTREADY;
-    case WSAECONNABORTED: return SCK_DISCONNECT;
-    case WSAECONNRESET:   return SCK_DISCONNECT;
-    case WSAETIMEDOUT:    return SCK_DISCONNECT;
-    case WSAENETRESET:    return SCK_DISCONNECT;
-    case WSAENOTCONN:     return SCK_DISCONNECT;
-    default:              return SCK_ERROR;
+        case WSAEWOULDBLOCK:
+            return SCK_NOTREADY;
+        case WSAECONNABORTED:
+            return SCK_DISCONNECT;
+        case WSAECONNRESET:
+            return SCK_DISCONNECT;
+        case WSAETIMEDOUT:
+            return SCK_DISCONNECT;
+        case WSAENETRESET:
+            return SCK_DISCONNECT;
+        case WSAENOTCONN:
+            return SCK_DISCONNECT;
+        default:
+            return SCK_ERROR;
     }
 #else
     // The followings are sometimes equal to EWOULDBLOCK,
@@ -76,14 +84,22 @@ mjpeg_sck_status mjpeg_sck_geterror() {
     }
 
     switch (errno) {
-    case EWOULDBLOCK:  return SCK_NOTREADY;
-    case ECONNABORTED: return SCK_DISCONNECT;
-    case ECONNRESET:   return SCK_DISCONNECT;
-    case ETIMEDOUT:    return SCK_DISCONNECT;
-    case ENETRESET:    return SCK_DISCONNECT;
-    case ENOTCONN:     return SCK_DISCONNECT;
-    case EPIPE:        return SCK_DISCONNECT;
-    default:           return SCK_ERROR;
+        case EWOULDBLOCK:
+            return SCK_NOTREADY;
+        case ECONNABORTED:
+            return SCK_DISCONNECT;
+        case ECONNRESET:
+            return SCK_DISCONNECT;
+        case ETIMEDOUT:
+            return SCK_DISCONNECT;
+        case ENETRESET:
+            return SCK_DISCONNECT;
+        case ENOTCONN:
+            return SCK_DISCONNECT;
+        case EPIPE:
+            return SCK_DISCONNECT;
+        default:
+            return SCK_ERROR;
     }
 #endif
 }
@@ -95,8 +111,7 @@ mjpeg_sck_status mjpeg_sck_geterror() {
  *  If the connection succeeds, the new socket descriptor
  *  is returned. On error, -1 isreturned, and errno is
  *  set appropriately. */
-mjpeg_socket_t mjpeg_sck_connect(const char* host,
-                                 int port,
+mjpeg_socket_t mjpeg_sck_connect(const char* host, int port,
                                  mjpeg_socket_t cancelfd) {
     mjpeg_socket_t sd;
     int error;
@@ -106,9 +121,9 @@ mjpeg_socket_t mjpeg_sck_connect(const char* host,
     struct hostent* hp;
     struct sockaddr_in pin;
 
-    #ifdef _WIN32
+#ifdef _WIN32
     _sck_wsainit();
-    #endif
+#endif
 
     // Create a new socket
     sd = socket(AF_INET, SOCK_STREAM, 0);
@@ -137,10 +152,8 @@ mjpeg_socket_t mjpeg_sck_connect(const char* host,
     pin.sin_port = htons(port);
 
     // Try to connect
-    error = connect(
-        sd,
-        reinterpret_cast<struct sockaddr*>(&pin),
-        sizeof(struct sockaddr_in));
+    error = connect(sd, reinterpret_cast<struct sockaddr*>(&pin),
+                    sizeof(struct sockaddr_in));
 
 #ifdef _WIN32
     if (error != 0 && WSAGetLastError() != WSAEWOULDBLOCK) {
@@ -201,9 +214,10 @@ mjpeg_socket_t mjpeg_sck_connect(const char* host,
         return -1;
     }
     if (error_code != 0) {
-        /* Note: Setting errno on systems which either do not support
-         *  it, or whose socket error codes are not consistent with its
-         *  system error codes is a bad idea. */
+/* Note: Setting errno on systems which either do not support it, or whose
+ * socket error codes are not consistent with its system error codes is a bad
+ * idea.
+ */
 #if _WIN32
         WSASetLastError(error);
 #else
@@ -243,13 +257,11 @@ int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd) {
         selector.zero(mjpeg_sck_selector::read | mjpeg_sck_selector::except);
 
         // Set the sockets into the fd_set s
-        selector.addSocket(sockfd,
-                           mjpeg_sck_selector::read |
-                           mjpeg_sck_selector::except);
+        selector.addSocket(
+            sockfd, mjpeg_sck_selector::read | mjpeg_sck_selector::except);
         if (cancelfd) {
-            selector.addSocket(cancelfd,
-                               mjpeg_sck_selector::read |
-                               mjpeg_sck_selector::except);
+            selector.addSocket(cancelfd, mjpeg_sck_selector::read |
+                                             mjpeg_sck_selector::except);
         }
 
         error = selector.select(nullptr);
@@ -292,9 +304,7 @@ struct SocketInitializer {
         WSAStartup(MAKEWORD(2, 2), &init);
     }
 
-    ~SocketInitializer() {
-        WSACleanup();
-    }
+    ~SocketInitializer() { WSACleanup(); }
 };
 
 SocketInitializer globalInitializer;

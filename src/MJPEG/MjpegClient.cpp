@@ -1,24 +1,17 @@
-// =============================================================================
-// Description: Receives an MJPEG stream and displays it in a child window with
-//              the specified properties
-// Author: FRC Team 3512, Spartatroniks
-// =============================================================================
+// Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
 #include "MjpegClient.hpp"
 
 #include <cstring>
 #include <iostream>
-#include <system_error>
 #include <map>
+#include <system_error>
 
 #include <QImage>
 
-MjpegClient::MjpegClient(const std::string& hostName,
-                         unsigned short port,
-                         const std::string& requestPath) :
-    m_hostName(hostName),
-    m_port(port),
-    m_requestPath(requestPath) {
+MjpegClient::MjpegClient(const std::string& hostName, unsigned short port,
+                         const std::string& requestPath)
+    : m_hostName(hostName), m_port(port), m_requestPath(requestPath) {
     mjpeg_socket_t pipefd[2];
 
     /* Create a pipe that, when written to, causes any operation in the
@@ -47,7 +40,7 @@ MjpegClient::~MjpegClient() {
 }
 
 void MjpegClient::start() {
-    if (!isStreaming()) { // if stream is closed, reopen it
+    if (!isStreaming()) {  // if stream is closed, reopen it
         // Join previous thread before making a new one
         if (m_recvThread.joinable()) {
             m_recvThread.join();
@@ -74,17 +67,15 @@ void MjpegClient::stop() {
     }
 }
 
-bool MjpegClient::isStreaming() const {
-    return !m_stopReceive;
-}
+bool MjpegClient::isStreaming() const { return !m_stopReceive; }
 
 void MjpegClient::saveCurrentImage(const std::string& fileName) {
     std::lock_guard<std::mutex> lock(m_imageMutex);
 
     QImage tmp(&m_pxlBuf[0], m_imgWidth, m_imgHeight, QImage::Format_RGB888);
     if (!tmp.save(fileName.c_str())) {
-        std::cout << "MjpegClient: failed to save image to '" << fileName <<
-            "'\n";
+        std::cout << "MjpegClient: failed to save image to '" << fileName
+                  << "'\n";
     }
 }
 
@@ -113,8 +104,7 @@ unsigned int MjpegClient::getCurrentHeight() const {
     return m_extHeight;
 }
 
-void MjpegClient::jpeg_load_from_memory(uint8_t* inputBuf,
-                                        int inputLen,
+void MjpegClient::jpeg_load_from_memory(uint8_t* inputBuf, int inputLen,
                                         std::vector<uint8_t>& outputBuf) {
     jpeg_mem_src(&m_cinfo, inputBuf, inputLen);
     if (jpeg_read_header(&m_cinfo, TRUE) != JPEG_HEADER_OK) {
@@ -220,8 +210,8 @@ int mjpeg_rxheaders(std::vector<uint8_t>& buf, int sd, int cancelfd) {
     buf.resize(1024);
 
     while (!(bufpos >= 4 && buf[bufpos - 4] == '\r' &&
-             buf[bufpos - 3] == '\n' &&
-             buf[bufpos - 2] == '\r' && buf[bufpos - 1] == '\n')) {
+             buf[bufpos - 3] == '\n' && buf[bufpos - 2] == '\r' &&
+             buf[bufpos - 1] == '\n')) {
         /* Read a byte from sd into &buf[bufpos]. If afterwards, bufpos ==
          * buf.size(), reallocate the buffer as 1024 bytes larger. This function
          * blocks until either a byte is received, or cancelfd becomes ready for

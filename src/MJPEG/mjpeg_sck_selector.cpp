@@ -1,7 +1,4 @@
-// =============================================================================
-// Description: A wrapper around select(3)
-// Author: FRC Team 3512, Spartatroniks
-// =============================================================================
+// Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
 #include "mjpeg_sck_selector.hpp"
 
@@ -45,14 +42,11 @@ void mjpeg_sck_selector::removeSocket(mjpeg_socket_t sd, uint32_t types) {
 bool mjpeg_sck_selector::isSelected(mjpeg_socket_t sd, select_type type) {
     if (type == select_type::read) {
         return FD_ISSET(sd, &m_in_readfds);
-    }
-    else if (type == select_type::write) {
+    } else if (type == select_type::write) {
         return FD_ISSET(sd, &m_in_writefds);
-    }
-    else if (type == select_type::except) {
+    } else if (type == select_type::except) {
         return FD_ISSET(sd, &m_in_exceptfds);
-    }
-    else {
+    } else {
         return false;
     }
 }
@@ -60,14 +54,11 @@ bool mjpeg_sck_selector::isSelected(mjpeg_socket_t sd, select_type type) {
 bool mjpeg_sck_selector::isReady(mjpeg_socket_t sd, select_type type) {
     if (type == select_type::read) {
         return FD_ISSET(sd, &m_readfds);
-    }
-    else if (type == select_type::write) {
+    } else if (type == select_type::write) {
         return FD_ISSET(sd, &m_writefds);
-    }
-    else if (type == select_type::except) {
+    } else if (type == select_type::except) {
         return FD_ISSET(sd, &m_exceptfds);
-    }
-    else {
+    } else {
         return false;
     }
 }
@@ -89,9 +80,6 @@ int mjpeg_sck_selector::select(struct timeval* timeout) {
     m_writefds = m_in_writefds;
     m_exceptfds = m_in_exceptfds;
 
-    return ::select(m_maxSocket + 1,
-                    &m_readfds,
-                    &m_writefds,
-                    &m_exceptfds,
+    return ::select(m_maxSocket + 1, &m_readfds, &m_writefds, &m_exceptfds,
                     timeout);
 }

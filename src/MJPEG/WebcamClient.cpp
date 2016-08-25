@@ -1,25 +1,18 @@
-// =============================================================================
-// Description: Receives a video stream from a webcam and displays it in a child
-//              window with the specified properties
-// Author: FRC Team 3512, Spartatroniks
-// =============================================================================
+// Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
 #include "WebcamClient.hpp"
 
 #include <iostream>
 
-#include <opencv2/imgproc.hpp>
 #include <QImage>
+#include <opencv2/imgproc.hpp>
 
-WebcamClient::WebcamClient(int device) : m_cap(device), m_device(device) {
-}
+WebcamClient::WebcamClient(int device) : m_cap(device), m_device(device) {}
 
-WebcamClient::~WebcamClient() {
-    stop();
-}
+WebcamClient::~WebcamClient() { stop(); }
 
 void WebcamClient::start() {
-    if (!isStreaming()) { // if stream is closed, reopen it
+    if (!isStreaming()) {  // if stream is closed, reopen it
         // Join previous thread before making a new one
         if (m_recvThread.joinable()) {
             m_recvThread.join();
@@ -43,17 +36,15 @@ void WebcamClient::stop() {
     }
 }
 
-bool WebcamClient::isStreaming() const {
-    return !m_stopReceive;
-}
+bool WebcamClient::isStreaming() const { return !m_stopReceive; }
 
 void WebcamClient::saveCurrentImage(const std::string& fileName) {
     std::lock_guard<std::mutex> lock(m_imageMutex);
 
     QImage tmp(&m_pxlBuf[0], m_imgWidth, m_imgHeight, QImage::Format_RGB888);
     if (!tmp.save(fileName.c_str())) {
-        std::cout << "WebcamClient: failed to save image to '" << fileName <<
-            "'\n";
+        std::cout << "WebcamClient: failed to save image to '" << fileName
+                  << "'\n";
     }
 }
 

@@ -1,7 +1,4 @@
-// =============================================================================
-// Description: An MJPEG server implementation
-// Author: FRC Team 3512, Spartatroniks
-// =============================================================================
+// Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
 #include "MjpegServer.hpp"
 
@@ -11,8 +8,7 @@
 #include <sstream>
 #include <system_error>
 
-MjpegServer::MjpegServer(unsigned short port) :
-    m_port(port) {
+MjpegServer::MjpegServer(uint16_t port) : m_port(port) {
     mjpeg_socket_t pipefd[2];
 
     /* Create a pipe that, when written to, causes any operation in the
@@ -64,13 +60,15 @@ void MjpegServer::start() {
         if (mjpeg_sck_valid(m_listenSock)) {
             mjpeg_sck_setnonblocking(m_listenSock, 0);
 
-            // Disable the Nagle algorithm (ie. removes buffering of TCP packets)
+            /* Disable the Nagle algorithm (ie. removes buffering of TCP
+             * packets)
+             */
             int yes = 1;
             if (setsockopt(m_listenSock, IPPROTO_TCP, TCP_NODELAY,
                            reinterpret_cast<char*>(&yes), sizeof(yes)) == -1) {
                 mjpeg_sck_close(m_listenSock);
                 std::cout << "MjpegServer: failed to remove TCP buffering\n";
-                return; // Failed to remove buffering
+                return;  // Failed to remove buffering
             }
 
             // Allow reconnecting to the same port after server restart
@@ -78,34 +76,33 @@ void MjpegServer::start() {
                            reinterpret_cast<char*>(&yes), sizeof(yes)) == -1) {
                 mjpeg_sck_close(m_listenSock);
                 std::cout << "MjpegServer: failed to remove TCP buffering\n";
-                return; // Failed to remove buffering
+                return;  // Failed to remove buffering
             }
-        }
-        else {
+        } else {
             std::cout << "MjpegServer: failed to create listener socket\n";
-            return; // Failed to create socket
+            return;  // Failed to create socket
         }
 
         // Bind the socket to the specified port
         sockaddr_in address;
         std::memset(&address, 0, sizeof(address));
         address.sin_addr.s_addr = htonl(INADDR_ANY);
-        address.sin_family      = AF_INET;
-        address.sin_port        = htons(m_port);
+        address.sin_family = AF_INET;
+        address.sin_port = htons(m_port);
 
         if (bind(m_listenSock, reinterpret_cast<sockaddr*>(&address),
                  sizeof(address)) == -1) {
             mjpeg_sck_close(m_listenSock);
             std::cout << "MjpegServer: failed to bind socket to port\n";
-            return; // Failed to bind socket to port
+            return;  // Failed to bind socket to port
         }
 
         // Listen to the bound port
         if (listen(m_listenSock, 0) == -1) {
             mjpeg_sck_close(m_listenSock);
-            std::cout << "MjpegServer: failed to listen to port " << m_port <<
-                "\n";
-            return; // Failed to listen to port
+            std::cout << "MjpegServer: failed to listen to port " << m_port
+                      << "\n";
+            return;  // Failed to listen to port
         }
 
         std::cout << "Started listening on " << m_port << "\n";
@@ -116,14 +113,13 @@ void MjpegServer::start() {
                               mjpeg_sck_selector::except);
 
         // Add reading end of socketpair to selector
-        m_clientSelector.addSocket(m_cancelfdr,
-                                   mjpeg_sck_selector::read |
-                                   mjpeg_sck_selector::except);
+        m_clientSelector.addSocket(
+            m_cancelfdr, mjpeg_sck_selector::read | mjpeg_sck_selector::except);
 
         // Add listening socket to selector
-        m_clientSelector.addSocket(m_listenSock,
-                                   mjpeg_sck_selector::read |
-                                   mjpeg_sck_selector::except);
+        m_clientSelector.addSocket(
+            m_listenSock,
+            mjpeg_sck_selector::read | mjpeg_sck_selector::except);
 
         m_isRunning = true;
         m_serverThread = std::thread(&MjpegServer::serverFunc, this);
@@ -150,8 +146,7 @@ void MjpegServer::stop() {
     }
 }
 
-void MjpegServer::serveImage(uint8_t* image,
-                             unsigned int width,
+void MjpegServer::serveImage(uint8_t* image, unsigned int width,
                              unsigned int height) {
     // Don't bother making the JPEG if there are no clients to which to send it
     if (m_clientSockets.size() == 0) {
@@ -175,30 +170,35 @@ void MjpegServer::serveImage(uint8_t* image,
      * the loop counter, so that we don't have to keep track ourselves.
      */
     while (m_cinfo.next_scanline < m_cinfo.image_height) {
-        m_row_pointer = image + m_cinfo.next_scanline * m_cinfo.image_width *
-                        m_cinfo.input_components;
-        (void) jpeg_write_scanlines(&m_cinfo, &m_row_pointer, 1);
+        m_row_pointer = image +
+                        m_cinfo.next_scanline * m_cinfo.image_width *
+                            m_cinfo.input_components;
+        (void)jpeg_write_scanlines(&m_cinfo, &m_row_pointer, 1);
     }
 
     jpeg_finish_compress(&m_cinfo);
     /* ===================================== */
 
     /* ===== Prepare MJPEG frame ===== */
-    std::string imgFrame = "--myboundary\r\n"
-                           "Content-Type: image/jpeg\r\n"
-                           "Content-Length: ";
+    std::string imgFrame =
+        "--myboundary\r\n"
+        "Content-Type: image/jpeg\r\n"
+        "Content-Length: ";
 
     std::stringstream ss;
     ss << m_serveLen;
 
-    imgFrame += ss.str(); // Add image size
+    imgFrame += ss.str();  // Add image size
     imgFrame += "\r\n\r\n";
 
-    char buffer[imgFrame.length() + m_serveLen + 2];
-    std::memcpy(buffer, imgFrame.c_str(), imgFrame.length());
-    std::memcpy(buffer + imgFrame.length(), m_serveImg, m_serveLen);
-    buffer[imgFrame.length() + m_serveLen] = '\r';
-    buffer[imgFrame.length() + m_serveLen + 1] = '\n';
+    if (m_buf.length() < imgFrame.length() + m_serveLen + 2) {
+        m_buf.resize(imgFrame.length() + m_serveLen + 2);
+    }
+
+    m_buf = imgFrame;
+    std::memcpy(&m_buf[0] + imgFrame.length(), m_serveImg, m_serveLen);
+    m_buf[imgFrame.length() + m_serveLen] = '\r';
+    m_buf[imgFrame.length() + m_serveLen + 1] = '\n';
     /* =============================== */
 
     // Send JPEG to all clients
@@ -209,20 +209,19 @@ void MjpegServer::serveImage(uint8_t* image,
         int sizeToSend = imgFrame.length() + m_serveLen + 2;
         for (int length = 0; length < sizeToSend; length += sent) {
             // Send a chunk of data
-            sent = send(*i, buffer + length, sizeToSend - length, 0);
+            sent = send(*i, &m_buf[0] + length, sizeToSend - length, 0);
 
             // Check for errors
             if (sent < 0) {
                 // Close dead socket and remove it from the selector
                 mjpeg_sck_close(*i);
-                m_clientSelector.removeSocket(*i,
-                                              mjpeg_sck_selector::read |
-                                              mjpeg_sck_selector::except);
+                m_clientSelector.removeSocket(
+                    *i, mjpeg_sck_selector::read | mjpeg_sck_selector::except);
 
                 // Remove socket from the list of clients
                 i = m_clientSockets.erase(i);
 
-                break; // Failed to send
+                break;  // Failed to send
             }
         }
     }
@@ -233,7 +232,8 @@ void MjpegServer::serverFunc() {
     int recvSize = 0;
 
     while (m_isRunning) {
-        // Wait until one of the sockets is ready for reading, or timeout is reached
+        // Wait until one of the sockets is ready for reading, or timeout is
+        // reached
         int count = m_clientSelector.select(nullptr);
 
         if (count > 0) {
@@ -243,47 +243,45 @@ void MjpegServer::serverFunc() {
                 // Accept a new connection
                 sockaddr_in acceptAddr;
                 socklen_t length = sizeof(acceptAddr);
-                mjpeg_socket_t newClient = accept(m_listenSock,
-                                                  reinterpret_cast<sockaddr*>(&
-                                                                              acceptAddr),
-                                                  &length);
+                mjpeg_socket_t newClient =
+                    accept(m_listenSock,
+                           reinterpret_cast<sockaddr*>(&acceptAddr), &length);
 
                 // Initialize new socket and add it to the selector
                 if (mjpeg_sck_valid(newClient)) {
                     mjpeg_sck_setnonblocking(newClient, 0);
 
-                    // Disable the Nagle algorithm (ie. removes buffering of TCP packets)
+                    // Disable the Nagle algorithm (ie. removes buffering of TCP
+                    // packets)
                     int yes = 1;
                     if (setsockopt(newClient, IPPROTO_TCP, TCP_NODELAY,
                                    reinterpret_cast<char*>(&yes),
                                    sizeof(yes)) == -1) {
                         mjpeg_sck_close(newClient);
-                        break; // Failed remove buffering
+                        break;  // Failed remove buffering
                     }
 
                     // Add socket to selector
                     m_clientSockets.push_front(newClient);
-                    m_clientSelector.addSocket(newClient,
-                                               mjpeg_sck_selector::read |
-                                               mjpeg_sck_selector::except);
+                    m_clientSelector.addSocket(
+                        newClient,
+                        mjpeg_sck_selector::read | mjpeg_sck_selector::except);
                 }
             }
 
             /* If an exception occurred with the cancel socket or it is ready
              * to be read, return.
              */
-            if (m_cancelfdr &&
-                (m_clientSelector.isReady(m_cancelfdr,
-                                          mjpeg_sck_selector::except) ||
-                 m_clientSelector.isReady(m_cancelfdr,
-                                          mjpeg_sck_selector::read))) {
+            if (m_cancelfdr && (m_clientSelector.isReady(
+                                    m_cancelfdr, mjpeg_sck_selector::except) ||
+                                m_clientSelector.isReady(
+                                    m_cancelfdr, mjpeg_sck_selector::read))) {
                 return;
             }
 
             // Check if sockets are requesting data stream
             std::lock_guard<std::mutex> lock(m_clientSocketMutex);
-            for (auto i = m_clientSockets.begin();
-                 i != m_clientSockets.end();
+            for (auto i = m_clientSockets.begin(); i != m_clientSockets.end();
                  i++) {
                 // If current client is ready to be read from
                 if (m_clientSelector.isReady(*i, mjpeg_sck_selector::read)) {
@@ -293,8 +291,8 @@ void MjpegServer::serverFunc() {
                     if (recvSize > 0) {
                         packet[recvSize] = '\0';
 
-                        /* Parse request to determine the right MJPEG stream to send them
-                         * It should be "GET %s HTTP/1.0\r\n\r\n"
+                        /* Parse request to determine the right MJPEG stream to
+                         * send them. It should be "GET %s HTTP/1.0\r\n\r\n"
                          */
                         char* tok = std::strtok(packet, " ");
                         if (std::strncmp(tok, "GET", 3) == 0) {
@@ -303,15 +301,16 @@ void MjpegServer::serverFunc() {
 
                             // TODO Finish parsing
 
-                            std::string ack = "HTTP/1.0 200 OK\r\n"
-                                              "Cache-Control: no-cache\r\n"
-                                              "Connection: close\r\n"
-                                              "Content-Type: multipart/x-mixed-replace; boundary=--myboundary\r\n\r\n";
+                            std::string ack =
+                                "HTTP/1.0 200 OK\r\n"
+                                "Cache-Control: no-cache\r\n"
+                                "Connection: close\r\n"
+                                "Content-Type: multipart/x-mixed-replace; "
+                                "boundary=--myboundary\r\n\r\n";
 
                             // Loop until every byte has been sent
                             int sent = 0;
-                            for (unsigned int pos = 0;
-                                 pos < ack.length();
+                            for (unsigned int pos = 0; pos < ack.length();
                                  pos += sent) {
                                 // Send a chunk of data
                                 sent = send(*i, ack.c_str() + pos,
@@ -319,28 +318,29 @@ void MjpegServer::serverFunc() {
 
                                 // Check for errors
                                 if (sent < 0) {
-                                    // Close dead socket and remove it from the selector
+                                    /* Close dead socket and remove it from the
+                                     * selector
+                                     */
                                     mjpeg_sck_close(*i);
-                                    m_clientSelector.removeSocket(*i,
-                                                                  mjpeg_sck_selector::read |
-                                                                  mjpeg_sck_selector::except);
+                                    m_clientSelector.removeSocket(
+                                        *i, mjpeg_sck_selector::read |
+                                                mjpeg_sck_selector::except);
 
                                     // Remove socket from the list of clients
                                     i = m_clientSockets.erase(i);
 
-                                    break; // Failed to send
+                                    break;  // Failed to send
                                 }
                             }
                         }
-                    }
+                    } else {
+                        // If socket disconnected or malfunctioned, remove it
 
-                    // If socket disconnected or malfunctioned, remove it
-                    else {
                         // Close dead socket and remove it from the selector
                         mjpeg_sck_close(*i);
-                        m_clientSelector.removeSocket(*i,
-                                                      mjpeg_sck_selector::read |
-                                                      mjpeg_sck_selector::except);
+                        m_clientSelector.removeSocket(
+                            *i, mjpeg_sck_selector::read |
+                                    mjpeg_sck_selector::except);
 
                         // Remove socket from the list of clients
                         i = m_clientSockets.erase(i);
@@ -352,9 +352,9 @@ void MjpegServer::serverFunc() {
                 if (m_clientSelector.isReady(*i, mjpeg_sck_selector::except)) {
                     // Close dead socket and remove it from the selector
                     mjpeg_sck_close(*i);
-                    m_clientSelector.removeSocket(*i,
-                                                  mjpeg_sck_selector::read |
-                                                  mjpeg_sck_selector::except);
+                    m_clientSelector.removeSocket(
+                        *i,
+                        mjpeg_sck_selector::read | mjpeg_sck_selector::except);
 
                     // Remove socket from the list of clients
                     i = m_clientSockets.erase(i);

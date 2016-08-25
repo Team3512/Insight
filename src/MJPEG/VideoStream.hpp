@@ -1,18 +1,10 @@
-// =============================================================================
-// Description: Receives a video stream and displays it in a child window with
-//             the specified properties
-// Author: FRC Team 3512, Spartatroniks
-// =============================================================================
+// Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
 #ifndef VIDEO_STREAM_HPP
 #define VIDEO_STREAM_HPP
 
-#include <QOpenGLWidget>
+#include <stdint.h>
 
-class QPaintEvent;
-class QMouseEvent;
-
-#include <cstdint>
 #include <atomic>
 #include <chrono>
 #include <functional>
@@ -21,18 +13,23 @@ class QMouseEvent;
 #include <string>
 #include <thread>
 
+#include <QOpenGLWidget>
+
 #include "WindowCallbacks.hpp"
 
 class ClientBase;
+class QPaintEvent;
+class QMouseEvent;
 
+/**
+ * Receives a video stream and displays it in a child window with the specified
+ * properties
+ */
 class VideoStream : public QOpenGLWidget {
     Q_OBJECT
 
 public:
-    VideoStream(ClientBase* client,
-                QWidget* parentWin,
-                int width,
-                int height,
+    VideoStream(ClientBase* client, QWidget* parentWin, int width, int height,
                 WindowCallbacks* windowCallbacks,
                 std::function<void(void)> newImageCbk = nullptr,
                 std::function<void(void)> startCbk = nullptr,
@@ -51,7 +48,7 @@ protected:
 
     void mousePressEvent(QMouseEvent* event);
     void paintGL();
-    void resizeGL(int w, int h); // Arguments are buffer dimensions
+    void resizeGL(int w, int h);  // Arguments are buffer dimensions
 
 private:
     ClientBase* m_client;
@@ -114,4 +111,4 @@ signals:
     void redraw();
 };
 
-#endif // VIDEO_STREAM_HPP
+#endif  // VIDEO_STREAM_HPP

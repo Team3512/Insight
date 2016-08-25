@@ -1,13 +1,10 @@
-// =============================================================================
-// Description: Receives an MJPEG stream and displays it in a child window with
-//              the specified properties
-// Author: FRC Team 3512, Spartatroniks
-// =============================================================================
+// Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
 #ifndef MJPEG_CLIENT_HPP
 #define MJPEG_CLIENT_HPP
 
-#include <cstdint>
+#include <stdint.h>
+
 #include <atomic>
 #include <map>
 #include <mutex>
@@ -20,6 +17,10 @@
 #include "ClientBase.hpp"
 #include "mjpeg_sck.hpp"
 
+/**
+ * Receives an MJPEG stream and displays it in a child window with the specified
+ * properties
+ */
 class MjpegClient : public ClientBase {
 public:
     MjpegClient(const std::string& hostName, unsigned short port,
@@ -51,7 +52,7 @@ public:
 
 private:
     std::string m_hostName;
-    unsigned short m_port;
+    uint16_t m_port;
     std::string m_requestPath;
 
     // Stores image before displaying it on the screen
@@ -100,4 +101,4 @@ int mjpeg_rxheaders(std::vector<uint8_t>& buf, int sd, int cancelfd);
 
 std::map<std::string, std::string> mjpeg_process_header(std::string header);
 
-#endif // MJPEG_CLIENT_HPP
+#endif  // MJPEG_CLIENT_HPP

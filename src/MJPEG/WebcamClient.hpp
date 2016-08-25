@@ -1,13 +1,10 @@
-// =============================================================================
-// Description: Receives a video stream from a webcam and displays it in a child
-//              window with the specified properties
-// Author: FRC Team 3512, Spartatroniks
-// =============================================================================
+// Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
 #ifndef WEBCAM_CLIENT_HPP
 #define WEBCAM_CLIENT_HPP
 
-#include <cstdint>
+#include <stdint.h>
+
 #include <atomic>
 #include <mutex>
 #include <string>
@@ -18,6 +15,10 @@
 
 #include "ClientBase.hpp"
 
+/**
+ * Receives a video stream from a webcam and displays it in a child window with
+ * the specified properties
+ */
 class WebcamClient : public ClientBase {
 public:
     explicit WebcamClient(int device = 0);
@@ -78,4 +79,4 @@ private:
     void recvFunc();
 };
 
-#endif // WEBCAM_CLIENT_HPP
+#endif  // WEBCAM_CLIENT_HPP

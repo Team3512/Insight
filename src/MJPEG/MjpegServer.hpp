@@ -1,24 +1,26 @@
-// =============================================================================
-// Description: An MJPEG server implementation
-// Author: FRC Team 3512, Spartatroniks
-// =============================================================================
+// Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
 #ifndef MJPEG_SERVER_HPP
 #define MJPEG_SERVER_HPP
 
-#include <cstdint>
+#include <stdint.h>
+
 #include <atomic>
 #include <list>
 #include <mutex>
+#include <string>
 #include <thread>
-
-#include <jpeglib.h>
 
 #include "mjpeg_sck_selector.hpp"
 
+#include <jpeglib.h>
+
+/**
+ * An MJPEG server implementation
+ */
 class MjpegServer {
 public:
-    MjpegServer(unsigned short port);
+    MjpegServer(uint16_t port);
     virtual ~MjpegServer();
 
     void start();
@@ -33,7 +35,7 @@ private:
     std::mutex m_clientSocketMutex;
 
     mjpeg_socket_t m_listenSock = INVALID_SOCKET;
-    unsigned short m_port;
+    uint16_t m_port;
 
     mjpeg_socket_t m_cancelfdr = 0;
     mjpeg_socket_t m_cancelfdw = 0;
@@ -42,12 +44,15 @@ private:
     void serverFunc();
     std::atomic<bool> m_isRunning{false};
 
+    // Temporary buffer used in serveImage()
+    std::string m_buf;
+
     struct jpeg_compress_struct m_cinfo;
     struct jpeg_error_mgr m_jerr;
-    JSAMPROW m_row_pointer; // pointer to start of scanline (row of image)
+    JSAMPROW m_row_pointer;  // pointer to start of scanline (row of image)
 
     uint8_t* m_serveImg = nullptr;
-    unsigned long int m_serveLen = 0;
+    unsigned long int m_serveLen = 0;  // NOLINT
 };
 
-#endif // MJPEG_SERVER_HPP
+#endif  // MJPEG_SERVER_HPP

@@ -1,20 +1,18 @@
-// =============================================================================
-// Description: Creates application's main window
-// Author: FRC Team 3512, Spartatroniks
-// =============================================================================
+// Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
 #ifndef MAIN_WINDOW_HPP
 #define MAIN_WINDOW_HPP
 
-#include <cstdint>
+#include <stdint.h>
+
 #include <memory>
 
 #include <QMainWindow>
 
 #include "ImageProcess/FindTarget2016.hpp"
 #include "MJPEG/MjpegServer.hpp"
-#include "MJPEG/mjpeg_sck.hpp"
 #include "MJPEG/WindowCallbacks.hpp"
+#include "MJPEG/mjpeg_sck.hpp"
 #include "Settings.hpp"
 
 class ClientBase;
@@ -24,6 +22,9 @@ class QPushButton;
 class QSlider;
 class VideoStream;
 
+/**
+ * Creates application's main window
+ */
 class MainWindow : public QMainWindow {
     Q_OBJECT
     QWidget* centralWidget;
@@ -88,11 +89,11 @@ private:
     bool m_newData;
     uint32_t m_robotIP;
     std::string m_robotIPStr;
-    unsigned short m_robotCtrlPort;
+    uint16_t m_robotCtrlPort;
 
     // Make sure control data isn't sent too fast
     std::chrono::time_point<std::chrono::system_clock> m_lastSendTime;
     /* ======================================== */
 };
 
-#endif // MAIN_WINDOW_HPP
+#endif  // MAIN_WINDOW_HPP
