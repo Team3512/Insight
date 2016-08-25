@@ -5,9 +5,6 @@
 
 #include "MainWindow.hpp"
 
-/**
- * Starts application
- */
 int main(int argc, char* argv[]) {
     Q_INIT_RESOURCE(Insight);
 
