@@ -1,5 +1,3 @@
-// Copyright (c) FRC Team 3512, Spartatroniks 2016. All Rights Reserved.
-
 /* socketpair.c
  * Copyright 2007 by Nathan C. Myers <ncm@cantrip.org>; some rights reserved.
  * This code is Free Software.  It may be copied freely, in original or

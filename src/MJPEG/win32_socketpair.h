@@ -1,5 +1,3 @@
-// Copyright (c) FRC Team 3512, Spartatroniks 2016. All Rights Reserved.
-
 #ifndef _WIN32SOCKETPAIR_H
 #define _WIN32SOCKETPAIR_H
 

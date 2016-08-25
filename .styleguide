@@ -17,4 +17,5 @@ modifiableFolderExclude {
 }
 
 modifiableFileExclude {
+  win32_socketpair
 }
