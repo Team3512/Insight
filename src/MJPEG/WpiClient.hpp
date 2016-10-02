@@ -1,7 +1,6 @@
 // Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
-#ifndef WPI_CLIENT_HPP
-#define WPI_CLIENT_HPP
+#pragma once
 
 #include <stdint.h>
 
@@ -23,7 +22,7 @@
  */
 class WpiClient : public ClientBase {
 public:
-    WpiClient(const std::string& hostName);
+    explicit WpiClient(const std::string& hostName);
     virtual ~WpiClient();
 
     // Request MJPEG stream
@@ -115,5 +114,3 @@ private:
  *  reading, the number of bytes received is returned. On error,
  *  -1 is returned, and errno is set appropriately. */
 int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd);
-
-#endif  // WPI_CLIENT_HPP

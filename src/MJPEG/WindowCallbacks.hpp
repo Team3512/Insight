@@ -1,7 +1,6 @@
 // Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
-#ifndef WINDOW_CALLBACKS_HPP
-#define WINDOW_CALLBACKS_HPP
+#pragma once
 
 #include <functional>
 
@@ -13,5 +12,3 @@ public:
     // The arguments are 'int x' and 'int y'
     std::function<void(int, int)> clickEvent = [](int, int) {};
 };
-
-#endif  // WINDOW_CALLBACKS_HPP

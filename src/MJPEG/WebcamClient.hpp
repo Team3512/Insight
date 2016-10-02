@@ -1,7 +1,6 @@
 // Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
-#ifndef WEBCAM_CLIENT_HPP
-#define WEBCAM_CLIENT_HPP
+#pragma once
 
 #include <stdint.h>
 
@@ -78,5 +77,3 @@ private:
     // Used by m_recvThread
     void recvFunc();
 };
-
-#endif  // WEBCAM_CLIENT_HPP

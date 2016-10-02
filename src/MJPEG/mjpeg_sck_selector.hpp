@@ -1,7 +1,6 @@
 // Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
-#ifndef MJPEG_SCK_SELECTOR_HPP
-#define MJPEG_SCK_SELECTOR_HPP
+#pragma once
 
 #include <stdint.h>
 
@@ -58,5 +57,3 @@ private:
 
     std::list<selector_sck> m_clientSockets;
 };
-
-#endif  // MJPEG_SCK_SELECTOR_HPP

@@ -1,7 +1,6 @@
 // Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
-#ifndef VIDEO_STREAM_HPP
-#define VIDEO_STREAM_HPP
+#pragma once
 
 #include <stdint.h>
 
@@ -110,5 +109,3 @@ private:
 signals:
     void redraw();
 };
-
-#endif  // VIDEO_STREAM_HPP

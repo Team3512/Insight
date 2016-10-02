@@ -1,7 +1,6 @@
 // Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
-#ifndef CLIENT_BASE_HPP
-#define CLIENT_BASE_HPP
+#pragma once
 
 #include <stdint.h>
 
@@ -61,5 +60,3 @@ protected:
     // Called when client thread stops
     void (VideoStream::*m_stopCbk)() = nullptr;
 };
-
-#endif  // CLIENT_BASE_HPP

@@ -1,7 +1,6 @@
 // Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
-#ifndef MJPEG_SCK_HPP
-#define MJPEG_SCK_HPP
+#pragma once
 
 #ifdef _WIN32
 
@@ -16,7 +15,6 @@ typedef u_int mjpeg_socket_t;
 #else
 
 #include <arpa/inet.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -24,6 +22,7 @@ typedef u_int mjpeg_socket_t;
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <cerrno>
 
 typedef int mjpeg_socket_t;
 #define INVALID_SOCKET -1
@@ -72,5 +71,3 @@ mjpeg_socket_t mjpeg_pipe(mjpeg_socket_t sv[2]);
  * On error, -1 is returned, and errno is set appropriately.
  */
 int mjpeg_sck_recv(int sockfd, void* buf, size_t len, int cancelfd);
-
-#endif  // MJPEG_SCK_HPP

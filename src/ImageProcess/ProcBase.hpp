@@ -1,7 +1,6 @@
 // Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
-#ifndef PROC_BASE_HPP
-#define PROC_BASE_HPP
+#pragma once
 
 #include <stdint.h>
 
@@ -74,5 +73,3 @@ private:
     virtual void findTargets();
     virtual void drawOverlay();
 };
-
-#endif  // PROC_BASE_HPP

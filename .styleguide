@@ -1,3 +1,20 @@
+cExtensions {
+  c
+  h
+}
+
+cppHeaderExtensions {
+  hpp
+  inl
+}
+
+cppSrcExtensions {
+  cpp
+}
+
+otherExtensions {
+}
+
 genFolderExclude {
 }
 
@@ -18,4 +35,20 @@ modifiableFolderExclude {
 
 modifiableFileExclude {
   win32_socketpair
+}
+
+includeRelated {
+}
+
+includeCSys {
+}
+
+includeCppSys {
+}
+
+includeOtherLibs {
+  ^jpeglib\.h$
+}
+
+includeProject {
 }

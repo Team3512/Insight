@@ -1,11 +1,11 @@
 // Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
-#ifndef MAIN_WINDOW_HPP
-#define MAIN_WINDOW_HPP
+#pragma once
 
 #include <stdint.h>
 
 #include <memory>
+#include <string>
 
 #include <QMainWindow>
 
@@ -95,5 +95,3 @@ private:
     std::chrono::time_point<std::chrono::system_clock> m_lastSendTime;
     /* ======================================== */
 };
-
-#endif  // MAIN_WINDOW_HPP

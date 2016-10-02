@@ -1,16 +1,17 @@
 // Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
+#include "VideoStream.hpp"
+
+#include <cstring>
+#include <iostream>
+
 #include <QFont>
 #include <QImage>
 #include <QMouseEvent>
 #include <QPainter>
 
-#include <cstring>
-#include <iostream>
-
 #include "../Util.hpp"
 #include "ClientBase.hpp"
-#include "VideoStream.hpp"
 
 using namespace std::chrono_literals;
 

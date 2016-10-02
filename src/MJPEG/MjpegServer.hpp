@@ -1,7 +1,6 @@
 // Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
-#ifndef MJPEG_SERVER_HPP
-#define MJPEG_SERVER_HPP
+#pragma once
 
 #include <stdint.h>
 
@@ -11,16 +10,16 @@
 #include <string>
 #include <thread>
 
-#include "mjpeg_sck_selector.hpp"
-
 #include <jpeglib.h>
+
+#include "mjpeg_sck_selector.hpp"
 
 /**
  * An MJPEG server implementation
  */
 class MjpegServer {
 public:
-    MjpegServer(uint16_t port);
+    explicit MjpegServer(uint16_t port);
     virtual ~MjpegServer();
 
     void start();
@@ -54,5 +53,3 @@ private:
     uint8_t* m_serveImg = nullptr;
     unsigned long int m_serveLen = 0;  // NOLINT
 };
-
-#endif  // MJPEG_SERVER_HPP

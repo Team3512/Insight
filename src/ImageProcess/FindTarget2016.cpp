@@ -2,6 +2,8 @@
 
 #include "FindTarget2016.hpp"
 
+#include <vector>
+
 #include <opencv2/imgproc/imgproc.hpp>
 
 void FindTarget2016::prepareImage() {

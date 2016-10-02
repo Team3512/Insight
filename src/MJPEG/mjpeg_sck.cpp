@@ -1,10 +1,11 @@
 // Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
 #include "mjpeg_sck.hpp"
-#include "mjpeg_sck_selector.hpp"
 
 #include <algorithm>
 #include <cstring>
+
+#include "mjpeg_sck_selector.hpp"
 
 #ifdef _WIN32
 void _sck_wsainit() {
@@ -145,7 +146,7 @@ mjpeg_socket_t mjpeg_sck_connect(const char* host, int port,
     }
 
     // Set up the sockaddr_in structure.
-    memset(&pin, 0, sizeof(struct sockaddr_in));
+    std::memset(&pin, 0, sizeof(struct sockaddr_in));
     pin.sin_family = AF_INET;
     pin.sin_addr.s_addr =
         reinterpret_cast<struct in_addr*>(hp->h_addr_list[0])->s_addr;

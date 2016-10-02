@@ -1,7 +1,6 @@
 // Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
-#ifndef MJPEG_CLIENT_HPP
-#define MJPEG_CLIENT_HPP
+#pragma once
 
 #include <stdint.h>
 
@@ -100,5 +99,3 @@ private:
 int mjpeg_rxheaders(std::vector<uint8_t>& buf, int sd, int cancelfd);
 
 std::map<std::string, std::string> mjpeg_process_header(std::string header);
-
-#endif  // MJPEG_CLIENT_HPP

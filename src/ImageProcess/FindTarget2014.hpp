@@ -1,7 +1,6 @@
 // Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
-#ifndef FIND_TARGET_2014_HPP
-#define FIND_TARGET_2014_HPP
+#pragma once
 
 #include "ProcBase.hpp"
 
@@ -34,5 +33,3 @@ private:
 
     float m_overlayScale = 1.f;
 };
-
-#endif  // FIND_TARGET_2014_HPP

@@ -2,6 +2,8 @@
 
 #include "FindTarget2013.hpp"
 
+#include <vector>
+
 #include <opencv2/imgproc/imgproc.hpp>
 
 void FindTarget2013::prepareImage() {

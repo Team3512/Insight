@@ -1,7 +1,6 @@
 // Copyright (c) FRC Team 3512, Spartatroniks 2013-2016. All Rights Reserved.
 
-#ifndef FIND_TARGET_2016_HPP
-#define FIND_TARGET_2016_HPP
+#pragma once
 
 #include <iostream>
 
@@ -28,5 +27,3 @@ private:
     int m_lowerGreenFilterValue = 230;
     float m_overlayScale = 1.f;
 };
-
-#endif  // FIND_TARGET_2016_HPP
