@@ -20,17 +20,9 @@ genFolderExclude {
 
 genFileExclude {
   \.ico$
-  \.o$
-  Insight$
-  Insight\.pro\.user$
-  Makefile
-  moc_
-  qrc_
-  ui_
 }
 
 modifiableFolderExclude {
-  \.git
 }
 
 modifiableFileExclude {
