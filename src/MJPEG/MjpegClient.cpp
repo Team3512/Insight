@@ -105,11 +105,21 @@ unsigned int MjpegClient::getCurrentHeight() const {
     return m_extHeight;
 }
 
-void MjpegClient::jpeg_load_from_memory(uint8_t* inputBuf, int inputLen,
+bool MjpegClient::jpeg_load_from_memory(uint8_t* inputBuf, int inputLen,
                                         std::vector<uint8_t>& outputBuf) {
+    // JPEG images start with bytes 0xFF, 0xD8 and end with bytes 0xFF, 0xD9.
+    // Don't process data that isn't JPEG.
+    if (inputBuf[0] != 0xFF || inputBuf[1] != 0xD8) {
+        std::cout << "jpeg_load_from_memory: invalid magic: " << std::hex
+                  << "0x" << static_cast<uint32_t>(inputBuf[0]) << ", "
+                  << "0x" << static_cast<uint32_t>(inputBuf[1]) << std::dec
+                  << std::endl;
+        return false;
+    }
+
     jpeg_mem_src(&m_cinfo, inputBuf, inputLen);
     if (jpeg_read_header(&m_cinfo, TRUE) != JPEG_HEADER_OK) {
-        return;
+        return false;
     }
 
     jpeg_start_decompress(&m_cinfo);
@@ -133,6 +143,8 @@ void MjpegClient::jpeg_load_from_memory(uint8_t* inputBuf, int inputLen,
     }
 
     jpeg_finish_decompress(&m_cinfo);
+
+    return true;
 }
 
 void MjpegClient::recvFunc() {
@@ -189,12 +201,15 @@ void MjpegClient::recvFunc() {
         }
 
         // Load the image received (converts from JPEG to pixel array)
+        bool decompressed = false;
         {
             std::lock_guard<std::mutex> lock(m_imageMutex);
-            jpeg_load_from_memory(&buf[0], datasize, m_pxlBuf);
+            decompressed = jpeg_load_from_memory(&buf[0], datasize, m_pxlBuf);
         }
 
-        ClientBase::callNewImage(&m_pxlBuf[0], m_pxlBuf.size());
+        if (decompressed) {
+            ClientBase::callNewImage(&m_pxlBuf[0], m_pxlBuf.size());
+        }
     }
 
     // The loop has exited. We should now clean up and exit the thread.

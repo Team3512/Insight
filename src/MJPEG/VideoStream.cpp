@@ -50,7 +50,7 @@ VideoStream::~VideoStream() {
     delete m_client;
 }
 
-QSize VideoStream::sizeHint() const { return QSize(320, 240); }
+QSize VideoStream::sizeHint() const { return QSize(m_imgWidth, m_imgHeight); }
 
 void VideoStream::setFPS(unsigned int fps) { m_frameRate = fps; }
 
