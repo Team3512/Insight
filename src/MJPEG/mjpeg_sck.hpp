@@ -1,19 +1,14 @@
-// Copyright (c) FRC Team 3512, Spartatroniks 2013-2017. All Rights Reserved.
+// Copyright (c) 2013-2017 FRC Team 3512. All Rights Reserved.
 
 #pragma once
 
 #ifdef _WIN32
-
 #define _WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
-
 typedef int socklen_t;
 typedef u_int mjpeg_socket_t;
-
 #include "win32_socketpair.h"
-
 #else
-
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netdb.h>
@@ -22,11 +17,10 @@ typedef u_int mjpeg_socket_t;
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <cerrno>
 
+#include <cerrno>
 typedef int mjpeg_socket_t;
 #define INVALID_SOCKET -1
-
 #endif
 
 typedef enum mjpeg_sck_status {

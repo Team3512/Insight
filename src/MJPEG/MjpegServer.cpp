@@ -1,4 +1,4 @@
-// Copyright (c) FRC Team 3512, Spartatroniks 2013-2017. All Rights Reserved.
+// Copyright (c) 2013-2017 FRC Team 3512. All Rights Reserved.
 
 #include "MjpegServer.hpp"
 
@@ -170,9 +170,8 @@ void MjpegServer::serveImage(uint8_t* image, unsigned int width,
      * the loop counter, so that we don't have to keep track ourselves.
      */
     while (m_cinfo.next_scanline < m_cinfo.image_height) {
-        m_row_pointer = image +
-                        m_cinfo.next_scanline * m_cinfo.image_width *
-                            m_cinfo.input_components;
+        m_row_pointer = image + m_cinfo.next_scanline * m_cinfo.image_width *
+                                    m_cinfo.input_components;
         (void)jpeg_write_scanlines(&m_cinfo, &m_row_pointer, 1);
     }
 
