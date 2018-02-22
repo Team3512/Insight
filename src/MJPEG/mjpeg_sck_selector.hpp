@@ -4,8 +4,6 @@
 
 #include <stdint.h>
 
-#include <list>
-
 #include "mjpeg_sck.hpp"
 
 struct selector_sck {
@@ -54,6 +52,4 @@ private:
                             // ready to write
     fd_set m_in_exceptfds;  // set containing sockets to be checked for error
                             // conditions pending
-
-    std::list<selector_sck> m_clientSockets;
 };
