@@ -6,18 +6,12 @@
 
 #include "mjpeg_sck.hpp"
 
-struct selector_sck {
-    mjpeg_socket_t sd = INVALID_SOCKET;
-    uint32_t types = 0;
-};
-
 /**
  * A wrapper around select(3)
  */
 class mjpeg_sck_selector {
 public:
     mjpeg_sck_selector();
-    virtual ~mjpeg_sck_selector() = default;
 
     enum select_type { read = 1 << 0, write = 1 << 1, except = 1 << 2 };
 
