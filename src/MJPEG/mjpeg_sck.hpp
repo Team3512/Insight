@@ -6,7 +6,7 @@
 #define _WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
 typedef int socklen_t;
-typedef u_int mjpeg_socket_t;
+typedef SOCKET mjpeg_socket_t;
 #include "win32_socketpair.h"
 #else
 #include <arpa/inet.h>
